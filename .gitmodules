@@ -1,0 +1,6 @@
+[submodule "siproc"]
+	path = siproc
+	url = https://git.stim.ee.uh.edu/release/siproc.git
+[submodule "stimlib"]
+	path = stimlib
+	url = https://git.stim.ee.uh.edu/codebase/stimlib.git
