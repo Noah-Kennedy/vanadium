@@ -19,7 +19,7 @@ import imageio
 from matplotlib import cm
 import numpy as np
 from matplotlib.colors import ListedColormap
-import python.envi
+# import python.envi
 
 
 # matplotlib.use('Qt4Agg')
