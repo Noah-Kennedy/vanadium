@@ -5,5 +5,7 @@
 /vendored
 /venv
 /bins
+/python
 
-*.bsq
+/*/*.bip
+/*/*.bsq
