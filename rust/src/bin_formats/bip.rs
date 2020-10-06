@@ -81,7 +81,7 @@ impl<C, C2, T> OutOfPlaceConvert<Bsq<C2, T>> for Bip<C, T>
 
             let bar = ProgressBar::new(bar_len as u64);
 
-            out_bands.into_par_iter()
+            out_bands.into_iter()
                 .enumerate()
                 .for_each(|(band_idx, band)| band
                     .par_chunks_mut(WORK_UNIT_SIZE)
