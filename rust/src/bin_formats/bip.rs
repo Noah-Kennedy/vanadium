@@ -75,54 +75,29 @@ impl<C, C2, T> OutOfPlaceConvert<Bsq<C2, T>> for Bip<C, T>
             // let pixels = self.slice().chunks(self.bands);
             let pixel_chunks = self.slice().par_chunks(self.bands * WORK_UNIT_SIZE);
 
-            let mut out_bands: Vec<&mut [T]> = out.split_bands_mut().collect();
+            let out_bands: Vec<&mut [T]> = out.split_bands_mut().collect();
 
             let bar_len = self.container.len();
 
             let bar = ProgressBar::new(bar_len as u64);
 
-            pixel_chunks.into_par_iter()
+            out_bands.into_par_iter()
                 .enumerate()
-                .for_each(|(chunk_idx, pixels)|
-                    {
-                        pixels
-                            .chunks(self.bands)
-                            .enumerate()
-                            .for_each(|(pixel_idx, pixel)| {
-                                for (band, out_band) in out_bands.iter().enumerate() {
-                                    let idx = chunk_idx * WORK_UNIT_SIZE + pixel_idx;
-
-                                    unsafe {
-                                        let refer = out_band.get_unchecked(idx);
-                                        let channel: *mut T = mem::transmute(refer);
-                                        *channel = *pixel.get_unchecked(band);
-                                    }
-                                }
+                .for_each(|(band_idx, band)| band
+                    .par_chunks_mut(WORK_UNIT_SIZE)
+                    .zip(pixel_chunks.clone())
+                    .for_each(|(channel_chunks, pixel_chunk)| {
+                        channel_chunks
+                            .iter_mut()
+                            .zip(pixel_chunk.chunks(self.bands))
+                            .for_each(|(channel, pixel)| {
+                                *channel = unsafe { *pixel.get_unchecked(band_idx) };
                             });
 
-                        let inc = pixels.len() * (self.bands - 1);
+                        let inc = WORK_UNIT_SIZE * (self.bands - 1);
                         bar.inc(inc as u64);
-                    }
+                    })
                 );
-
-
-            // out_bands.into_par_iter()
-            //     .enumerate()
-            //     .for_each(|(band_idx, band)| band
-            //         .par_chunks_mut(WORK_UNIT_SIZE)
-            //         .zip(pixel_chunks.clone())
-            //         .for_each(|(channel_chunks, pixel_chunk)| {
-            //             channel_chunks
-            //                 .iter_mut()
-            //                 .zip(pixel_chunk.chunks(self.bands))
-            //                 .for_each(|(channel, pixel)| {
-            //                     *channel = unsafe { *pixel.get_unchecked(band_idx) };
-            //                 });
-            //
-            //             let inc = WORK_UNIT_SIZE * (self.bands - 1);
-            //             bar.inc(inc as u64);
-            //         })
-            //     );
 
             bar.finish();
 
