@@ -61,21 +61,43 @@ pub struct Headers {
 // Fields
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+pub struct ParseFieldError;
+
+impl Display for ParseFieldError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Invalid")
+    }
+}
+
+impl Error for ParseFieldError {}
+
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub enum Interleave {
     Bip,
     Bil,
     Bsq,
 }
 
+
 impl FromStr for Interleave {
-    type Err = ();
+    type Err = ParseFieldError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "bip" => Ok(Self::Bip),
             "bil" => Ok(Self::Bil),
             "bsq" => Ok(Self::Bsq),
-            _ => Err(())
+            _ => Err(ParseFieldError)
+        }
+    }
+}
+
+impl ToString for Interleave {
+    fn to_string(&self) -> String {
+        match self {
+            Interleave::Bip => "bip".to_owned(),
+            Interleave::Bil => "bil".to_owned(),
+            Interleave::Bsq => "bsq".to_owned(),
         }
     }
 }
@@ -143,7 +165,7 @@ pub enum ParseHeaderError {
     BadValue(&'static str),
     NoKey(usize),
     NoValue(usize),
-    DuplicateKey(String),
+    _DuplicateKey(String),
     RequiredFieldNotFound(&'static str),
     InvalidFirstLine
 }
@@ -160,7 +182,7 @@ impl Display for ParseHeaderError {
             ParseHeaderError::NoValue(line) => {
                 writeln!(f, "Value not found for line {}!", line)
             }
-            ParseHeaderError::DuplicateKey(k) => {
+            ParseHeaderError::_DuplicateKey(k) => {
                 writeln!(f, "Duplicate key {}!", k)
             }
             ParseHeaderError::RequiredFieldNotFound(k) => {

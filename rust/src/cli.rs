@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
+use crate::headers::Interleave;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "basic")]
@@ -16,11 +17,8 @@ pub enum SubcommandOpt {
 #[derive(StructOpt, Debug)]
 #[structopt(name = "convert")]
 pub struct ConvertOpt {
-    #[structopt(short, long, parse(from_os_str))]
-    pub input: PathBuf,
-
     #[structopt(short, long, parse(from_str))]
-    pub input_type: String,
+    pub input: PathBuf,
 
     #[structopt(short, long, parse(from_os_str))]
     pub header: PathBuf,
@@ -28,6 +26,6 @@ pub struct ConvertOpt {
     #[structopt(short, long, parse(from_os_str))]
     pub output: PathBuf,
 
-    #[structopt(short, long, parse(from_str))]
-    pub output_type: String,
+    #[structopt(short, long, parse(try_from_str))]
+    pub output_type: Interleave,
 }
