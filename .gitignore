@@ -6,6 +6,6 @@
 /venv
 /bins
 /python
-
+*.png
 /*/*.bip
 /*/*.bsq
