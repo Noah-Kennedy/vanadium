@@ -29,6 +29,11 @@ version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "cc"
+version = "1.0.60"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "cfg-if"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -138,6 +143,7 @@ version = "0.1.0"
 dependencies = [
  "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap2 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nix 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -185,6 +191,17 @@ version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "nix"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cc 1.0.60 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.78 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -399,6 +416,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum atty 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)" = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
 "checksum autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 "checksum bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
+"checksum cc 1.0.60 (registry+https://github.com/rust-lang/crates.io-index)" = "ef611cc68ff783f18535d77ddd080185275713d852c4f5cbb6122c462a7a825c"
 "checksum cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 "checksum clap 2.33.3 (registry+https://github.com/rust-lang/crates.io-index)" = "37e58ac78573c40708d45522f0d80fa2f01cc4f9b4e2bf749807255454312002"
 "checksum console 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c0b1aacfaffdbff75be81c15a399b4bedf78aaefe840e8af1d299ac2ade885d2"
@@ -416,6 +434,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum maybe-uninit 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 "checksum memmap2 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d9b70ca2a6103ac8b665dc150b142ef0e4e89df640c9e6cf295d189c3caebe5a"
 "checksum memoffset 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)" = "043175f069eda7b85febe4a74abbaeff828d9f8b448515d3151a14a3542811aa"
+"checksum nix 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)" = "83450fe6a6142ddd95fb064b746083fc4ef1705fe81f64a64e1d4b39f54a1055"
 "checksum num_cpus 1.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "05499f3756671c15885fee9034446956fff3f243d6077b91e5767df161f766b3"
 "checksum number_prefix 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17b02fc0ff9a9e4b35b3342880f48e896ebf69f2967921fe8646bf5b7125956a"
 "checksum proc-macro-error 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"

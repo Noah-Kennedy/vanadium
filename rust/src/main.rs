@@ -10,10 +10,14 @@ use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
 use crate::cli::{ConvertOpt, Opt, SubcommandOpt};
 use crate::headers::Headers;
+use nix::fcntl::{fallocate, FallocateFlags};
+use crate::file_alloc::allocate_file;
+use crate::bin_formats::OutOfPlaceConvert;
 
 mod headers;
 mod bin_formats;
 mod cli;
+mod file_alloc;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let opt: Opt = Opt::from_args();
@@ -50,16 +54,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Bip::with_headers(&parsed_headers, &input_file)?
             };
 
+            println!("Allocating output file");
+            allocate_file(&output_file, bip.container.len())?;
+
             println!("Mapping output file");
             let mut bsq: Bsq<MmapMut, f32> = unsafe {
-                Bsq::with_headers_anon(&parsed_headers)?
+                Bsq::with_headers_mut(&parsed_headers, output_file)?
             };
 
             println!("Performing conversion");
-            bip.convert_bsq(&mut bsq);
-
-            println!("Writing file");
-            output_file.write_all(bsq.container.as_ref())?;
+            bip.convert_into(&mut bsq)?;
+            // println!("Writing file");
+            // output_file.write_all(bsq.container.as_ref())?;
 
             println!("finished")
         }

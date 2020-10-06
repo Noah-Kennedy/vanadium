@@ -12,3 +12,6 @@ structopt = "0.3.18"
 [dependencies.indicatif]
 version = "0.15.0"
 features = ["improved_unicode", "with_rayon"]
+
+[dependencies.nix]
+version = "0.18.0"
