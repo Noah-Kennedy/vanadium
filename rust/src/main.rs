@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fs::{File, OpenOptions, read_to_string};
+use std::io::Write;
 use std::str::FromStr;
 
 use memmap2::{Mmap, MmapMut};
@@ -8,11 +9,10 @@ use structopt::StructOpt;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
 use crate::cli::{ConvertOpt, Opt, SubcommandOpt};
-use crate::headers::envi::EnviHeaders;
-use std::io::Write;
+use crate::headers::Headers;
 
-pub mod headers;
-pub mod bin_formats;
+mod headers;
+mod bin_formats;
 mod cli;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -20,7 +20,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match opt.subcommand {
         SubcommandOpt::Convert(cvt) => {
-            let ConvertOpt { input, header, output } = cvt;
+            let ConvertOpt {
+                input,
+                input_type,
+                header,
+                output,
+                output_type
+            } = cvt;
 
             println!("Converting bip {:?} into bsq {:?}", input.as_os_str(), output.as_os_str());
 
@@ -37,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             println!("Reading headers");
             let headers_str = read_to_string(header)?;
-            let parsed_headers = EnviHeaders::from_str(&headers_str)?;
+            let parsed_headers = Headers::from_str(&headers_str)?;
 
             println!("Mapping input file");
             let bip: Bip<Mmap, f32> = unsafe {

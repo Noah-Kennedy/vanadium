@@ -8,7 +8,7 @@ use memmap2::{Mmap, MmapOptions};
 use rayon::prelude::*;
 
 use crate::bin_formats::bsq::Bsq;
-use crate::headers::envi::{EnviByteOrder, EnviHeaders};
+use crate::headers::{FileByteOrder, Headers};
 
 pub struct Bip<C, T> {
     pub bands: usize,
@@ -18,8 +18,8 @@ pub struct Bip<C, T> {
 }
 
 impl<T> Bip<Mmap, T> {
-    pub unsafe fn with_headers(headers: &EnviHeaders, file: &File) -> Result<Self, Box<dyn Error>> {
-        assert_eq!(EnviByteOrder::Intel, headers.byte_order);
+    pub unsafe fn with_headers(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
+        assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
@@ -60,14 +60,5 @@ impl<C, T> Bip<C, T> where C: Deref<Target=[u8]>, T: Copy + Send + Sync {
                 .zip(pixels.clone())
                 .for_each(|(channel, pixel)| *channel = unsafe { *pixel.get_unchecked(band_idx) })
             );
-
-        //for (row, bands) in pixels.enumerate().progress_count(len) {
-        //    for (col, value) in bands.iter().enumerate() {
-        //        unsafe {
-        //            *out_bands.get_unchecked_mut(col)
-        //                .get_unchecked_mut(row) = *value;
-        //        }
-        //    }
-        //}
     }
 }

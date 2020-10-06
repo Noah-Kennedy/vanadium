@@ -7,7 +7,7 @@ use std::slice::{Chunks, ChunksMut};
 
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
-use crate::headers::envi::{EnviByteOrder, EnviHeaders};
+use crate::headers::{FileByteOrder, Headers};
 
 pub struct Bsq<C, T> {
     pub bands: usize,
@@ -17,8 +17,8 @@ pub struct Bsq<C, T> {
 }
 
 impl<T> Bsq<Mmap, T> {
-    pub unsafe fn with_headers(headers: &EnviHeaders, file: File) -> Result<Self, Box<dyn Error>> {
-        assert_eq!(EnviByteOrder::Intel, headers.byte_order);
+    pub unsafe fn with_headers(headers: &Headers, file: File) -> Result<Self, Box<dyn Error>> {
+        assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
@@ -39,10 +39,10 @@ impl<T> Bsq<Mmap, T> {
 
 impl<T> Bsq<MmapMut, T> {
     pub unsafe fn with_headers_mut(
-        headers: &EnviHeaders, file: File,
+        headers: &Headers, file: File,
     ) -> Result<Self, Box<dyn Error>>
     {
-        assert_eq!(EnviByteOrder::Intel, headers.byte_order);
+        assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
@@ -61,10 +61,10 @@ impl<T> Bsq<MmapMut, T> {
     }
 
     pub unsafe fn with_headers_copy(
-        headers: &EnviHeaders, file: &File,
+        headers: &Headers, file: &File,
     ) -> Result<Self, Box<dyn Error>>
     {
-        assert_eq!(EnviByteOrder::Intel, headers.byte_order);
+        assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
@@ -82,8 +82,8 @@ impl<T> Bsq<MmapMut, T> {
         })
     }
 
-    pub unsafe fn with_headers_anon(headers: &EnviHeaders) -> Result<Self, Box<dyn Error>> {
-        assert_eq!(EnviByteOrder::Intel, headers.byte_order);
+    pub unsafe fn with_headers_anon(headers: &Headers) -> Result<Self, Box<dyn Error>> {
+        assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
         let len = headers.bands * headers.samples * headers.lines * mem::size_of::<T>();
 

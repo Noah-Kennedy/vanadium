@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-/// A basic example
 #[derive(StructOpt, Debug)]
 #[structopt(name = "basic")]
 pub struct Opt {
@@ -14,16 +13,21 @@ pub enum SubcommandOpt {
     Convert(ConvertOpt)
 }
 
-/// A basic example
 #[derive(StructOpt, Debug)]
-#[structopt(name = "bip2bsq")]
+#[structopt(name = "convert")]
 pub struct ConvertOpt {
     #[structopt(short, long, parse(from_os_str))]
     pub input: PathBuf,
+
+    #[structopt(short, long, parse(from_str))]
+    pub input_type: String,
 
     #[structopt(short, long, parse(from_os_str))]
     pub header: PathBuf,
 
     #[structopt(short, long, parse(from_os_str))]
     pub output: PathBuf,
+
+    #[structopt(short, long, parse(from_str))]
+    pub output_type: String,
 }
