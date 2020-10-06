@@ -4,7 +4,6 @@ use std::fs::File;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
-use indicatif::{ParallelProgressIterator, ProgressIterator};
 use memmap2::{Mmap, MmapOptions};
 use rayon::prelude::*;
 
