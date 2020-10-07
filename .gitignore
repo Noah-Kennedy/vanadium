@@ -4,6 +4,8 @@
 /bins
 /python
 *.png
-/*/*.bip
-/*/*.bsq
 /target
+
+*.bsq
+*.bip
+*.bil
