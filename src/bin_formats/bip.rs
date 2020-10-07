@@ -43,7 +43,7 @@ impl<T> Bip<Mmap, T> {
 }
 
 impl<C, T> Bip<C, T> where C: Deref<Target=[u8]> {
-    pub fn slice(&self) -> &[T] {
+    fn slice(&self) -> &[T] {
         let ptr = self.container.as_ptr() as *mut T;
         let len = self.band_len * self.bands;
         unsafe { slice::from_raw_parts(ptr, len) }
