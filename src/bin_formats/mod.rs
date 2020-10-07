@@ -82,7 +82,22 @@ impl<T> FileInner<MmapMut, T> {
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
-            .map_mut(&file)?;
+            .map_copy(&file)?;
+
+        Ok(Self {
+            dims: FileDims::from(headers),
+            container: raw,
+            phantom: Default::default(),
+        })
+    }
+
+    pub unsafe fn headers_anon(headers: &Headers) -> Result<Self, Box<dyn Error>> {
+        assert_eq!(FileByteOrder::Intel, headers.byte_order);
+
+        let raw = MmapOptions::new()
+            .offset(headers.header_offset as u64)
+            .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
+            .map_anon()?;
 
         Ok(Self {
             dims: FileDims::from(headers),
@@ -96,6 +111,32 @@ impl<T> FileInner<MmapMut, T> {
             .offset(0)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_mut(&file)?;
+
+        Ok(Self {
+            dims: dims.clone(),
+            container: raw,
+            phantom: Default::default(),
+        })
+    }
+
+    pub unsafe fn from_dims_copy(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
+        let raw = MmapOptions::new()
+            .offset(0)
+            .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
+            .map_copy(&file)?;
+
+        Ok(Self {
+            dims: dims.clone(),
+            container: raw,
+            phantom: Default::default(),
+        })
+    }
+
+    pub unsafe fn from_dims_anon(dims: &FileDims) -> Result<Self, Box<dyn Error>> {
+        let raw = MmapOptions::new()
+            .offset(0)
+            .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
+            .map_anon()?;
 
         Ok(Self {
             dims: dims.clone(),
