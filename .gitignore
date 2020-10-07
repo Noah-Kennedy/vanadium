@@ -1,11 +1,9 @@
 /data
 /.idea
-/siproc
-/stimlib
 /vendored
-/venv
 /bins
 /python
 *.png
 /*/*.bip
 /*/*.bsq
+/target

@@ -38,7 +38,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Opening output file");
             let output_file = OpenOptions::new()
                 .create(true)
-                .truncate(true)
                 .write(true)
                 .read(true)
                 .open(output)?;
