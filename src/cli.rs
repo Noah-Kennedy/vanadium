@@ -1,5 +1,7 @@
 use std::path::PathBuf;
+
 use structopt::StructOpt;
+
 use crate::headers::Interleave;
 
 #[derive(StructOpt, Debug)]
