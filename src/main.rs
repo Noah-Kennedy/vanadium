@@ -59,14 +59,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             match output_type {
                 Interleave::Bip => {
-                    // println!("Mapping output file");
-                    // let mut bip: Bip<_, f32> = unsafe {
-                    //     Bip::with_headers_mut(&parsed_headers, output_file)?
-                    // };
-                    //
-                    // println!("Performing conversion");
-                    // input_mat.to_bsq(&mut bip)?;
-                    // println!("finished")
+                    println!("Mapping output file");
+                    let mut bip: Bip<_, f32> = Bip::from(output_inner);
+
+
+                    println!("Performing conversion");
+                    input_mat.to_bip(&mut bip)?;
+                    println!("finished")
                 }
                 Interleave::Bil => todo!(),
                 Interleave::Bsq => {

@@ -4,7 +4,7 @@ use std::slice::{Chunks, ChunksMut};
 use num::{Float, NumCast};
 use num::traits::NumAssign;
 
-use crate::bin_formats::{FileAlgebra, FileConvert, FileInner};
+use crate::bin_formats::{FileAlgebra, FileConvert, FileInner, WORK_UNIT_SIZE};
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::error::ConversionError;
 
@@ -118,10 +118,25 @@ impl<C, C2> FileConvert<u8, C2> for Bsq<C, f32>
           C2: DerefMut<Target=[u8]> + Sync,
 {
     fn to_bsq(&self, out: &mut Bsq<C2, u8>) -> Result<(), ConversionError> {
+        let out_dims = out.inner.dims.clone();
         let out_bands = out.split_bands_mut();
         let in_bands = self.split_bands();
 
-        // in_bands.iter
+        let band_iter = in_bands
+            .zip(self.inner.dims.bands.iter())
+            .zip(out_bands.zip(out_dims.bands.iter()));
+
+        for ((in_channel, in_id), (out_channel, out_id)) in band_iter {
+            if in_id == out_id {
+                in_channel
+                    .chunks(WORK_UNIT_SIZE)
+                    .zip(out_channel.chunks_mut(WORK_UNIT_SIZE))
+                    .for_each(|(input_unit, output_unit)| input_unit
+                        .iter()
+                        .zip(output_unit.iter_mut())
+                        .for_each(|(input, output)| *output = (*input * 255.) as u8))
+            }
+        }
 
         Ok(())
     }

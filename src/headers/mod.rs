@@ -167,7 +167,7 @@ pub enum ParseHeaderError {
     NoValue(usize),
     _DuplicateKey(String),
     RequiredFieldNotFound(&'static str),
-    InvalidFirstLine
+    InvalidFirstLine,
 }
 
 impl Display for ParseHeaderError {
@@ -206,18 +206,18 @@ impl FromStr for Headers {
         for (number, text) in s.lines().enumerate() {
             if number == 0 {
                 if text != "ENVI" {
-                    return Err(ParseHeaderError::InvalidFirstLine)
+                    return Err(ParseHeaderError::InvalidFirstLine);
                 }
             } else {
                 let mut split = text.split('=');
 
                 let key = split.next()
-                    .map(|x| Ok(x))
+                    .map(Ok)
                     .unwrap_or(Err(ParseHeaderError::NoKey(number)))?
                     .trim();
 
                 let value = split.next()
-                    .map(|x| Ok(x))
+                    .map(Ok)
                     .unwrap_or(Err(ParseHeaderError::NoValue(number)))?
                     .trim();
 
@@ -234,7 +234,7 @@ impl FromStr for Headers {
             interleave: parse_scalar_field(&mut fields_map, "interleave")?,
             lines: parse_scalar_field(&mut fields_map, "lines")?,
             samples: parse_scalar_field(&mut fields_map, "samples")?,
-            other: fields_map
+            other: fields_map,
         })
     }
 }
@@ -246,7 +246,7 @@ fn parse_scalar_field<T>(
     where T: FromStr
 {
     fields_map.remove(field)
-        .map(|x| Ok(x))
+        .map(Ok)
         .unwrap_or(Err(ParseHeaderError::RequiredFieldNotFound(field)))?
         .parse::<T>()
         .map_err(|_| ParseHeaderError::BadValue("bands"))
