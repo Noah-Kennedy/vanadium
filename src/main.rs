@@ -18,6 +18,9 @@ pub mod cli;
 pub mod file_alloc;
 pub mod convert;
 
+#[cfg(test)]
+mod tests;
+
 fn main() -> Result<(), Box<dyn Error>> {
     let opt: Opt = Opt::from_args();
 

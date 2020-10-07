@@ -13,6 +13,7 @@ use crate::headers::{FileByteOrder, Headers};
 
 pub mod bsq;
 pub mod bip;
+pub mod bil;
 pub mod error;
 
 const WORK_UNIT_SIZE: usize = 2097152;
