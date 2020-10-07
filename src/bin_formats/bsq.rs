@@ -109,13 +109,13 @@ impl<T> Bsq<MmapMut, T> {
 }
 
 impl<C, T> Bsq<C, T> where C: Deref<Target=[u8]> {
-    fn slice(&self) -> &[T] {
+    pub fn slice(&self) -> &[T] {
         let ptr = self.container.as_ptr() as *mut T;
         let len = self.band_len * self.bands;
         unsafe { slice::from_raw_parts(ptr, len) }
     }
 
-    fn band(&self, band: usize) -> &[T] {
+    pub fn band(&self, band: usize) -> &[T] {
         assert!(band < self.bands);
         &self.slice()[(band * self.band_len)..((band * self.band_len) + self.band_len)]
     }
