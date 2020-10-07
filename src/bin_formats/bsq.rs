@@ -109,13 +109,13 @@ impl<T> Bsq<MmapMut, T> {
 }
 
 impl<C, T> Bsq<C, T> where C: Deref<Target=[u8]> {
-    pub fn slice(&self) -> &[T] {
+    fn slice(&self) -> &[T] {
         let ptr = self.container.as_ptr() as *mut T;
         let len = self.band_len * self.bands;
         unsafe { slice::from_raw_parts(ptr, len) }
     }
 
-    pub fn band(&self, band: usize) -> &[T] {
+    fn band(&self, band: usize) -> &[T] {
         assert!(band < self.bands);
         &self.slice()[(band * self.band_len)..((band * self.band_len) + self.band_len)]
     }
@@ -152,24 +152,31 @@ impl<C, T> OperableExt<T> for Bsq<C, T> where C: DerefMut<Target=[u8]>, T: Float
             let band = self.band_mut(*band_id);
 
             for register in band.chunks_mut(8) {
-                unsafe {
-                    *register.get_unchecked_mut(0) += offset;
-                    *register.get_unchecked_mut(1) += offset;
-                    *register.get_unchecked_mut(2) += offset;
-                    *register.get_unchecked_mut(3) += offset;
-                    *register.get_unchecked_mut(4) += offset;
-                    *register.get_unchecked_mut(5) += offset;
-                    *register.get_unchecked_mut(6) += offset;
-                    *register.get_unchecked_mut(7) += offset;
+                if register.len() % 8 == 0 {
+                    unsafe {
+                        *register.get_unchecked_mut(0) += offset;
+                        *register.get_unchecked_mut(1) += offset;
+                        *register.get_unchecked_mut(2) += offset;
+                        *register.get_unchecked_mut(3) += offset;
+                        *register.get_unchecked_mut(4) += offset;
+                        *register.get_unchecked_mut(5) += offset;
+                        *register.get_unchecked_mut(6) += offset;
+                        *register.get_unchecked_mut(7) += offset;
 
-                    *register.get_unchecked_mut(0) *= scale;
-                    *register.get_unchecked_mut(1) *= scale;
-                    *register.get_unchecked_mut(2) *= scale;
-                    *register.get_unchecked_mut(3) *= scale;
-                    *register.get_unchecked_mut(4) *= scale;
-                    *register.get_unchecked_mut(5) *= scale;
-                    *register.get_unchecked_mut(6) *= scale;
-                    *register.get_unchecked_mut(7) *= scale;
+                        *register.get_unchecked_mut(0) *= scale;
+                        *register.get_unchecked_mut(1) *= scale;
+                        *register.get_unchecked_mut(2) *= scale;
+                        *register.get_unchecked_mut(3) *= scale;
+                        *register.get_unchecked_mut(4) *= scale;
+                        *register.get_unchecked_mut(5) *= scale;
+                        *register.get_unchecked_mut(6) *= scale;
+                        *register.get_unchecked_mut(7) *= scale;
+                    }
+                } else {
+                    for pixel in register {
+                        *pixel += offset;
+                        *pixel *= scale;
+                    }
                 }
             }
         }
