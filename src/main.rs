@@ -13,10 +13,10 @@ use crate::file_alloc::allocate_file;
 use crate::headers::{Headers, Interleave};
 use num::traits::NumAssign;
 
-mod headers;
-mod bin_formats;
-mod cli;
-mod file_alloc;
+pub mod headers;
+pub mod bin_formats;
+pub mod cli;
+pub mod file_alloc;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let opt: Opt = Opt::from_args();
