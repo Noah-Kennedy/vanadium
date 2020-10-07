@@ -6,6 +6,7 @@ use std::ops::{Deref, DerefMut};
 
 use indicatif::ProgressBar;
 use memmap2::{Mmap, MmapOptions};
+use num::traits::NumAssign;
 use rayon::prelude::*;
 
 use crate::bin_formats::{OperableFile, WORK_UNIT_SIZE};
@@ -54,19 +55,17 @@ impl<C, T> Bip<C, T> where C: Deref<Target=[u8]>, T: Copy + Send + Sync {}
 impl<C, C2, T> OperableFile<T, C2> for Bip<C, T>
     where C: Deref<Target=[u8]> + Sync,
           C2: DerefMut<Target=[u8]> + Sync,
-          T: Copy + Send + Sync
+          T: Copy + Send + Sync + NumAssign
 {
     fn to_bsq(&self, out: &mut Bsq<C2, T>) -> Result<(), ConversionError> {
         if self.container.len() == out.container.len() {
-            let pixel_chunks = self.slice().par_chunks(self.bands * WORK_UNIT_SIZE);
+            let pixel_chunks = self.slice().par_chunks(WORK_UNIT_SIZE * self.bands);
 
             let out_bands: Vec<&mut [T]> = out.split_bands_mut().collect();
 
-            let bar_len = self.container.len();
+            let bar = ProgressBar::new(self.container.len() as u64);
 
-            let bar = ProgressBar::new(bar_len as u64);
-
-            out_bands.into_iter()
+            out_bands.into_par_iter()
                 .enumerate()
                 .for_each(|(band_idx, band)| band
                     .par_chunks_mut(WORK_UNIT_SIZE)
@@ -106,7 +105,6 @@ impl<C, C2, T> OperableFile<T, C2> for Bip<C, T>
     }
 
     fn to_bip(&self, _out: &mut Bip<C2, T>) -> Result<(), ConversionError> {
-        unimplemented!("Support for converting a file to itself is not implemented. Why are you \
-        doing this anyways?")
+        unimplemented!("Support for bip->bip is not implemented. Why are you doing this anyways?")
     }
 }

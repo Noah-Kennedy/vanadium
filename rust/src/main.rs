@@ -3,7 +3,6 @@ use std::fs::{File, OpenOptions, read_to_string};
 use std::ops::DerefMut;
 use std::str::FromStr;
 
-use memmap2::{Mmap, MmapMut};
 use structopt::StructOpt;
 
 use crate::bin_formats::bip::Bip;
@@ -12,6 +11,7 @@ use crate::bin_formats::OperableFile;
 use crate::cli::{ConvertOpt, Opt, SubcommandOpt};
 use crate::file_alloc::allocate_file;
 use crate::headers::{Headers, Interleave};
+use num::traits::NumAssign;
 
 mod headers;
 mod bin_formats;
@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Interleave::Bil => todo!(),
                 Interleave::Bsq => {
                     println!("Mapping output file");
-                    let mut bsq: Bsq<MmapMut, f32> = unsafe {
+                    let mut bsq: Bsq<_, f32> = unsafe {
                         Bsq::with_headers_mut(&parsed_headers, output_file)?
                     };
 
@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 unsafe fn get_input_map<T, C>(headers: &Headers, file: &File)
                               -> Result<Box<dyn OperableFile<T, C>>, Box<dyn Error>>
-    where T: Copy + Send + Sync + 'static,
+    where T: Copy + Send + Sync + NumAssign + 'static,
           C: Sync + Send + DerefMut<Target=[u8]>
 {
     match headers.interleave {

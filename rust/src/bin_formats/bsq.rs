@@ -6,7 +6,11 @@ use std::ops::{Deref, DerefMut};
 use std::slice::{Chunks, ChunksMut};
 
 use memmap2::{Mmap, MmapMut, MmapOptions};
+use num::{Float, NumCast, Zero, One};
+use num::traits::NumAssign;
 
+use crate::bin_formats::error::ConversionError;
+use crate::bin_formats::OperableExt;
 use crate::headers::{FileByteOrder, Headers};
 
 pub struct Bsq<C, T> {
@@ -139,5 +143,56 @@ impl<C, T> Bsq<C, T> where C: DerefMut<Target=[u8]> {
     pub fn split_bands_mut(&mut self) -> ChunksMut<T> {
         let len = self.band_len;
         self.slice_mut().chunks_mut(len)
+    }
+}
+
+impl<C, T> OperableExt<T> for Bsq<C, T> where C: DerefMut<Target=[u8]>, T: Float + NumCast + NumAssign {
+    fn rescale(&mut self, bands: &[usize], scale: T, offset: T) -> Result<(), ConversionError> {
+        for band_id in bands {
+            let band = self.band_mut(*band_id);
+
+            for register in band.chunks_mut(8) {
+                unsafe {
+                    *register.get_unchecked_mut(0) += offset;
+                    *register.get_unchecked_mut(1) += offset;
+                    *register.get_unchecked_mut(2) += offset;
+                    *register.get_unchecked_mut(3) += offset;
+                    *register.get_unchecked_mut(4) += offset;
+                    *register.get_unchecked_mut(5) += offset;
+                    *register.get_unchecked_mut(6) += offset;
+                    *register.get_unchecked_mut(7) += offset;
+
+                    *register.get_unchecked_mut(0) *= scale;
+                    *register.get_unchecked_mut(1) *= scale;
+                    *register.get_unchecked_mut(2) *= scale;
+                    *register.get_unchecked_mut(3) *= scale;
+                    *register.get_unchecked_mut(4) *= scale;
+                    *register.get_unchecked_mut(5) *= scale;
+                    *register.get_unchecked_mut(6) *= scale;
+                    *register.get_unchecked_mut(7) *= scale;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn normalize(&mut self, bands: &[usize], floor: T, ceiling: T) -> Result<(), ConversionError> {
+        let range = ceiling - floor;
+        self.rescale(bands, range, -floor)?;
+
+        for band_id in bands {
+            let band = self.band_mut(*band_id);
+
+            for pixel in band {
+                if *pixel < T::zero() {
+                    pixel.set_zero()
+                } else if *pixel > T::one() {
+                    pixel.set_one()
+                }
+            }
+        }
+
+        Ok(())
     }
 }
