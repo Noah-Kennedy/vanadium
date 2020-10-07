@@ -134,7 +134,7 @@ dependencies = [
 
 [[package]]
 name = "hyperspectra"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap2 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
