@@ -1,6 +1,6 @@
+use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt;
-use std::error::Error;
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct ConversionError {

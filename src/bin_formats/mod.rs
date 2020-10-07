@@ -116,7 +116,7 @@ impl<C, T> FileInner<C, T> where C: Deref<Target=[u8]> {
 impl<C, T> FileInner<C, T> where C: DerefMut<Target=[u8]> {
     pub fn slice_mut(&mut self) -> &mut [T] {
         let ptr = self.container.as_mut_ptr() as *mut T;
-        let len = self.dims.lines* self.dims.bands.len() * self.dims.samples;
+        let len = self.dims.lines * self.dims.bands.len() * self.dims.samples;
         unsafe { slice::from_raw_parts_mut(ptr, len) }
     }
 }
