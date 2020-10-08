@@ -8,6 +8,8 @@ use crate::bin_formats::{FileConvert, FileInner, WORK_UNIT_SIZE, FileAlgebra};
 use crate::bin_formats::bsq::Bsq;
 use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
 use num::{Float, NumCast};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::mem;
 
 pub struct Bip<C, T> {
     pub(crate) inner: FileInner<C, T>
@@ -31,7 +33,13 @@ impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
 
             let out_bands: Vec<&mut [T]> = out.split_bands_mut().collect();
 
-            let bar = ProgressBar::new(self.inner.container.len() as u64);
+            let elements = self.inner.container.len() / mem::size_of::<T>();
+
+            println!("\tElements: {}", elements);
+            println!("\tBands: {}", self.inner.dims.bands.len());
+            println!("\tTWU Size: {}", WORK_UNIT_SIZE);
+
+            let bar = ProgressBar::new(elements as u64);
 
             out_bands.into_par_iter()
                 .enumerate()
@@ -46,7 +54,7 @@ impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
                                 *channel = unsafe { *pixel.get_unchecked(band_idx) };
                             });
 
-                        let inc = WORK_UNIT_SIZE * (self.inner.dims.bands.len() - 1);
+                        let inc = WORK_UNIT_SIZE;
                         bar.inc(inc as u64);
                     })
                 );
