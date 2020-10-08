@@ -118,6 +118,8 @@ impl<C, C2> FileConvert<u8, C2> for Bsq<C, f32>
           C2: DerefMut<Target=[u8]> + Sync,
 {
     fn to_bsq(&self, out: &mut Bsq<C2, u8>) -> Result<(), ConversionError> {
+        let wu_size = unsafe {WORK_UNIT_SIZE};
+
         let out_dims = out.inner.dims.clone();
         let out_bands = out.split_bands_mut();
         let in_bands = self.split_bands();
@@ -129,8 +131,8 @@ impl<C, C2> FileConvert<u8, C2> for Bsq<C, f32>
         for ((in_channel, in_id), (out_channel, out_id)) in band_iter {
             if in_id == out_id {
                 in_channel
-                    .chunks(WORK_UNIT_SIZE)
-                    .zip(out_channel.chunks_mut(WORK_UNIT_SIZE))
+                    .chunks(wu_size)
+                    .zip(out_channel.chunks_mut(wu_size))
                     .for_each(|(input_unit, output_unit)| input_unit
                         .iter()
                         .zip(output_unit.iter_mut())

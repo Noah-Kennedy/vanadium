@@ -5,7 +5,7 @@ use std::ops::DerefMut;
 use num::traits::NumAssign;
 use structopt::StructOpt;
 
-use crate::bin_formats::{FileConvert, FileInner};
+use crate::bin_formats::{FileConvert, FileInner, WORK_UNIT_SIZE};
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
 use crate::cli::{Opt, SubcommandOpt};
@@ -23,6 +23,14 @@ mod tests;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let opt: Opt = Opt::from_args();
+
+    if let Ok(s) = std::env::var("HYPERSPECTRA_WORK_UNIT_SIZE") {
+        let size = s.parse()?;
+
+        unsafe {
+            WORK_UNIT_SIZE = size;
+        }
+    }
 
     match opt.subcommand {
         SubcommandOpt::Convert(cvt) => execute_conversion(cvt),

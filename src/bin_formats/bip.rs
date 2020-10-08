@@ -28,8 +28,9 @@ impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
 {
     fn to_bsq(&self, out: &mut Bsq<C2, T>) -> Result<(), ConversionError> {
         if self.inner.container.len() == out.inner.container.len() {
+            let wu_size = unsafe {WORK_UNIT_SIZE};
             let pixel_chunks = self.inner.slice()
-                .par_chunks(WORK_UNIT_SIZE * self.inner.dims.bands.len());
+                .par_chunks(wu_size * self.inner.dims.bands.len());
 
             let out_bands: Vec<&mut [T]> = out.split_bands_mut().collect();
 
@@ -37,14 +38,14 @@ impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
 
             println!("\tElements: {}", elements);
             println!("\tBands: {}", self.inner.dims.bands.len());
-            println!("\tTWU Size: {}", WORK_UNIT_SIZE);
+            println!("\tTWU Size: {}", wu_size);
 
             let bar = ProgressBar::new(elements as u64);
 
             out_bands.into_par_iter()
                 .enumerate()
                 .for_each(|(band_idx, band)| band
-                    .par_chunks_mut(WORK_UNIT_SIZE)
+                    .par_chunks_mut(wu_size)
                     .zip(pixel_chunks.clone())
                     .for_each(|(channel_chunks, pixel_chunk)| {
                         channel_chunks
@@ -54,7 +55,7 @@ impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
                                 *channel = unsafe { *pixel.get_unchecked(band_idx) };
                             });
 
-                        let inc = WORK_UNIT_SIZE;
+                        let inc = wu_size;
                         bar.inc(inc as u64);
                     })
                 );

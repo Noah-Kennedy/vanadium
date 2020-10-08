@@ -16,7 +16,8 @@ pub mod bip;
 pub mod bil;
 pub mod error;
 
-const WORK_UNIT_SIZE: usize = 2097152;
+const DEFAULT_WORK_UNIT_SIZE: usize = 2097152;
+pub static mut WORK_UNIT_SIZE: usize = DEFAULT_WORK_UNIT_SIZE;
 
 pub struct FileInner<C, T> {
     pub dims: FileDims,
