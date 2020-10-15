@@ -22,12 +22,15 @@ pub struct ConvertOpt {
     #[structopt(short, long, parse(from_str))]
     pub input: PathBuf,
 
-    #[structopt(short, long, parse(from_os_str))]
-    pub header: PathBuf,
+    #[structopt(short = "n", long, parse(from_os_str))]
+    pub input_header: PathBuf,
 
-    #[structopt(short, long, parse(from_os_str))]
+    #[structopt(short = "o", long, parse(from_os_str))]
     pub output: PathBuf,
 
-    #[structopt(short, long, parse(try_from_str))]
+    #[structopt(short = "u", long, parse(from_os_str))]
+    pub output_header: PathBuf,
+
+    #[structopt(short = "t", long, parse(try_from_str))]
     pub output_type: Interleave,
 }

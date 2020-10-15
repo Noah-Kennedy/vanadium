@@ -1,15 +1,14 @@
+use std::mem;
 use std::ops::{Deref, DerefMut};
 
 use indicatif::ProgressBar;
+use num::{Float, NumCast};
 use num::traits::NumAssign;
 use rayon::prelude::*;
 
-use crate::bin_formats::{FileConvert, FileInner, WORK_UNIT_SIZE, FileAlgebra};
+use crate::bin_formats::{FileAlgebra, FileConvert, FileInner, WORK_UNIT_SIZE};
 use crate::bin_formats::bsq::Bsq;
 use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
-use num::{Float, NumCast};
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::mem;
 
 pub struct Bip<C, T> {
     pub(crate) inner: FileInner<C, T>
@@ -28,7 +27,7 @@ impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
 {
     fn to_bsq(&self, out: &mut Bsq<C2, T>) -> Result<(), ConversionError> {
         if self.inner.container.len() == out.inner.container.len() {
-            let wu_size = unsafe {WORK_UNIT_SIZE};
+            let wu_size = unsafe { WORK_UNIT_SIZE };
             let pixel_chunks = self.inner.slice()
                 .par_chunks(wu_size * self.inner.dims.bands.len());
 
@@ -89,11 +88,11 @@ impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
 impl<C, T> FileAlgebra<T> for Bip<C, T>
     where C: DerefMut<Target=[u8]>, T: Float + NumCast + NumAssign
 {
-    fn rescale(&mut self, bands: &[usize], scale: T, offset: T) {
+    fn rescale(&mut self, _bands: &[usize], _scale: T, _offset: T) {
         todo!()
     }
 
-    fn normalize(&mut self, bands: &[usize], floor: T, ceiling: T) {
+    fn normalize(&mut self, _bands: &[usize], _floor: T, _ceiling: T) {
         todo!()
     }
 }
@@ -102,7 +101,7 @@ impl<C, C2> FileConvert<u8, C2> for Bip<C, f32>
     where C: Deref<Target=[u8]> + Sync,
           C2: DerefMut<Target=[u8]> + Sync,
 {
-    fn to_bsq(&self, out: &mut Bsq<C2, u8>) -> Result<(), ConversionError> {
+    fn to_bsq(&self, _out: &mut Bsq<C2, u8>) -> Result<(), ConversionError> {
         todo!()
     }
 

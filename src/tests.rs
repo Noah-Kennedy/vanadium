@@ -6,7 +6,7 @@ use std::process::Command;
 fn test_convert() {
     let opt = ConvertOpt {
         input: "data/raw/unnormalized/unnorm.bip".into(),
-        header: "data/raw/unnormalized/unnorm.bip.hdr".into(),
+        input_header: "data/raw/unnormalized/unnorm.bip.hdr".into(),
         output: "out.bsq".into(),
         output_type: Interleave::Bsq
     };
