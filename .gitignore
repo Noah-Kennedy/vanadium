@@ -9,3 +9,5 @@
 *.bsq
 *.bip
 *.bil
+
+/.cargo
