@@ -2,7 +2,10 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::option::Option::Some;
 use std::str::FromStr;
+
+use regex::Regex;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Headers {
@@ -197,33 +200,56 @@ impl Display for ParseHeaderError {
 
 impl Error for ParseHeaderError {}
 
+const REGEX_STR: &str = "(?m:^(?P<key>.+) = (?:(?:(?P<value>.+)\n)|(?:\\{(?P<value2>.+)\\}\n)))";
+
+
 impl FromStr for Headers {
     type Err = ParseHeaderError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut fields_map = HashMap::with_capacity(32);
 
-        for (number, text) in s.lines().enumerate() {
-            if number == 0 {
-                if text != "ENVI" {
-                    return Err(ParseHeaderError::InvalidFirstLine);
-                }
+        let regex = Regex::new(REGEX_STR).unwrap();
+
+        // let regex = Regex::new(r"(?m:^(?P<key>.+) = (?P<value>.+)\n)")
+        //     .unwrap();
+
+        for (i, cap) in regex.captures_iter(s).enumerate() {
+            dbg!(&cap);
+            let key = &cap["key"];
+
+            let value = if let Some(v) = cap.name("value") {
+                v.as_str()
+            } else if let Some(v) = cap.name("value2") {
+                v.as_str()
             } else {
-                let mut split = text.split('=');
+                return Err(ParseHeaderError::NoValue(i));
+            };
 
-                let key = split.next()
-                    .map(Ok)
-                    .unwrap_or(Err(ParseHeaderError::NoKey(number)))?
-                    .trim();
-
-                let value = split.next()
-                    .map(Ok)
-                    .unwrap_or(Err(ParseHeaderError::NoValue(number)))?
-                    .trim();
-
-                fields_map.insert(key.to_lowercase(), value.to_owned());
-            }
+            fields_map.insert(key.to_lowercase(), value.to_owned());
         }
+
+        // for (number, text) in s.lines().enumerate() {
+        //     if number == 0 {
+        //         if text != "ENVI" {
+        //             return Err(ParseHeaderError::InvalidFirstLine);
+        //         }
+        //     } else {
+        //         let mut split = text.split('=');
+        //
+        //         let key = split.next()
+        //             .map(Ok)
+        //             .unwrap_or(Err(ParseHeaderError::NoKey(number)))?
+        //             .trim();
+        //
+        //         let value = split.next()
+        //             .map(Ok)
+        //             .unwrap_or(Err(ParseHeaderError::NoValue(number)))?
+        //             .trim();
+        //
+        //         fields_map.insert(key.to_lowercase(), value.to_owned());
+        //     }
+        // }
 
         Ok(Self {
             bands: parse_scalar_field(&mut fields_map, "bands")?,

@@ -3,5 +3,11 @@
 // envi-header
 // Author: noah
 //
+char = {
+    ASCII_ALPHANUMERIC | "." | "_" | "/" | "[" | "]" | "(" | ")" | "+" | "-" | "*" | "\\" | "%" |
+    "<" | ">" | "'" | "\"" | "?" | ":" | ";" | "|" | "&" | "^" | "$" | "#" | "@" | "!" | "=" | ","
+}
 
-byte_order = { "byte order" }
+value = { char* }
+
+description_prop = ""

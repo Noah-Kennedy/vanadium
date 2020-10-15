@@ -8,6 +8,7 @@ edition = "2018"
 memmap2 = "0.1.0"
 rayon = "1.4"
 structopt = "0.3.18"
+regex = "1.4"
 
 [dependencies.indicatif]
 version = "0.15.0"
