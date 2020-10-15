@@ -12,6 +12,7 @@ Navigate to [rustup.rs](https://rustup.rs/) and follow the instructions provided
 In your terminal of choice:
 ```bash
 git clone https://github.com/Noah-Kennedy/hyperspectral.git
+cd hyperspectral
 cargo install --path .
 ```
 
