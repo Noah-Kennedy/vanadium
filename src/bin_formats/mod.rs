@@ -2,7 +2,7 @@ use std::{mem, slice};
 use std::error::Error;
 use std::fs::File;
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
@@ -176,6 +176,22 @@ impl From<&Headers> for FileDims {
             lines,
         }
     }
+}
+
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum MatOrder {
+    RowOrder,
+    ColumnOrder
+}
+
+pub trait FileIndex<T>: Index<(usize, usize), Output = T> {
+    fn size(&self) -> (usize, usize);
+    fn order(&self) -> MatOrder;
+    unsafe fn get_unchecked(&self, pixel: usize, band: usize) -> &T;
+}
+
+pub trait FileIndexMut<T>: FileIndex<T> + IndexMut<(usize, usize), Output = T> {
+    unsafe fn get_mut_unchecked(&mut self, pixel: usize, band: usize) -> &mut T;
 }
 
 pub trait FileConvert<T, C> {
