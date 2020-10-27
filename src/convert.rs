@@ -8,6 +8,7 @@ use crate::bin_formats::bsq::Bsq;
 use crate::cli::ConvertOpt;
 use crate::file_alloc::allocate_file;
 use crate::headers::{Headers, Interleave};
+use crate::bin_formats::bil::Bil;
 
 pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let ConvertOpt {
@@ -45,7 +46,8 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
             continue_from_input(&parsed_headers, input, &output_file, output_type)
         }
         Interleave::Bil => {
-            todo!()
+            let input = Bil::from(inner);
+            continue_from_input(&parsed_headers, input, &output_file, output_type)
         }
         Interleave::Bsq => {
             let input = Bsq::from(inner);
@@ -68,7 +70,10 @@ fn continue_from_input<T>(headers: &Headers, input: T, out: &File, out_type: Int
             let mut out: Bip<_, f32> = Bip::from(output_inner);
             finish_conversion(&input, &mut out)
         }
-        Interleave::Bil => todo!(),
+        Interleave::Bil => {
+            let mut out: Bil<_, f32> = Bil::from(output_inner);
+            finish_conversion(&input, &mut out)
+        },
         Interleave::Bsq => {
             let mut out: Bsq<_, f32> = Bsq::from(output_inner);
             finish_conversion(&input, &mut out)

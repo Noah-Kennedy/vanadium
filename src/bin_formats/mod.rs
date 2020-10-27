@@ -193,66 +193,31 @@ pub enum MatOrder {
 }
 
 pub trait FileIndex<T> {
-    fn size(&self) -> (usize, usize);
+    fn size(&self) -> (usize, usize, usize);
     fn order(&self) -> MatOrder;
-    unsafe fn get_unchecked(&self, pixel: usize, band: usize) -> &T;
+    unsafe fn get_unchecked(&self, line: usize, pixel: usize, band: usize) -> &T;
 }
 
 pub trait FileIndexMut<T>: FileIndex<T> {
-    unsafe fn get_mut_unchecked(&mut self, pixel: usize, band: usize) -> &mut T;
+    unsafe fn get_mut_unchecked(&mut self, line: usize, pixel: usize, band: usize) -> &mut T;
 }
 
-#[inline(never)]
 pub fn convert<T, I, O>(input: &I, out: &mut O)
     where I: 'static + FileIndex<T> + Sync + Send,
           O: 'static + FileIndexMut<T> + Sync + Send,
           T: Copy
 {
-    match input.order() {
-        MatOrder::RowOrder => convert_row_major(input, out),
-        MatOrder::ColumnOrder => convert_column_major(input, out),
-    }
-}
+    let (lines, pixels, bands) = input.size();
+    let bar = ProgressBar::new((lines * pixels * bands) as u64);
 
-#[inline(never)]
-pub fn convert_row_major<T, I, O>(input: &I, out: &mut O)
-    where I: 'static + FileIndex<T> + Sync + Send,
-          O: 'static + FileIndexMut<T> + Sync + Send,
-          T: Copy
-{
-    let (num_pixels, num_bands) = input.size();
-    let bar = ProgressBar::new((num_bands * num_pixels) as u64);
-
-    for pixel_idx in 0..num_pixels {
-        for band_idx in 0..num_bands {
-            unsafe {
-                *out.get_mut_unchecked(pixel_idx, band_idx) =
-                    *input.get_unchecked(pixel_idx, band_idx);
+    for l in 0..lines {
+        for b in 0..bands {
+            for p in 0..pixels {
+                unsafe {
+                    *out.get_mut_unchecked(l, p, b) = *input.get_unchecked(l, p, b);
+                }
             }
         }
-
-        if pixel_idx % 4096 == 0 {
-            bar.inc(4069 * num_bands as u64)
-        }
-    }
-}
-
-#[inline(never)]
-pub fn convert_column_major<T, I, O>(input: &I, out: &mut O)
-    where I: 'static + FileIndex<T> + Sync + Send,
-          O: 'static + FileIndexMut<T> + Sync + Send,
-          T: Copy
-{
-    let (num_pixels, num_bands) = input.size();
-    let bar = ProgressBar::new((num_bands * num_pixels) as u64);
-
-    for band_idx in 0..num_bands {
-        for pixel_idx in 0..num_pixels {
-            unsafe {
-                *out.get_mut_unchecked(pixel_idx, band_idx) =
-                    *input.get_unchecked(pixel_idx, band_idx);
-            }
-        }
-        bar.inc(num_pixels as u64)
+        bar.inc((bands * pixels) as u64)
     }
 }

@@ -211,11 +211,7 @@ impl FromStr for Headers {
 
         let regex = Regex::new(REGEX_STR).unwrap();
 
-        // let regex = Regex::new(r"(?m:^(?P<key>.+) = (?P<value>.+)\n)")
-        //     .unwrap();
-
         for (i, cap) in regex.captures_iter(s).enumerate() {
-            dbg!(&cap);
             let key = &cap["key"];
 
             let value = if let Some(v) = cap.name("value") {
@@ -228,28 +224,6 @@ impl FromStr for Headers {
 
             fields_map.insert(key.to_lowercase(), value.to_owned());
         }
-
-        // for (number, text) in s.lines().enumerate() {
-        //     if number == 0 {
-        //         if text != "ENVI" {
-        //             return Err(ParseHeaderError::InvalidFirstLine);
-        //         }
-        //     } else {
-        //         let mut split = text.split('=');
-        //
-        //         let key = split.next()
-        //             .map(Ok)
-        //             .unwrap_or(Err(ParseHeaderError::NoKey(number)))?
-        //             .trim();
-        //
-        //         let value = split.next()
-        //             .map(Ok)
-        //             .unwrap_or(Err(ParseHeaderError::NoValue(number)))?
-        //             .trim();
-        //
-        //         fields_map.insert(key.to_lowercase(), value.to_owned());
-        //     }
-        // }
 
         Ok(Self {
             bands: parse_scalar_field(&mut fields_map, "bands")?,
