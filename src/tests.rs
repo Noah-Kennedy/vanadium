@@ -1,6 +1,7 @@
 use super::*;
 use crate::cli::ConvertOpt;
 use std::process::Command;
+use crate::headers::Interleave;
 
 #[test]
 fn test_convert() {

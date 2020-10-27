@@ -2,12 +2,11 @@ use std::error::Error;
 use std::fs::{File, OpenOptions, read_to_string};
 use std::str::FromStr;
 
+use crate::bin_formats::{convert, FileIndex, FileIndexMut, FileInner};
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
-use crate::bin_formats::FileInner;
 use crate::cli::ConvertOpt;
 use crate::file_alloc::allocate_file;
-use crate::get_input_map;
 use crate::headers::{Headers, Interleave};
 
 pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
@@ -39,32 +38,51 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let input_mat = unsafe { get_input_map(&parsed_headers, &input_file)? };
+    let inner = unsafe { FileInner::headers(&parsed_headers, &input_file)? };
+    match parsed_headers.interleave {
+        Interleave::Bip => {
+            let input = Bip::from(inner);
+            continue_from_input(&parsed_headers, input, &output_file, output_type)
+        }
+        Interleave::Bil => {
+            todo!()
+        }
+        Interleave::Bsq => {
+            let input = Bsq::from(inner);
+            continue_from_input(&parsed_headers, input, &output_file, output_type)
+        }
+    }
+}
 
+fn continue_from_input<T>(headers: &Headers, input: T, out: &File, out_type: Interleave)
+                          -> Result<(), Box<dyn Error>>
+    where T: 'static + FileIndex<f32> + Sync + Send,
+{
     println!("Mapping output file");
     let output_inner = unsafe {
-        FileInner::headers_mut(&parsed_headers, &output_file)?
+        FileInner::headers_mut(&headers, &out)?
     };
 
-    match output_type {
+    match out_type {
         Interleave::Bip => {
-            println!("Mapping output file");
-            let mut bip: Bip<_, f32> = Bip::from(output_inner);
-
-
-            println!("Performing conversion");
-            input_mat.to_bip(&mut bip)?;
-            println!("finished")
+            let mut out: Bip<_, f32> = Bip::from(output_inner);
+            finish_conversion(&input, &mut out)
         }
         Interleave::Bil => todo!(),
         Interleave::Bsq => {
-            let mut bsq: Bsq<_, f32> = Bsq::from(output_inner);
-
-            println!("Performing conversion");
-            input_mat.to_bsq(&mut bsq)?;
-            println!("finished")
+            let mut out: Bsq<_, f32> = Bsq::from(output_inner);
+            finish_conversion(&input, &mut out)
         }
     }
 
     Ok(())
+}
+
+fn finish_conversion<I, O>(input: &I, output: &mut O)
+    where I: 'static + FileIndex<f32> + Sync + Send,
+          O: 'static + FileIndexMut<f32> + Sync + Send,
+{
+    println!("Performing conversion");
+    convert(input, output);
+    println!("finished")
 }

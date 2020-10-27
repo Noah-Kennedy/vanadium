@@ -1,12 +1,7 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice::{Chunks, ChunksMut};
 
-use num::{Float, NumCast};
-use num::traits::NumAssign;
-
-use crate::bin_formats::{FileAlgebra, FileConvert, FileInner, WORK_UNIT_SIZE};
-use crate::bin_formats::bip::Bip;
-use crate::bin_formats::error::ConversionError;
+use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, MatOrder};
 
 pub struct Bsq<C, T> {
     pub(crate) inner: FileInner<C, T>,
@@ -45,105 +40,46 @@ impl<C, T> Bsq<C, T> where C: DerefMut<Target=[u8]> {
     }
 }
 
-impl<C, T> FileAlgebra<T> for Bsq<C, T> where C: DerefMut<Target=[u8]>, T: Float + NumCast + NumAssign {
-    fn rescale(&mut self, bands: &[usize], scale: T, offset: T) {
-        for band_id in bands {
-            let band = self.band_mut(*band_id);
+impl<C, T> Index<(usize, usize)> for Bsq<C, T> where C: Deref<Target=[u8]> {
+    type Output = T;
 
-            for register in band.chunks_mut(8) {
-                if register.len() % 8 == 0 {
-                    unsafe {
-                        *register.get_unchecked_mut(0) += offset;
-                        *register.get_unchecked_mut(1) += offset;
-                        *register.get_unchecked_mut(2) += offset;
-                        *register.get_unchecked_mut(3) += offset;
-                        *register.get_unchecked_mut(4) += offset;
-                        *register.get_unchecked_mut(5) += offset;
-                        *register.get_unchecked_mut(6) += offset;
-                        *register.get_unchecked_mut(7) += offset;
-
-                        *register.get_unchecked_mut(0) *= scale;
-                        *register.get_unchecked_mut(1) *= scale;
-                        *register.get_unchecked_mut(2) *= scale;
-                        *register.get_unchecked_mut(3) *= scale;
-                        *register.get_unchecked_mut(4) *= scale;
-                        *register.get_unchecked_mut(5) *= scale;
-                        *register.get_unchecked_mut(6) *= scale;
-                        *register.get_unchecked_mut(7) *= scale;
-                    }
-                } else {
-                    for pixel in register {
-                        *pixel += offset;
-                        *pixel *= scale;
-                    }
-                }
-            }
-        }
-    }
-
-    fn normalize(&mut self, bands: &[usize], floor: T, ceiling: T) {
-        let range = ceiling - floor;
-        self.rescale(bands, range, -floor);
-
-        for band_id in bands {
-            let band = self.band_mut(*band_id);
-
-            for pixel in band {
-                if *pixel < T::zero() {
-                    T::set_zero(pixel)
-                } else if *pixel > T::one() {
-                    T::set_one(pixel)
-                }
-            }
-        }
+    #[inline(always)]
+    fn index(&self, (pixel, band): (usize, usize)) -> &Self::Output {
+        let idx = (band * self.band_len) + pixel;
+        self.inner.slice().index(idx)
     }
 }
 
-impl<C, C2, T> FileConvert<T, C2> for Bsq<C, T>
-    where C: Deref<Target=[u8]> + Sync,
-          C2: DerefMut<Target=[u8]> + Sync,
-          T: Copy + Send + Sync + NumAssign
-{
-    fn to_bsq(&self, _out: &mut Bsq<C2, T>) -> Result<(), ConversionError> {
-        unimplemented!("Support for bsq->bsq is not implemented. Why are you doing this anyways?")
-    }
-
-    fn to_bip(&self, _out: &mut Bip<C2, T>) -> Result<(), ConversionError> {
-        todo!()
+impl<C, T> IndexMut<(usize, usize)> for Bsq<C, T> where C: DerefMut<Target=[u8]> {
+    #[inline(always)]
+    fn index_mut(&mut self, (pixel, band): (usize, usize)) -> &mut Self::Output {
+        let idx = (band * self.band_len) + pixel;
+        self.inner.slice_mut().index_mut(idx)
     }
 }
 
-impl<C, C2> FileConvert<u8, C2> for Bsq<C, f32>
-    where C: Deref<Target=[u8]> + Sync,
-          C2: DerefMut<Target=[u8]> + Sync,
-{
-    fn to_bsq(&self, out: &mut Bsq<C2, u8>) -> Result<(), ConversionError> {
-        let wu_size = unsafe {WORK_UNIT_SIZE};
-
-        let out_dims = out.inner.dims.clone();
-        let out_bands = out.split_bands_mut();
-        let in_bands = self.split_bands();
-
-        let band_iter = in_bands
-            .zip(self.inner.dims.bands.iter())
-            .zip(out_bands.zip(out_dims.bands.iter()));
-
-        for ((in_channel, in_id), (out_channel, out_id)) in band_iter {
-            if in_id == out_id {
-                in_channel
-                    .chunks(wu_size)
-                    .zip(out_channel.chunks_mut(wu_size))
-                    .for_each(|(input_unit, output_unit)| input_unit
-                        .iter()
-                        .zip(output_unit.iter_mut())
-                        .for_each(|(input, output)| *output = (*input * 255.) as u8))
-            }
-        }
-
-        Ok(())
+impl<C, T> FileIndex<T> for Bsq<C, T> where C: Deref<Target=[u8]> {
+    #[inline(always)]
+    fn size(&self) -> (usize, usize) {
+        (self.band_len, self.inner.dims.bands.len())
     }
 
-    fn to_bip(&self, _out: &mut Bip<C2, u8>) -> Result<(), ConversionError> {
-        todo!()
+    #[inline(always)]
+    fn order(&self) -> MatOrder {
+        MatOrder::ColumnOrder
+    }
+
+    #[inline(always)]
+    unsafe fn get_unchecked(&self, pixel: usize, band: usize) -> &T {
+        let idx = (band * self.band_len) + pixel;
+        self.inner.slice().get_unchecked(idx)
+    }
+}
+
+impl<C, T> FileIndexMut<T> for Bsq<C, T> where C: DerefMut<Target=[u8]> {
+    #[inline(always)]
+    unsafe fn get_mut_unchecked(&mut self, pixel: usize, band: usize) -> &mut T {
+        let idx = (band * self.band_len) + pixel;
+        self.inner.slice_mut().get_unchecked_mut(idx)
     }
 }

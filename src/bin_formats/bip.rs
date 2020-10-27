@@ -1,14 +1,6 @@
-use std::mem;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 
-use indicatif::ProgressBar;
-use num::{Float, NumCast};
-use num::traits::NumAssign;
-use rayon::prelude::*;
-
-use crate::bin_formats::{FileAlgebra, FileConvert, FileInner, WORK_UNIT_SIZE};
-use crate::bin_formats::bsq::Bsq;
-use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
+use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, MatOrder};
 
 pub struct Bip<C, T> {
     pub(crate) inner: FileInner<C, T>
@@ -20,92 +12,46 @@ impl<C, T> From<FileInner<C, T>> for Bip<C, T> {
     }
 }
 
-impl<C, C2, T> FileConvert<T, C2> for Bip<C, T>
-    where C: Deref<Target=[u8]> + Sync,
-          C2: DerefMut<Target=[u8]> + Sync,
-          T: Copy + Send + Sync + NumAssign
-{
-    fn to_bsq(&self, out: &mut Bsq<C2, T>) -> Result<(), ConversionError> {
-        if self.inner.container.len() == out.inner.container.len() {
-            let wu_size = unsafe { WORK_UNIT_SIZE };
-            let pixel_chunks = self.inner.slice()
-                .par_chunks(wu_size * self.inner.dims.bands.len());
+impl<C, T> Index<(usize, usize)> for Bip<C, T> where C: Deref<Target=[u8]> {
+    type Output = T;
 
-            let out_bands: Vec<&mut [T]> = out.split_bands_mut().collect();
-
-            let elements = self.inner.container.len() / mem::size_of::<T>();
-
-            println!("\tElements: {}", elements);
-            println!("\tBands: {}", self.inner.dims.bands.len());
-            println!("\tTWU Size: {}", wu_size);
-
-            let bar = ProgressBar::new(elements as u64);
-
-            out_bands.into_par_iter()
-                .enumerate()
-                .for_each(|(band_idx, band)| band
-                    .par_chunks_mut(wu_size)
-                    .zip(pixel_chunks.clone())
-                    .for_each(|(channel_chunks, pixel_chunk)| {
-                        channel_chunks
-                            .iter_mut()
-                            .zip(pixel_chunk.chunks(self.inner.dims.bands.len()))
-                            .for_each(|(channel, pixel)| {
-                                *channel = unsafe { *pixel.get_unchecked(band_idx) };
-                            });
-
-                        let inc = wu_size;
-                        bar.inc(inc as u64);
-                    })
-                );
-
-            bar.finish();
-
-            Ok(())
-        } else {
-            let size_error = SizeMismatchError {
-                input_size: self.inner.container.len(),
-                output_size: out.inner.container.len(),
-            };
-
-            let kind = ConversionErrorKind::SizeMismatch(size_error);
-
-            let conversion_error = ConversionError {
-                input_type: "bip",
-                output_type: "bsq",
-                kind,
-            };
-
-            Err(conversion_error)
-        }
-    }
-
-    fn to_bip(&self, _out: &mut Bip<C2, T>) -> Result<(), ConversionError> {
-        unimplemented!("Support for bip->bip is not implemented. Why are you doing this anyways?")
+    #[inline(always)]
+    fn index(&self, (pixel, band): (usize, usize)) -> &Self::Output {
+        let idx = (pixel * self.inner.dims.bands.len()) + band;
+        self.inner.slice().index(idx)
     }
 }
 
-impl<C, T> FileAlgebra<T> for Bip<C, T>
-    where C: DerefMut<Target=[u8]>, T: Float + NumCast + NumAssign
-{
-    fn rescale(&mut self, _bands: &[usize], _scale: T, _offset: T) {
-        todo!()
-    }
-
-    fn normalize(&mut self, _bands: &[usize], _floor: T, _ceiling: T) {
-        todo!()
+impl<C, T> IndexMut<(usize, usize)> for Bip<C, T> where C: DerefMut<Target=[u8]> {
+    #[inline(always)]
+    fn index_mut(&mut self, (pixel, band): (usize, usize)) -> &mut Self::Output {
+        let idx = (pixel * self.inner.dims.bands.len()) + band;
+        self.inner.slice_mut().index_mut(idx)
     }
 }
 
-impl<C, C2> FileConvert<u8, C2> for Bip<C, f32>
-    where C: Deref<Target=[u8]> + Sync,
-          C2: DerefMut<Target=[u8]> + Sync,
-{
-    fn to_bsq(&self, _out: &mut Bsq<C2, u8>) -> Result<(), ConversionError> {
-        todo!()
+impl<C, T> FileIndex<T> for Bip<C, T> where C: Deref<Target=[u8]> {
+    #[inline(always)]
+    fn size(&self) -> (usize, usize) {
+        (self.inner.dims.samples * self.inner.dims.lines, self.inner.dims.bands.len())
     }
 
-    fn to_bip(&self, _out: &mut Bip<C2, u8>) -> Result<(), ConversionError> {
-        todo!()
+    #[inline(always)]
+    fn order(&self) -> MatOrder {
+        MatOrder::RowOrder
+    }
+
+    #[inline(always)]
+    unsafe fn get_unchecked(&self, pixel: usize, band: usize) -> &T {
+        let idx = (pixel * self.inner.dims.bands.len()) + band;
+        self.inner.slice().get_unchecked(idx)
+    }
+}
+
+impl<C, T> FileIndexMut<T> for Bip<C, T> where C: DerefMut<Target=[u8]> {
+    #[inline(always)]
+    unsafe fn get_mut_unchecked(&mut self, pixel: usize, band: usize) -> &mut T {
+        let idx = (pixel * self.inner.dims.bands.len()) + band;
+        self.inner.slice_mut().get_unchecked_mut(idx)
     }
 }
