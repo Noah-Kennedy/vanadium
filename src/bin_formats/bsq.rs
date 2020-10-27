@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::ops::{Deref, DerefMut};
 use std::slice::{Chunks, ChunksMut};
 
 use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, MatOrder};
@@ -40,28 +40,22 @@ impl<C, T> Bsq<C, T> where C: DerefMut<Target=[u8]> {
     }
 }
 
-impl<C, T> Index<(usize, usize)> for Bsq<C, T> where C: Deref<Target=[u8]> {
-    type Output = T;
-
+impl<C, T> Bsq<C, T> {
     #[inline(always)]
-    fn index(&self, (pixel, band): (usize, usize)) -> &Self::Output {
-        let idx = (band * self.band_len) + pixel;
-        self.inner.slice().index(idx)
+    fn _idx_2d(&self, pixel: usize, band: usize) -> usize {
+        (band * self.band_len) + pixel
     }
-}
 
-impl<C, T> IndexMut<(usize, usize)> for Bsq<C, T> where C: DerefMut<Target=[u8]> {
     #[inline(always)]
-    fn index_mut(&mut self, (pixel, band): (usize, usize)) -> &mut Self::Output {
-        let idx = (band * self.band_len) + pixel;
-        self.inner.slice_mut().index_mut(idx)
+    fn idx_3d(&self, line: usize, pixel: usize, band: usize) -> usize {
+        (band * self.band_len) + (self.inner.dims.samples * line) + pixel
     }
 }
 
 impl<C, T> FileIndex<T> for Bsq<C, T> where C: Deref<Target=[u8]> {
     #[inline(always)]
-    fn size(&self) -> (usize, usize) {
-        (self.band_len, self.inner.dims.bands.len())
+    fn size(&self) -> (usize, usize, usize) {
+        (self.inner.dims.lines, self.inner.dims.samples, self.inner.dims.bands.len())
     }
 
     #[inline(always)]
@@ -70,16 +64,15 @@ impl<C, T> FileIndex<T> for Bsq<C, T> where C: Deref<Target=[u8]> {
     }
 
     #[inline(always)]
-    unsafe fn get_unchecked(&self, pixel: usize, band: usize) -> &T {
-        let idx = (band * self.band_len) + pixel;
-        self.inner.slice().get_unchecked(idx)
+    unsafe fn get_unchecked(&self, line: usize, pixel: usize, band: usize) -> &T {
+        self.inner.slice().get_unchecked(self.idx_3d(line, pixel, band))
     }
 }
 
 impl<C, T> FileIndexMut<T> for Bsq<C, T> where C: DerefMut<Target=[u8]> {
     #[inline(always)]
-    unsafe fn get_mut_unchecked(&mut self, pixel: usize, band: usize) -> &mut T {
-        let idx = (band * self.band_len) + pixel;
+    unsafe fn get_mut_unchecked(&mut self, line: usize, pixel: usize, band: usize) -> &mut T {
+        let idx = self.idx_3d(line, pixel, band);
         self.inner.slice_mut().get_unchecked_mut(idx)
     }
 }
