@@ -2,13 +2,11 @@ use std::{mem, slice};
 use std::error::Error;
 use std::fs::File;
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::ops::{Deref, DerefMut};
 
+use indicatif::ProgressBar;
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
-use crate::bin_formats::bip::Bip;
-use crate::bin_formats::bsq::Bsq;
-use crate::bin_formats::error::ConversionError;
 use crate::headers::{FileByteOrder, Headers};
 
 pub mod bsq;
@@ -38,6 +36,7 @@ impl<T> FileInner<Mmap, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
+            .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map(&file)?;
 
@@ -51,6 +50,7 @@ impl<T> FileInner<Mmap, T> {
     pub unsafe fn from_dims(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
+            .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map(&file)?;
 
@@ -68,6 +68,7 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
+            .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_mut(&file)?;
 
@@ -83,6 +84,7 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
+            .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_copy(&file)?;
 
@@ -98,6 +100,7 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
+            .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_anon()?;
 
@@ -111,6 +114,7 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn from_dims_mut(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
+            .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_mut(&file)?;
 
@@ -124,6 +128,7 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn from_dims_copy(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
+            .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_copy(&file)?;
 
@@ -137,6 +142,7 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn from_dims_anon(dims: &FileDims) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
+            .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_anon()?;
 
@@ -149,6 +155,7 @@ impl<T> FileInner<MmapMut, T> {
 }
 
 impl<C, T> FileInner<C, T> where C: Deref<Target=[u8]> {
+    #[inline(always)]
     pub fn slice(&self) -> &[T] {
         let ptr = self.container.as_ptr() as *mut T;
         let len = self.dims.lines * self.dims.bands.len() * self.dims.samples;
@@ -157,6 +164,7 @@ impl<C, T> FileInner<C, T> where C: Deref<Target=[u8]> {
 }
 
 impl<C, T> FileInner<C, T> where C: DerefMut<Target=[u8]> {
+    #[inline(always)]
     pub fn slice_mut(&mut self) -> &mut [T] {
         let ptr = self.container.as_mut_ptr() as *mut T;
         let len = self.dims.lines * self.dims.bands.len() * self.dims.samples;
@@ -181,25 +189,70 @@ impl From<&Headers> for FileDims {
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum MatOrder {
     RowOrder,
-    ColumnOrder
+    ColumnOrder,
 }
 
-pub trait FileIndex<T>: Index<(usize, usize), Output = T> {
+pub trait FileIndex<T> {
     fn size(&self) -> (usize, usize);
     fn order(&self) -> MatOrder;
     unsafe fn get_unchecked(&self, pixel: usize, band: usize) -> &T;
 }
 
-pub trait FileIndexMut<T>: FileIndex<T> + IndexMut<(usize, usize), Output = T> {
+pub trait FileIndexMut<T>: FileIndex<T> {
     unsafe fn get_mut_unchecked(&mut self, pixel: usize, band: usize) -> &mut T;
 }
 
-pub trait FileConvert<T, C> {
-    fn to_bsq(&self, out: &mut Bsq<C, T>) -> Result<(), ConversionError>;
-    fn to_bip(&self, out: &mut Bip<C, T>) -> Result<(), ConversionError>;
+#[inline(never)]
+pub fn convert<T, I, O>(input: &I, out: &mut O)
+    where I: 'static + FileIndex<T> + Sync + Send,
+          O: 'static + FileIndexMut<T> + Sync + Send,
+          T: Copy
+{
+    match input.order() {
+        MatOrder::RowOrder => convert_row_major(input, out),
+        MatOrder::ColumnOrder => convert_column_major(input, out),
+    }
 }
 
-pub trait FileAlgebra<T> {
-    fn rescale(&mut self, bands: &[usize], scale: T, offset: T);
-    fn normalize(&mut self, bands: &[usize], floor: T, ceiling: T);
+#[inline(never)]
+pub fn convert_row_major<T, I, O>(input: &I, out: &mut O)
+    where I: 'static + FileIndex<T> + Sync + Send,
+          O: 'static + FileIndexMut<T> + Sync + Send,
+          T: Copy
+{
+    let (num_pixels, num_bands) = input.size();
+    let bar = ProgressBar::new((num_bands * num_pixels) as u64);
+
+    for pixel_idx in 0..num_pixels {
+        for band_idx in 0..num_bands {
+            unsafe {
+                *out.get_mut_unchecked(pixel_idx, band_idx) =
+                    *input.get_unchecked(pixel_idx, band_idx);
+            }
+        }
+
+        if pixel_idx % 4096 == 0 {
+            bar.inc(4069 * num_bands as u64)
+        }
+    }
+}
+
+#[inline(never)]
+pub fn convert_column_major<T, I, O>(input: &I, out: &mut O)
+    where I: 'static + FileIndex<T> + Sync + Send,
+          O: 'static + FileIndexMut<T> + Sync + Send,
+          T: Copy
+{
+    let (num_pixels, num_bands) = input.size();
+    let bar = ProgressBar::new((num_bands * num_pixels) as u64);
+
+    for band_idx in 0..num_bands {
+        for pixel_idx in 0..num_pixels {
+            unsafe {
+                *out.get_mut_unchecked(pixel_idx, band_idx) =
+                    *input.get_unchecked(pixel_idx, band_idx);
+            }
+        }
+        bar.inc(num_pixels as u64)
+    }
 }

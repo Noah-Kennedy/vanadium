@@ -5,10 +5,12 @@ authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-memmap2 = "0.1.0"
 rayon = "1.4"
 structopt = "0.3.18"
 regex = "1.4"
+
+[dependencies.memmap2]
+git = "https://github.com/Noah-Kennedy/memmap2-rs"
 
 [dependencies.indicatif]
 version = "0.15.0"
