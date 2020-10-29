@@ -81,13 +81,24 @@ pub struct ColorOpt {
     #[structopt(short = "o", long, parse(from_os_str))]
     pub output: PathBuf,
 
+    /// The floor to clamp to for each band.
+    ///
+    /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
+    /// If the colormap is 'rgb', 3 values should be provided.
     #[structopt(short = "m", long)]
     pub min: Vec<f32>,
 
+    /// The ceiling to clamp to for each band.
+    ///
+    /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
+    /// If the colormap is 'rgb', 3 values should be provided.
     #[structopt(short = "x", long)]
     pub max: Vec<f32>,
 
-    /// The bands to work with
+    /// The bands to work with.
+    ///
+    /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
+    /// If the colormap is 'rgb', 3 values should be provided.
     #[structopt(short = "b", long)]
     pub bands: Vec<usize>,
 
