@@ -14,7 +14,7 @@ pub struct Opt {
 #[derive(StructOpt, Debug)]
 pub enum SubcommandOpt {
     Convert(ConvertOpt),
-    Norm(NormOpt)
+    Norm(ColorOpt),
 }
 
 /// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
@@ -44,10 +44,30 @@ pub struct ConvertOpt {
     pub output_type: Interleave,
 }
 
-/// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
+/// Subcommand for outputting color images.
+///
+/// # Examples
+///
+/// ## RGB
+///
+/// ```sh
+/// hyperspectra norm -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
+/// ```
+///
+/// ## Grayscale
+///
+/// ```sh
+/// hyperspectra norm -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
+/// ```
+///
+/// ## Coolwarm
+///
+/// ```sh
+/// hyperspectra norm -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
+/// ```
 #[derive(StructOpt, Debug)]
-#[structopt(name = "norm")]
-pub struct NormOpt {
+#[structopt(name = "color")]
+pub struct ColorOpt {
     /// The path to the input binary file.
     #[structopt(short, long, parse(from_os_str))]
     pub input: PathBuf,
@@ -56,7 +76,8 @@ pub struct NormOpt {
     #[structopt(short = "n", long, parse(from_os_str))]
     pub input_header: PathBuf,
 
-    /// The path to the output binary file.
+    /// The path to the output image file.
+    /// The file should have a .png, .jpg, or .jpeg extension
     #[structopt(short = "o", long, parse(from_os_str))]
     pub output: PathBuf,
 
@@ -66,9 +87,13 @@ pub struct NormOpt {
     #[structopt(short = "x", long)]
     pub max: Vec<f32>,
 
+    /// The bands to work with
     #[structopt(short = "b", long)]
     pub bands: Vec<usize>,
 
-    #[structopt(short = "f", long)]
-    pub format: String
+    /// The color map of the image.
+    ///
+    /// If 'gray', 'grey', or 'coolwarm', 3 bands should be provided
+    #[structopt(short = "c", long)]
+    pub color_map: String,
 }
