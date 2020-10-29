@@ -93,7 +93,8 @@ pub struct ColorOpt {
 
     /// The color map of the image.
     ///
-    /// If 'gray', 'grey', or 'coolwarm', 3 bands should be provided
+    /// If 'gray', 'grey', or 'coolwarm', 1 band should be provided.
+    /// If 'rgb', 3 bands should be provided.
     #[structopt(short = "c", long)]
     pub color_map: String,
 }
