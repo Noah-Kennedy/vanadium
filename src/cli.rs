@@ -13,7 +13,8 @@ pub struct Opt {
 
 #[derive(StructOpt, Debug)]
 pub enum SubcommandOpt {
-    Convert(ConvertOpt)
+    Convert(ConvertOpt),
+    Norm(NormOpt)
 }
 
 /// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
@@ -60,11 +61,14 @@ pub struct NormOpt {
     pub output: PathBuf,
 
     #[structopt(short = "m", long)]
-    pub min: f32,
+    pub min: Vec<f32>,
 
     #[structopt(short = "x", long)]
-    pub max: f32,
+    pub max: Vec<f32>,
 
     #[structopt(short = "b", long)]
     pub bands: Vec<usize>,
+
+    #[structopt(short = "f", long)]
+    pub format: String
 }

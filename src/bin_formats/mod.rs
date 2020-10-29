@@ -4,10 +4,13 @@ use std::fs::File;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut, Div, Sub};
 
+use image::{Rgb, RgbImage, GrayImage, Luma};
 use indicatif::ProgressBar;
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
 use crate::headers::{FileByteOrder, Headers};
+use std::fmt::Debug;
+use num::Zero;
 
 pub mod bsq;
 pub mod bip;
@@ -192,8 +195,6 @@ pub enum MatOrder {
     ColumnOrder,
 }
 
-
-
 pub trait FileIndex<T> {
     fn size(&self) -> (usize, usize, usize);
     fn order(&self) -> MatOrder;
@@ -205,12 +206,11 @@ pub trait FileIndexMut<T>: FileIndex<T> {
 }
 
 pub struct Mat<F> {
-    inner: Box<F>
+    pub (crate) inner: F
 }
 
-impl <F> From<F> for Mat<F> {
+impl<F> From<F> for Mat<F> {
     fn from(inner: F) -> Self {
-        let inner = Box::new(inner);
         Self { inner }
     }
 }
@@ -220,7 +220,7 @@ impl<I> Mat<I> {
         where
             I: 'static + FileIndex<T> + Sync + Send,
             O: 'static + FileIndexMut<T> + Sync + Send,
-            T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T>
+            T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T> + Debug
 
     {
         let (lines, pixels, bands) = self.inner.size();
@@ -238,31 +238,94 @@ impl<I> Mat<I> {
         }
     }
 
-    pub fn clamp_between<T, O>(&self, out: &mut Mat<O>, min: T, max: T, bands: &[usize])
+    pub fn norm_between<T>(&mut self, min: &[T], max: &[T], bands: &[usize])
         where
-            I: 'static + FileIndex<T> + Sync + Send,
-            O: 'static + FileIndexMut<T> + Sync + Send,
-            T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T>
+            I: 'static + FileIndex<T> + FileIndexMut<T> + Sync + Send,
+            T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T> + Debug + Zero
     {
         let (lines, pixels, _) = self.inner.size();
         let bar = ProgressBar::new((lines * pixels * bands.len()) as u64);
 
-        let scale = max - min;
+        for ((&b, &min), &max) in bands.iter().zip(min.iter()).zip(max.iter()) {
+            let scale = max - min;
 
-        for &b in bands {
             for l in 0..lines {
                 for p in 0..pixels {
                     unsafe {
-                        let clamped = num::clamp(*self.inner.get_unchecked(l, p, b), min, max);
+                        let val = *self.inner.get_unchecked(l, p, b);
+                        let clamped = num::clamp(val, min, max);
                         let shifted = clamped - min;
                         let norm = shifted / scale;
 
-                        *out.inner.get_mut_unchecked(l, p, b) = norm;
+                        *self.inner.get_mut_unchecked(l, p, b) = norm;
                     }
                 }
+                bar.inc(pixels as u64)
             }
+        }
+    }
 
-            bar.inc((lines * pixels) as u64)
+    pub fn cool_warm(&self, out: &mut RgbImage, band: usize)
+        where I: 'static + FileIndex<f32> + Sync + Send,
+    {
+        let (lines, samples, bands) = self.inner.size();
+        let bar = ProgressBar::new((lines * samples) as u64);
+        assert!(band < bands);
+
+        for l in 0..lines {
+            for s in 0..samples {
+                let val = unsafe {
+                    *self.inner.get_unchecked(l, s, band)
+                };
+
+                let r = (val * 255.0).floor() as u8;
+                let b = ((1.0 - val) * 255.0).floor() as u8;
+
+                out.put_pixel(s as u32, l as u32, Rgb([r, 0, b]))
+            }
+            bar.inc(samples as u64)
+        }
+    }
+
+    pub fn gray(&self, out: &mut GrayImage, band: usize)
+        where I: 'static + FileIndex<f32> + Sync + Send,
+    {
+        let (lines, samples, bands) = self.inner.size();
+        let bar = ProgressBar::new((lines * samples) as u64);
+        assert!(band < bands);
+
+        for l in 0..lines {
+            for s in 0..samples {
+                let val = unsafe {
+                    *self.inner.get_unchecked(l, s, band)
+                };
+
+                let r = (val * 255.0).floor() as u8;
+
+                out.put_pixel(s as u32, l as u32, Luma([r]))
+            }
+            bar.inc(samples as u64)
+        }
+    }
+
+    pub fn rgb(&self, out: &mut RgbImage, bands: [usize; 3])
+        where I: 'static + FileIndex<f32> + Sync + Send,
+    {
+        let (lines, samples, _) = self.inner.size();
+        let bar = ProgressBar::new((lines * samples) as u64);
+
+        for l in 0..lines {
+            for s in 0..samples {
+                let rgb = unsafe {
+                    let r = (*self.inner.get_unchecked(l, s, bands[0]) * 255.0).floor() as u8;
+                    let g = (*self.inner.get_unchecked(l, s, bands[1]) * 255.0).floor() as u8;
+                    let b = (*self.inner.get_unchecked(l, s, bands[2]) * 255.0).floor() as u8;
+                    [r, g, b]
+                };
+
+                out.put_pixel(s as u32, l as u32, Rgb(rgb))
+            }
+            bar.inc(samples as u64)
         }
     }
 }
