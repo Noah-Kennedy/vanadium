@@ -11,6 +11,7 @@ pub mod bin_formats;
 pub mod cli;
 pub mod file_alloc;
 pub mod convert;
+pub mod norm;
 
 #[cfg(test)]
 mod tests;

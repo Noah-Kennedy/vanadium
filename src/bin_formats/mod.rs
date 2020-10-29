@@ -2,7 +2,7 @@ use std::{mem, slice};
 use std::error::Error;
 use std::fs::File;
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Div, Sub};
 
 use indicatif::ProgressBar;
 use memmap2::{Mmap, MmapMut, MmapOptions};
@@ -202,22 +202,65 @@ pub trait FileIndexMut<T>: FileIndex<T> {
     unsafe fn get_mut_unchecked(&mut self, line: usize, pixel: usize, band: usize) -> &mut T;
 }
 
-pub fn convert<T, I, O>(input: &I, out: &mut O)
-    where I: 'static + FileIndex<T> + Sync + Send,
-          O: 'static + FileIndexMut<T> + Sync + Send,
-          T: Copy
-{
-    let (lines, pixels, bands) = input.size();
-    let bar = ProgressBar::new((lines * pixels * bands) as u64);
+pub struct Mat<F> {
+    inner: Box<F>
+}
 
-    for l in 0..lines {
-        for b in 0..bands {
-            for p in 0..pixels {
-                unsafe {
-                    *out.get_mut_unchecked(l, p, b) = *input.get_unchecked(l, p, b);
+impl <F> From<F> for Mat<F> {
+    fn from(inner: F) -> Self {
+        let inner = Box::new(inner);
+        Self { inner }
+    }
+}
+
+impl<I> Mat<I> {
+    pub fn convert<T, O>(&self, out: &mut Mat<O>)
+        where
+            I: 'static + FileIndex<T> + Sync + Send,
+            O: 'static + FileIndexMut<T> + Sync + Send,
+            T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T>
+
+    {
+        let (lines, pixels, bands) = self.inner.size();
+        let bar = ProgressBar::new((lines * pixels * bands) as u64);
+
+        for l in 0..lines {
+            for b in 0..bands {
+                for p in 0..pixels {
+                    unsafe {
+                        *out.inner.get_mut_unchecked(l, p, b) = *self.inner.get_unchecked(l, p, b);
+                    }
                 }
             }
+            bar.inc((bands * pixels) as u64)
         }
-        bar.inc((bands * pixels) as u64)
+    }
+
+    pub fn clamp_between<T, O>(&self, out: &mut Mat<O>, min: T, max: T, bands: &[usize])
+        where
+            I: 'static + FileIndex<T> + Sync + Send,
+            O: 'static + FileIndexMut<T> + Sync + Send,
+            T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T>
+    {
+        let (lines, pixels, _) = self.inner.size();
+        let bar = ProgressBar::new((lines * pixels * bands.len()) as u64);
+
+        let scale = max - min;
+
+        for &b in bands {
+            for l in 0..lines {
+                for p in 0..pixels {
+                    unsafe {
+                        let clamped = num::clamp(*self.inner.get_unchecked(l, p, b), min, max);
+                        let shifted = clamped - min;
+                        let norm = shifted / scale;
+
+                        *out.inner.get_mut_unchecked(l, p, b) = norm;
+                    }
+                }
+            }
+
+            bar.inc((lines * pixels) as u64)
+        }
     }
 }
