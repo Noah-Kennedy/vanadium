@@ -4,20 +4,35 @@ version = "0.0.0"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
 
+# Runtime dependencies
 [dependencies]
+# Data parallelism library, provides iterator-like adaptors and a task scheduling system.
 rayon = "1.4"
+
+# CLI arg parsing
 structopt = "0.3.18"
+
+# Regex library
 regex = "1.4"
 
+# Fork of memmap2 library. I added support for MMAP_POPULATE, to enable page cache preloading.
 [dependencies.memmap2]
 git = "https://github.com/Noah-Kennedy/memmap2-rs"
 
+# Provides status bar
 [dependencies.indicatif]
 version = "0.15.0"
 features = ["with_rayon"]
 
+# Provides numeric traits and generic numeric functions
 [dependencies.num]
 version = "0.3.0"
 
-[dev-dependencies.subprocess]
-version = "0.2.6"
+# Image processing library, used to generate PNG images.
+[dependencies.image]
+version = "0.23.11"
+
+# Development dependencies
+# Used primarily for tests
+[dev-dependencies]
+subprocess = "0.2.6"

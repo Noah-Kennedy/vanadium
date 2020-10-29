@@ -42,3 +42,29 @@ pub struct ConvertOpt {
     #[structopt(short = "t", long, parse(try_from_str))]
     pub output_type: Interleave,
 }
+
+/// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
+#[derive(StructOpt, Debug)]
+#[structopt(name = "norm")]
+pub struct NormOpt {
+    /// The path to the input binary file.
+    #[structopt(short, long, parse(from_os_str))]
+    pub input: PathBuf,
+
+    /// The path to the input header file.
+    #[structopt(short = "n", long, parse(from_os_str))]
+    pub input_header: PathBuf,
+
+    /// The path to the output binary file.
+    #[structopt(short = "o", long, parse(from_os_str))]
+    pub output: PathBuf,
+
+    #[structopt(short = "m", long)]
+    pub min: f32,
+
+    #[structopt(short = "x", long)]
+    pub max: f32,
+
+    #[structopt(short = "b", long)]
+    pub bands: Vec<usize>,
+}
