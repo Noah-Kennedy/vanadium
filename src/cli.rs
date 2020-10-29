@@ -14,7 +14,7 @@ pub struct Opt {
 #[derive(StructOpt, Debug)]
 pub enum SubcommandOpt {
     Convert(ConvertOpt),
-    Norm(ColorOpt),
+    Color(ColorOpt),
 }
 
 /// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.

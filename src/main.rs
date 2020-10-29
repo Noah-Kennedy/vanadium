@@ -30,6 +30,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match opt.subcommand {
         SubcommandOpt::Convert(cvt) => execute_conversion(cvt),
-        SubcommandOpt::Norm(norm_opt) => normalize(norm_opt),
+        SubcommandOpt::Color(norm_opt) => normalize(norm_opt),
     }
 }
