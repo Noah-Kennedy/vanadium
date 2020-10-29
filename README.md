@@ -10,14 +10,42 @@ Navigate to [rustup.rs](https://rustup.rs/) and follow the instructions provided
 
 #### Building and Installing Hyperspectral
 In your terminal of choice:
-```bash
+```shell script
 git clone https://github.com/Noah-Kennedy/hyperspectral.git
 cd hyperspectral
 cargo install --path .
 ```
 
 ## Usage
-TODO
+For help, invoke:
+```shell script
+hyperspectra --help
+```
+
+### Examples
+#### Conversion
+```shell script
+hyperspectra convert -i input.bsq -n input.hdr -o out.bil -t bil
+```
+
+#### Colorization
+##### RGB
+
+```shell script
+hyperspectra norm -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
+```
+
+##### Grayscale
+
+```shell script
+hyperspectra norm -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
+```
+
+##### Coolwarm
+
+```shell script
+hyperspectra norm -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
+```
 
 ## Design
 TODO

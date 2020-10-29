@@ -9,10 +9,10 @@ use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, Mat};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
-use crate::cli::NormOpt;
+use crate::cli::ColorOpt;
 use crate::headers::{Headers, Interleave};
 
-pub fn normalize(opt: NormOpt) -> Result<(), Box<dyn Error>> {
+pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     println!("Opening input file");
     let input_file = File::open(opt.input)?;
 
@@ -26,15 +26,15 @@ pub fn normalize(opt: NormOpt) -> Result<(), Box<dyn Error>> {
     match parsed_headers.interleave {
         Interleave::Bip => {
             let mut input = Mat::from(Bip::from(inner));
-            helper(&mut input, opt.output, &opt.format, &opt.min, &opt.max, &opt.bands)
+            helper(&mut input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
         Interleave::Bil => {
             let mut input = Mat::from(Bil::from(inner));
-            helper(&mut input, opt.output, &opt.format, &opt.min, &opt.max, &opt.bands)
+            helper(&mut input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
         Interleave::Bsq => {
             let mut input = Mat::from(Bsq::from(inner));
-            helper(&mut input, opt.output, &opt.format, &opt.min, &opt.max, &opt.bands)
+            helper(&mut input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
     }
 }
