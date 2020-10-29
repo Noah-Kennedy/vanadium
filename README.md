@@ -23,7 +23,34 @@ TODO
 TODO
 
 ## Benchmarks
-TODO
+Benchmarks were performed on a machine running Arch Linux with a Ryzen 3900X, an Nvidia RTX 2080 TI,
+64 GiB of Ram, and SSD storage.
+
+Warm cache benchmarks occurred after the program was run twice before measured runs began, in order
+to ensure that the file cache had been prepared.
+Cold cache benchmarks flushed the file cache before each run, ensuring that no files were present
+in the cache when the run began.
+
+### Conversion
+#### Warm Cache
+|Input|Output|Time (mean ± σ)|
+|-----|------|----|
+|bip|bil|24.469 s ± 0.815 s|
+|bip|bsq|9.458 s ± 0.429 s|
+|bil|bip|24.576 s ± 1.149 s|
+|bil|bsq|11.683 s ± 0.246 s|
+|bsq|bip|24.582 s ± 0.431 s|
+|bsq|bil|24.679 s ± 0.811 s|
+
+#### Cold Cache
+|Input|Output|Time (mean ± σ)|
+|-----|------|----|
+|bip|bil||
+|bip|bsq||
+|bil|bip||
+|bil|bsq|58.449 s ±  0.254 s|
+|bsq|bip|56.836 s ± 0.577 s|
+|bsq|bil|58.137 s ± 0.660 s|
 
 ## Testing
 TODO
