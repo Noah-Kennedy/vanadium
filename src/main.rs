@@ -5,6 +5,7 @@ use structopt::StructOpt;
 use crate::bin_formats::WORK_UNIT_SIZE;
 use crate::cli::{Opt, SubcommandOpt};
 use crate::convert::execute_conversion;
+use crate::norm::normalize;
 
 pub mod headers;
 pub mod bin_formats;
@@ -29,5 +30,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match opt.subcommand {
         SubcommandOpt::Convert(cvt) => execute_conversion(cvt),
+        SubcommandOpt::Norm(norm_opt) => normalize(norm_opt),
     }
 }
