@@ -10,7 +10,6 @@ use crate::norm::normalize;
 mod headers;
 mod bin_formats;
 mod cli;
-mod file_alloc;
 mod convert;
 mod norm;
 
