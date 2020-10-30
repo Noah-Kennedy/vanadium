@@ -33,15 +33,22 @@ pub enum ConversionErrorKind {
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct SizeMismatchError {
-    pub input_size: usize,
-    pub output_size: usize,
+    pub input_size: (usize, usize, usize),
+    pub output_size: (usize, usize, usize),
 }
 
 impl Display for SizeMismatchError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "SizeMismatchError: Input size was {}, output size was {}.",
-                 self.input_size,
-                 self.output_size)
+        writeln!(
+            f,
+            "SizeMismatchError: Input size was ({}, {}, {}), output size was ({}, {}, {}).",
+            self.input_size.0,
+            self.input_size.1,
+            self.input_size.2,
+            self.output_size.0,
+            self.output_size.1,
+            self.output_size.2
+        )
     }
 }
 
