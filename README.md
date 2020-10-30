@@ -13,7 +13,7 @@ In your terminal of choice:
 ```shell script
 git clone https://github.com/Noah-Kennedy/hyperspectral.git
 cd hyperspectral
-cargo install --path .
+RUSTFLAGS="-C target-cpu=native" cargo install --path .
 ```
 
 ## Usage
@@ -86,15 +86,15 @@ in the cache when the run began.
 #### Warm Cache
 |Input|Color Map|Time (mean ± σ)   |
 |-----|---------|------------------|
-|bip  |RGB      |35.433 s ± 0.748 s|
-|bil  |RGB      |34.939 s ± 0.602 s|
-|bsq  |RGB      |33.863 s ± 0.348 s|
-|bip  |Coolwarm |23.700 s ± 0.916 s|
-|bil  |Coolwarm |22.795 s ± 0.274 s|
-|bsq  |Coolwarm |22.860 s ± 0.861 s|
-|bip  |Gray     |14.600 s ± 0.198 s|
-|bil  |Gray     |14.131 s ± 0.083 s|
-|bsq  |Gray     |13.763 s ± 0.133 s|
+|bip  |RGB      |28.259 s ± 0.691 s|
+|bil  |RGB      |27.717 s ± 0.669 s|
+|bsq  |RGB      |27.594 s ± 0.154 s|
+|bip  |Coolwarm |20.462 s ± 1.040 s|
+|bil  |Coolwarm |20.451 s ± 1.089 s|
+|bsq  |Coolwarm |20.101 s ± 0.410 s|
+|bip  |Gray     |11.781 s ± 0.137 s|
+|bil  |Gray     |11.877 s ± 0.028 s|
+|bsq  |Gray     |11.937 s ± 0.170 s|
 
 #### Cold Cache
 |Input|Color Map|Time (mean ± σ)   |
