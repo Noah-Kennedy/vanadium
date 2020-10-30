@@ -1,7 +1,6 @@
 use std::ops::{Deref, DerefMut};
-use std::slice::{Chunks, ChunksMut};
 
-use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, MatOrder};
+use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, MatType};
 
 pub struct Bsq<C, T> {
     pub(crate) inner: FileInner<C, T>,
@@ -14,29 +13,6 @@ impl<C, T> From<FileInner<C, T>> for Bsq<C, T> {
             band_len: inner.dims.samples * inner.dims.lines,
             inner,
         }
-    }
-}
-
-impl<C, T> Bsq<C, T> where C: Deref<Target=[u8]> {
-    pub fn band(&self, band: usize) -> &[T] {
-        assert!(band < self.inner.dims.bands.len());
-        &self.inner.slice()[(band * self.band_len)..((band * self.band_len) + self.band_len)]
-    }
-
-    pub fn split_bands(&self) -> Chunks<T> {
-        self.inner.slice().chunks(self.band_len)
-    }
-}
-
-impl<C, T> Bsq<C, T> where C: DerefMut<Target=[u8]> {
-    pub fn band_mut(&mut self, band: usize) -> &mut [T] {
-        assert!(band < self.inner.dims.bands.len());
-        &mut self.inner
-            .slice_mut()[(band * self.band_len)..((band * self.band_len) + self.band_len)]
-    }
-
-    pub fn split_bands_mut(&mut self) -> ChunksMut<T> {
-        self.inner.slice_mut().chunks_mut(self.band_len)
     }
 }
 
@@ -59,8 +35,8 @@ impl<C, T> FileIndex<T> for Bsq<C, T> where C: Deref<Target=[u8]> {
     }
 
     #[inline(always)]
-    fn order(&self) -> MatOrder {
-        MatOrder::ColumnOrder
+    fn order(&self) -> MatType {
+        MatType::Bsq
     }
 
     #[inline(always)]

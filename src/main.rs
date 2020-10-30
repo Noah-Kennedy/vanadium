@@ -7,12 +7,12 @@ use crate::cli::{Opt, SubcommandOpt};
 use crate::convert::execute_conversion;
 use crate::norm::normalize;
 
-pub mod headers;
-pub mod bin_formats;
-pub mod cli;
-pub mod file_alloc;
-pub mod convert;
-pub mod norm;
+mod headers;
+mod bin_formats;
+mod cli;
+mod file_alloc;
+mod convert;
+mod norm;
 
 #[cfg(test)]
 mod tests;

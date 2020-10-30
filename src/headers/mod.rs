@@ -166,11 +166,14 @@ impl FromStr for FileByteOrder {
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub enum ParseHeaderError {
     BadValue(&'static str),
-    NoKey(usize),
+    /// Not used
+    _NoKey(usize),
     NoValue(usize),
+    /// Not used
     _DuplicateKey(String),
     RequiredFieldNotFound(&'static str),
-    InvalidFirstLine,
+    /// Not used
+    _InvalidFirstLine,
 }
 
 impl Display for ParseHeaderError {
@@ -179,7 +182,7 @@ impl Display for ParseHeaderError {
             ParseHeaderError::BadValue(e) => {
                 writeln!(f, "Failed to parse field '{}'.", e)
             }
-            ParseHeaderError::NoKey(line) => {
+            ParseHeaderError::_NoKey(line) => {
                 writeln!(f, "Key not found for line {}!", line)
             }
             ParseHeaderError::NoValue(line) => {
@@ -191,7 +194,7 @@ impl Display for ParseHeaderError {
             ParseHeaderError::RequiredFieldNotFound(k) => {
                 writeln!(f, "Required field not found {}!", k)
             }
-            ParseHeaderError::InvalidFirstLine => {
+            ParseHeaderError::_InvalidFirstLine => {
                 writeln!(f, "First line should be 'ENVI'!")
             }
         }

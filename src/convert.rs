@@ -2,13 +2,14 @@ use std::error::Error;
 use std::fs::{File, OpenOptions, read_to_string};
 use std::str::FromStr;
 
-use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, Mat};
+use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, Mat, MatType};
+use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
+use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
 use crate::cli::ConvertOpt;
 use crate::file_alloc::allocate_file;
 use crate::headers::{Headers, Interleave};
-use crate::bin_formats::bil::Bil;
 
 pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let ConvertOpt {
@@ -73,21 +74,39 @@ fn continue_from_input<T>(headers: &Headers, input: &Mat<T>, out: &File, out_typ
         Interleave::Bil => {
             let mut out = Mat::from(Bil::from(inner));
             finish_conversion(&input, &mut out)
-        },
+        }
         Interleave::Bsq => {
             let mut out = Mat::from(Bil::from(inner));
             finish_conversion(&input, &mut out)
         }
-    }
+    }?;
 
     Ok(())
 }
 
-fn finish_conversion<I, O>(input: &Mat<I>, output: &mut Mat<O>)
+fn finish_conversion<I, O>(input: &Mat<I>, output: &mut Mat<O>) -> Result<(), ConversionError>
     where I: 'static + FileIndex<f32> + Sync + Send,
           O: 'static + FileIndexMut<f32> + Sync + Send,
 {
-    println!("Performing conversion");
-    input.convert(output);
-    println!("finished")
+    if input.inner.size() == output.inner.size() {
+        println!("Performing conversion");
+        input.convert(output);
+        println!("finished");
+        Ok(())
+    } else {
+        Err(ConversionError {
+            input_type: match input.inner.order() {
+                MatType::Bip => "bip",
+                MatType::Bil => "bil",
+                MatType::Bsq => "bsq",
+            },
+            output_type: "",
+            kind: ConversionErrorKind::SizeMismatch(
+                SizeMismatchError {
+                    input_size: input.inner.size(),
+                    output_size: output.inner.size(),
+                }
+            ),
+        })
+    }
 }

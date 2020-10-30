@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, MatOrder};
+use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, MatType};
 
 pub struct Bip<C, T> {
     pub(crate) inner: FileInner<C, T>
@@ -26,8 +26,8 @@ impl<C, T> FileIndex<T> for Bip<C, T> where C: Deref<Target=[u8]> {
     }
 
     #[inline(always)]
-    fn order(&self) -> MatOrder {
-        MatOrder::RowOrder
+    fn order(&self) -> MatType {
+        MatType::Bip
     }
 
     #[inline(always)]
