@@ -5,13 +5,9 @@ use std::ops::{Div, Sub};
 use image::{GrayImage, Luma, Rgb, RgbImage};
 use indicatif::ProgressBar;
 use num::Zero;
+use crate::headers::Interleave;
 
-#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum MatType {
-    Bip,
-    Bil,
-    Bsq,
-}
+pub type MatType = Interleave;
 
 pub trait FileIndex<T> {
     fn size(&self) -> (usize, usize, usize);
@@ -179,6 +175,5 @@ fn normify<T>(val: T, scale: T, min: T, max: T) -> T
 {
     let clamped = num::clamp(val, min, max);
     let shifted = clamped - min;
-    let norm = shifted / scale;
-    norm
+    shifted / scale
 }
