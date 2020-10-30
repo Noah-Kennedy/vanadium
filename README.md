@@ -54,6 +54,8 @@ TODO
 Benchmarks were performed on a machine running Arch Linux with a Ryzen 3900X, an Nvidia RTX 2080 TI,
 64 GiB of Ram, and SSD storage.
 
+Input files had 5 bands and were 28740 x 21954.
+
 Warm cache benchmarks occurred after the program was run twice before measured runs began, in order
 to ensure that the file cache had been prepared.
 Cold cache benchmarks flushed the file cache before each run, ensuring that no files were present
@@ -79,6 +81,33 @@ in the cache when the run began.
 |bil|bsq|58.449 s ±  0.254 s|
 |bsq|bip|56.836 s ± 0.577 s|
 |bsq|bil|58.137 s ± 0.660 s|
+
+### Colorization
+#### Warm Cache
+|Input|Color Map|Time (mean ± σ)    |
+|-----|---------|-------------------|
+|bip  |RGB      |35.433 s ±  0.748 s|
+|bil  |RGB      |34.939 s ±  0.602 s|
+|bsq  |RGB      |33.863 s ±  0.348 s|
+|bip  |Coolwarm |23.700 s ±  0.916 s|
+|bil  |Coolwarm |22.795 s ±  0.274 s|
+|bsq  |Coolwarm |22.860 s ±  0.861 s|
+|bip  |Gray     |14.600 s ±  0.198 s|
+|bil  |Gray     |14.131 s ±  0.083 s|
+|bsq  |Gray     |13.763 s ±  0.133 s|
+
+#### Cold Cache
+|Input|Color Map|Time (mean ± σ)    |
+|-----|---------|-------------------|
+|bip  |RGB      ||
+|bil  |RGB      ||
+|bsq  |RGB      ||
+|bip  |Coolwarm ||
+|bil  |Coolwarm ||
+|bsq  |Coolwarm ||
+|bip  |Gray     ||
+|bil  |Gray     ||
+|bsq  |Gray     ||
 
 ## Testing
 TODO
