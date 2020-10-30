@@ -43,8 +43,8 @@ fn helper<F>(input: &mut Mat<F>, path: PathBuf, f: &str, min: &[f32], max: &[f32
              -> Result<(), Box<dyn Error>>
     where F: 'static + FileIndex<f32> + FileIndexMut<f32> + Sync + Send
 {
-    println!("Normalizing");
-    input.norm_between(min, max, bands);
+    // println!("Normalizing");
+    // input.norm_between(min, max, bands);
 
     let (height, width, _) = input.inner.size();
 
@@ -58,7 +58,7 @@ fn helper<F>(input: &mut Mat<F>, path: PathBuf, f: &str, min: &[f32], max: &[f32
             ).unwrap();
 
             println!("Applying color map");
-            input.cool_warm(&mut out, bands[0]);
+            input.cool_warm(&mut out, min[0], max[0], bands[0]);
 
             println!("Saving...");
             out.save(path)?;
@@ -72,7 +72,11 @@ fn helper<F>(input: &mut Mat<F>, path: PathBuf, f: &str, min: &[f32], max: &[f32
             ).unwrap();
 
             println!("Applying color map");
-            input.rgb(&mut out, [bands[0], bands[1], bands[2]]);
+            input.rgb(&mut out,
+                      [min[0], min[1], min[2]],
+                      [max[0], max[1], max[2]],
+                      [bands[0], bands[1], bands[2]],
+            );
 
             println!("Saving...");
             out.save(path)?;
@@ -86,7 +90,7 @@ fn helper<F>(input: &mut Mat<F>, path: PathBuf, f: &str, min: &[f32], max: &[f32
             ).unwrap();
 
             println!("Applying color map");
-            input.gray(&mut out, bands[0]);
+            input.gray(&mut out, min[0], max[0], bands[0]);
 
             println!("Saving...");
             out.save(path)?;
