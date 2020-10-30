@@ -6,9 +6,6 @@ edition = "2018"
 
 # Runtime dependencies
 [dependencies]
-# Data parallelism library, provides iterator-like adaptors and a task scheduling system.
-rayon = "1.4"
-
 # CLI arg parsing
 structopt = "0.3.18"
 
@@ -22,7 +19,6 @@ git = "https://github.com/Noah-Kennedy/memmap2-rs"
 # Provides status bar
 [dependencies.indicatif]
 version = "0.15.0"
-features = ["with_rayon"]
 
 # Provides numeric traits and generic numeric functions
 [dependencies.num]
@@ -31,6 +27,8 @@ version = "0.3.0"
 # Image processing library, used to generate PNG images.
 [dependencies.image]
 version = "0.23.11"
+default-features = false
+features = ["png"]
 
 # Development dependencies
 # Used primarily for tests
