@@ -84,30 +84,30 @@ in the cache when the run began.
 
 ### Colorization
 #### Warm Cache
-|Input|Color Map|Time (mean ± σ)    |
-|-----|---------|-------------------|
-|bip  |RGB      |35.433 s ±  0.748 s|
-|bil  |RGB      |34.939 s ±  0.602 s|
-|bsq  |RGB      |33.863 s ±  0.348 s|
-|bip  |Coolwarm |23.700 s ±  0.916 s|
-|bil  |Coolwarm |22.795 s ±  0.274 s|
-|bsq  |Coolwarm |22.860 s ±  0.861 s|
-|bip  |Gray     |14.600 s ±  0.198 s|
-|bil  |Gray     |14.131 s ±  0.083 s|
-|bsq  |Gray     |13.763 s ±  0.133 s|
+|Input|Color Map|Time (mean ± σ)   |
+|-----|---------|------------------|
+|bip  |RGB      |35.433 s ± 0.748 s|
+|bil  |RGB      |34.939 s ± 0.602 s|
+|bsq  |RGB      |33.863 s ± 0.348 s|
+|bip  |Coolwarm |23.700 s ± 0.916 s|
+|bil  |Coolwarm |22.795 s ± 0.274 s|
+|bsq  |Coolwarm |22.860 s ± 0.861 s|
+|bip  |Gray     |14.600 s ± 0.198 s|
+|bil  |Gray     |14.131 s ± 0.083 s|
+|bsq  |Gray     |13.763 s ± 0.133 s|
 
 #### Cold Cache
-|Input|Color Map|Time (mean ± σ)    |
-|-----|---------|-------------------|
-|bip  |RGB      ||
-|bil  |RGB      ||
-|bsq  |RGB      ||
-|bip  |Coolwarm ||
-|bil  |Coolwarm ||
-|bsq  |Coolwarm ||
-|bip  |Gray     ||
-|bil  |Gray     ||
-|bsq  |Gray     ||
+|Input|Color Map|Time (mean ± σ)   |
+|-----|---------|------------------|
+|bip  |RGB      |56.159 s ± 1.152 s|
+|bil  |RGB      |55.467 s ± 0.470 s|
+|bsq  |RGB      |54.522 s ± 0.392 s|
+|bip  |Coolwarm |43.794 s ± 0.388 s|
+|bil  |Coolwarm |43.282 s ± 0.440 s|
+|bsq  |Coolwarm |43.353 s ± 0.341 s|
+|bip  |Gray     |35.436 s ± 0.274 s|
+|bil  |Gray     |34.771 s ± 0.280 s|
+|bsq  |Gray     |34.259 s ± 0.161 s|
 
 ## Testing
 TODO
