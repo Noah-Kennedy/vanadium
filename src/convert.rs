@@ -8,7 +8,6 @@ use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
 use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
 use crate::cli::ConvertOpt;
-use crate::file_alloc::allocate_file;
 use crate::headers::{Headers, Interleave};
 
 pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
@@ -33,7 +32,7 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
         .open(output)?;
 
     println!("Allocating output file");
-    allocate_file(&output_file, input_file.metadata()?.len() as usize)?;
+    output_file.set_len(input_file.metadata()?.len())?;
 
     println!("Reading headers");
     let headers_str = read_to_string(header)?;
