@@ -29,8 +29,3 @@ version = "0.3.0"
 version = "0.23.11"
 default-features = false
 features = ["png"]
-
-# Development dependencies
-# Used primarily for tests
-[dev-dependencies]
-subprocess = "0.2.6"
