@@ -1,188 +1,56 @@
-use std::process::Command;
+use std::mem;
 
-use subprocess::Exec;
+use memmap2::MmapMut;
 
-use crate::cli::ConvertOpt;
-use crate::headers::Interleave;
+use crate::bin_formats::{FileDims, FileIndex, FileInner, Mat};
 
-use super::*;
+mod mat_tests;
 
-#[test]
-fn test_convert_bip_2_bsq() {
-    Command::new("sync").output().unwrap();
-    Exec::shell("pkexec bash -c 'echo 3 > /proc/sys/vm/drop_caches'").join().unwrap();
+const BIP: [u8; 108] = unsafe {
+    mem::transmute::<[f32; 27], [u8; 108]>
+        (
+            [
+                00., 00., 00., 01., 00., 01., 02., 00., 02.,
+                10., 01., 00., 11., 01., 01., 12., 01., 02.,
+                20., 02., 00., 21., 02., 01., 22., 02., 02.
+            ]
+        )
+};
 
-    let out = "bip.bsq";
-    let opt = ConvertOpt {
-        input: "data/raw/unnormalized/unnorm.bip".into(),
-        input_header: "data/raw/unnormalized/unnorm.bip.hdr".into(),
-        output: out.into(),
-        output_header: None,
-        output_type: Interleave::Bsq,
-    };
+const BSQ: [u8; 108] = unsafe {
+    mem::transmute::<[f32; 27], [u8; 108]>
+        (
+            [
+                00., 01., 02., 10., 11., 12., 20., 21., 22.,
+                00., 00., 00., 01., 01., 01., 02., 02., 02.,
+                00., 01., 02., 00., 01., 02., 00., 01., 02.,
+            ]
+        )
+};
 
-    execute_conversion(opt).unwrap();
+const BIL: [u8; 108] = unsafe {
+    mem::transmute::<[f32; 27], [u8; 108]>
+        (
+            [
+                00., 01., 02., 00., 00., 00., 00., 01., 02.,
+                10., 11., 12., 01., 01., 01., 00., 01., 02.,
+                20., 21., 22., 02., 02., 02., 00., 01., 02.,
+            ]
+        )
+};
 
-    let diff = Command::new("diff")
-        .arg(out)
-        .arg("data/raw/unnormalized/unnorm.bsq")
-        .status()
-        .unwrap();
+unsafe fn make_mat<F>(bytes: &[u8; 108]) -> Mat<f32, F>
+    where F: FileIndex<f32> + From<FileInner<MmapMut, f32>>
+{
+    let mut f = FileInner::_from_dims_anon(&FileDims {
+        bands: vec![0, 1, 2],
+        samples: 3,
+        lines: 3,
+    }).unwrap();
 
-    assert!(diff.success());
+    f.container.clone_from_slice(&mut bytes.to_vec());
 
-    Command::new("rm")
-        .arg(out)
-        .output()
-        .unwrap();
-}
+    let c = F::from(f);
 
-#[test]
-fn test_convert_bip_2_bil() {
-    Command::new("sync").output().unwrap();
-    Exec::shell("pkexec bash -c 'echo 3 > /proc/sys/vm/drop_caches'").join().unwrap();
-
-    let out = "bip.bil";
-    let opt = ConvertOpt {
-        input: "data/raw/unnormalized/unnorm.bip".into(),
-        input_header: "data/raw/unnormalized/unnorm.bip.hdr".into(),
-        output: out.into(),
-        output_header: None,
-        output_type: Interleave::Bil,
-    };
-
-    execute_conversion(opt).unwrap();
-
-    let diff = Command::new("diff")
-        .arg(out)
-        .arg("data/raw/unnormalized/unnorm.bil")
-        .status()
-        .unwrap();
-
-    assert!(diff.success());
-
-    Command::new("rm")
-        .arg(out)
-        .output()
-        .unwrap();
-}
-
-#[test]
-fn test_convert_bil_2_bip() {
-    Command::new("sync").output().unwrap();
-    Exec::shell("pkexec bash -c 'echo 3 > /proc/sys/vm/drop_caches'").join().unwrap();
-
-    let out = "bil.bip";
-    let opt = ConvertOpt {
-        input: "data/raw/unnormalized/unnorm.bil".into(),
-        input_header: "data/raw/unnormalized/unnorm.bil.hdr".into(),
-        output: out.into(),
-        output_header: None,
-        output_type: Interleave::Bip,
-    };
-
-    execute_conversion(opt).unwrap();
-
-    let diff = Command::new("diff")
-        .arg(out)
-        .arg("data/raw/unnormalized/unnorm.bip")
-        .status()
-        .unwrap();
-
-    assert!(diff.success());
-
-    Command::new("rm")
-        .arg(out)
-        .output()
-        .unwrap();
-}
-
-#[test]
-fn test_convert_bil_2_bsq() {
-    Command::new("sync").output().unwrap();
-    Exec::shell("pkexec bash -c 'echo 3 > /proc/sys/vm/drop_caches'").join().unwrap();
-
-    let out = "bil.bsq";
-    let opt = ConvertOpt {
-        input: "data/raw/unnormalized/unnorm.bil".into(),
-        input_header: "data/raw/unnormalized/unnorm.bil.hdr".into(),
-        output: out.into(),
-        output_header: None,
-        output_type: Interleave::Bsq,
-    };
-
-    execute_conversion(opt).unwrap();
-
-    let diff = Command::new("diff")
-        .arg(out)
-        .arg("data/raw/unnormalized/unnorm.bsq")
-        .status()
-        .unwrap();
-
-    assert!(diff.success());
-
-    Command::new("rm")
-        .arg(out)
-        .output()
-        .unwrap();
-}
-
-#[test]
-fn test_convert_bsq_2_bil() {
-    Command::new("sync").output().unwrap();
-    Exec::shell("pkexec bash -c 'echo 3 > /proc/sys/vm/drop_caches'").join().unwrap();
-
-    let out = "bsq.bil";
-    let opt = ConvertOpt {
-        input: "data/raw/unnormalized/unnorm.bsq".into(),
-        input_header: "data/raw/unnormalized/unnorm.bsq.hdr".into(),
-        output: out.into(),
-        output_header: None,
-        output_type: Interleave::Bil,
-    };
-
-    execute_conversion(opt).unwrap();
-
-    let diff = Command::new("diff")
-        .arg(out)
-        .arg("data/raw/unnormalized/unnorm.bil")
-        .status()
-        .unwrap();
-
-    assert!(diff.success());
-
-    Command::new("rm")
-        .arg(out)
-        .output()
-        .unwrap();
-}
-
-#[test]
-fn test_convert_bsq_2_bip() {
-    Command::new("sync").output().unwrap();
-    Exec::shell("pkexec bash -c 'echo 3 > /proc/sys/vm/drop_caches'").join().unwrap();
-
-    let out = "bsq.bip";
-    let opt = ConvertOpt {
-        input: "data/raw/unnormalized/unnorm.bsq".into(),
-        input_header: "data/raw/unnormalized/unnorm.bsq.hdr".into(),
-        output: out.into(),
-        output_header: None,
-        output_type: Interleave::Bip,
-    };
-
-    execute_conversion(opt).unwrap();
-
-    let diff = Command::new("diff")
-        .arg(out)
-        .arg("data/raw/unnormalized/unnorm.bip")
-        .status()
-        .unwrap();
-
-    assert!(diff.success());
-
-    Command::new("rm")
-        .arg(out)
-        .output()
-        .unwrap();
+    Mat::from(c)
 }

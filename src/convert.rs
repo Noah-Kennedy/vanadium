@@ -56,9 +56,9 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     }
 }
 
-fn continue_from_input<T>(headers: &Headers, input: &Mat<T>, out: &File, out_type: Interleave)
+fn continue_from_input<F>(headers: &Headers, input: &Mat<f32, F>, out: &File, out_type: Interleave)
                           -> Result<(), Box<dyn Error>>
-    where T: 'static + FileIndex<f32> + Sync + Send,
+    where F: 'static + FileIndex<f32> + Sync + Send,
 {
     println!("Mapping output file");
     let inner = unsafe {
@@ -83,7 +83,7 @@ fn continue_from_input<T>(headers: &Headers, input: &Mat<T>, out: &File, out_typ
     Ok(())
 }
 
-fn finish_conversion<I, O>(input: &Mat<I>, output: &mut Mat<O>) -> Result<(), ConversionError>
+fn finish_conversion<I, O>(input: &Mat<f32, I>, output: &mut Mat<f32, O>) -> Result<(), ConversionError>
     where I: 'static + FileIndex<f32> + Sync + Send,
           O: 'static + FileIndexMut<f32> + Sync + Send,
 {

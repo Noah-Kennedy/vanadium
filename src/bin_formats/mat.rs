@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::ops::{Div, Sub};
 
 use image::{GrayImage, Luma, Rgb, RgbImage};
@@ -22,23 +23,52 @@ pub trait FileIndexMut<T>: FileIndex<T> {
     unsafe fn get_mut_unchecked(&mut self, line: usize, pixel: usize, band: usize) -> &mut T;
 }
 
-pub struct Mat<F> {
-    pub(crate) inner: F
+pub struct Mat<T, F> {
+    pub(crate) inner: F,
+    pub(crate) _phantom: PhantomData<T>,
 }
 
-impl<F> From<F> for Mat<F> {
+impl<T, F> From<F> for Mat<T, F> {
     fn from(inner: F) -> Self {
-        Self { inner }
+        Self { inner, _phantom: Default::default() }
     }
 }
 
-impl<I> Mat<I> {
-    pub fn convert<T, O>(&self, out: &mut Mat<O>)
+impl<T, I, O> PartialEq<Mat<T, O>> for Mat<T, I>
+    where
+        I: FileIndex<T>,
+        O: FileIndex<T>,
+        T: Copy + PartialEq
+{
+    fn eq(&self, other: &Mat<T, O>) -> bool {
+        if self.inner.size() == other.inner.size() {
+            let (lines, samples, bands) = self.inner.size();
+
+            let mut res = true;
+
+            for l in 0..lines {
+                for s in 0..samples {
+                    for b in 0..bands {
+                        unsafe {
+                            res &= *self.inner.get_unchecked(l, s, b)
+                                == *other.inner.get_unchecked(l, s, b);
+                        }
+                    }
+                }
+            }
+
+            res
+        } else {
+            false
+        }
+    }
+}
+
+impl<T, I> Mat<T, I> where T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T> + Debug {
+    pub fn convert<O>(&self, out: &mut Mat<T, O>)
         where
             I: 'static + FileIndex<T> + Sync + Send,
             O: 'static + FileIndexMut<T> + Sync + Send,
-            T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T> + Debug
-
     {
         let (lines, pixels, bands) = self.inner.size();
         let bar = ProgressBar::new((lines * pixels * bands) as u64);

@@ -39,13 +39,10 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     }
 }
 
-fn helper<F>(input: &mut Mat<F>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize])
+fn helper<F>(input: &mut Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize])
              -> Result<(), Box<dyn Error>>
     where F: 'static + FileIndex<f32> + FileIndexMut<f32> + Sync + Send
 {
-    // println!("Normalizing");
-    // input.norm_between(min, max, bands);
-
     let (height, width, _) = input.inner.size();
 
     match f {
