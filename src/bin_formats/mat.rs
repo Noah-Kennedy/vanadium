@@ -1,8 +1,9 @@
-use std::ops::{Sub, Div};
 use std::fmt::Debug;
-use num::Zero;
-use image::{RgbImage, Rgb, GrayImage, Luma};
+use std::ops::{Div, Sub};
+
+use image::{GrayImage, Luma, Rgb, RgbImage};
 use indicatif::ProgressBar;
+use num::Zero;
 
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum MatType {
