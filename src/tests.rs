@@ -1,8 +1,11 @@
-use super::*;
-use crate::cli::ConvertOpt;
 use std::process::Command;
-use crate::headers::Interleave;
+
 use subprocess::Exec;
+
+use crate::cli::ConvertOpt;
+use crate::headers::Interleave;
+
+use super::*;
 
 #[test]
 fn test_convert_bip_2_bsq() {
@@ -15,7 +18,7 @@ fn test_convert_bip_2_bsq() {
         input_header: "data/raw/unnormalized/unnorm.bip.hdr".into(),
         output: out.into(),
         output_header: None,
-        output_type: Interleave::Bsq
+        output_type: Interleave::Bsq,
     };
 
     execute_conversion(opt).unwrap();
@@ -45,7 +48,7 @@ fn test_convert_bip_2_bil() {
         input_header: "data/raw/unnormalized/unnorm.bip.hdr".into(),
         output: out.into(),
         output_header: None,
-        output_type: Interleave::Bil
+        output_type: Interleave::Bil,
     };
 
     execute_conversion(opt).unwrap();
@@ -75,7 +78,7 @@ fn test_convert_bil_2_bip() {
         input_header: "data/raw/unnormalized/unnorm.bil.hdr".into(),
         output: out.into(),
         output_header: None,
-        output_type: Interleave::Bip
+        output_type: Interleave::Bip,
     };
 
     execute_conversion(opt).unwrap();
@@ -105,7 +108,7 @@ fn test_convert_bil_2_bsq() {
         input_header: "data/raw/unnormalized/unnorm.bil.hdr".into(),
         output: out.into(),
         output_header: None,
-        output_type: Interleave::Bsq
+        output_type: Interleave::Bsq,
     };
 
     execute_conversion(opt).unwrap();
@@ -135,7 +138,7 @@ fn test_convert_bsq_2_bil() {
         input_header: "data/raw/unnormalized/unnorm.bsq.hdr".into(),
         output: out.into(),
         output_header: None,
-        output_type: Interleave::Bil
+        output_type: Interleave::Bil,
     };
 
     execute_conversion(opt).unwrap();
@@ -165,7 +168,7 @@ fn test_convert_bsq_2_bip() {
         input_header: "data/raw/unnormalized/unnorm.bsq.hdr".into(),
         output: out.into(),
         output_header: None,
-        output_type: Interleave::Bip
+        output_type: Interleave::Bip,
     };
 
     execute_conversion(opt).unwrap();

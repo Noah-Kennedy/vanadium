@@ -1,10 +1,12 @@
-use std::{slice, mem};
-use std::ops::{Deref, DerefMut};
-use memmap2::{MmapOptions, MmapMut, Mmap};
+use std::{mem, slice};
 use std::error::Error;
 use std::fs::File;
-use crate::headers::{Headers, FileByteOrder};
 use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
+
+use memmap2::{Mmap, MmapMut, MmapOptions};
+
+use crate::headers::{FileByteOrder, Headers};
 
 pub struct FileInner<C, T> {
     pub dims: FileDims,
