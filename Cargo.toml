@@ -12,17 +12,15 @@ structopt = "0.3.18"
 # Regex library
 regex = "1.4"
 
+# Provides numeric traits and generic numeric functions
+num = "0.3.0"
+
+# Provides status bar
+indicatif = "0.15.0"
+
 # Fork of memmap2 library. I added support for MMAP_POPULATE, to enable page cache preloading.
 [dependencies.memmap2]
 git = "https://github.com/Noah-Kennedy/memmap2-rs"
-
-# Provides status bar
-[dependencies.indicatif]
-version = "0.15.0"
-
-# Provides numeric traits and generic numeric functions
-[dependencies.num]
-version = "0.3.0"
 
 # Image processing library, used to generate PNG images.
 [dependencies.image]
