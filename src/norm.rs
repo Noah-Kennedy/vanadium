@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, Mat};
+use crate::bin_formats::{FileIndex, FileInner, Mat};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -21,27 +21,27 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let inner: FileInner<_, f32> = unsafe { FileInner::headers_copy(&parsed_headers, &input_file)? };
+    let inner: FileInner<_, f32> = unsafe { FileInner::headers(&parsed_headers, &input_file)? };
 
     match parsed_headers.interleave {
         Interleave::Bip => {
-            let mut input = Mat::from(Bip::from(inner));
-            helper(&mut input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            let input = Mat::from(Bip::from(inner));
+            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
         Interleave::Bil => {
-            let mut input = Mat::from(Bil::from(inner));
-            helper(&mut input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            let input = Mat::from(Bil::from(inner));
+            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
         Interleave::Bsq => {
-            let mut input = Mat::from(Bsq::from(inner));
-            helper(&mut input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            let input = Mat::from(Bsq::from(inner));
+            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
     }
 }
 
-fn helper<F>(input: &mut Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize])
+fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize])
              -> Result<(), Box<dyn Error>>
-    where F: 'static + FileIndex<f32> + FileIndexMut<f32> + Sync + Send
+    where F: 'static + FileIndex<f32> + Sync + Send
 {
     let (height, width, _) = input.inner.size();
 

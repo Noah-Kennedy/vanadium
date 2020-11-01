@@ -84,7 +84,7 @@ impl<T> FileInner<MmapMut, T> {
         })
     }
 
-    pub unsafe fn headers_copy(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
+    pub unsafe fn _headers_copy(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
         assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
         let raw = MmapOptions::new()
