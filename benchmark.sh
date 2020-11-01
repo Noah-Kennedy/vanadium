@@ -6,11 +6,11 @@ RGB='-o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb'
 COOL='-o cool.png -m 0 -x 1 -b 3 -c coolwarm'
 GREY='-o grey.png -m 0 -x 1 -b 3 -c grey'
 
-CONVERT_IN='hyperspectra convert -i data/raw/unnormalized/unnorm.{type}'
+CONVERT_IN='hyperspectra convert -i data/raw/unnormalized/unnorm.{type} -n data/raw/unnormalized/unnorm.{type}.hdr'
 
-CONVERT_OUT_BIP='-n data/raw/unnormalized/unnorm.bsq.hdr -o out.bip -t bip'
-CONVERT_OUT_BIL='-n data/raw/unnormalized/unnorm.bil.hdr -o out.bil -t bil'
-CONVERT_OUT_BSQ='-n data/raw/unnormalized/unnorm.bsq.hdr -o out.bsq -t bsq'
+CONVERT_OUT_BIP='-o out.bip -t bip'
+CONVERT_OUT_BIL='-o out.bil -t bil'
+CONVERT_OUT_BSQ='-o out.bsq -t bsq'
 
 time hyperfine --warmup=2 \
   --prepare 'rm *.png *.bil *.bip *.bsq || true' \
