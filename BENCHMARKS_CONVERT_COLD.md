@@ -1,11 +1,11 @@
 | Command | Mean [s] | Min [s] | Max [s] | Relative |
 |:---|---:|---:|---:|---:|
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bip -n data/raw/unnormalized/unnorm.bip.hdr -o out.bip -t bip` | 40.178 ± 0.421 | 39.597 | 40.892 | 1.08 ± 0.02 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bip -n data/raw/unnormalized/unnorm.bip.hdr -o out.bil -t bil` | 37.342 ± 0.377 | 36.836 | 37.996 | 1.00 ± 0.02 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bip -n data/raw/unnormalized/unnorm.bip.hdr -o out.bsq -t bsq` | 37.295 ± 0.549 | 36.378 | 38.030 | 1.00 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bil -n data/raw/unnormalized/unnorm.bil.hdr -o out.bip -t bip` | 38.466 ± 0.527 | 37.696 | 39.520 | 1.03 ± 0.02 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bil -n data/raw/unnormalized/unnorm.bil.hdr -o out.bil -t bil` | 38.218 ± 0.611 | 36.800 | 38.829 | 1.02 ± 0.02 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bil -n data/raw/unnormalized/unnorm.bil.hdr -o out.bsq -t bsq` | 38.323 ± 0.701 | 37.371 | 40.018 | 1.03 ± 0.02 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bsq -n data/raw/unnormalized/unnorm.bsq.hdr -o out.bip -t bip` | 37.556 ± 0.760 | 36.461 | 38.957 | 1.01 ± 0.03 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bsq -n data/raw/unnormalized/unnorm.bsq.hdr -o out.bil -t bil` | 38.096 ± 0.518 | 36.972 | 39.048 | 1.02 ± 0.02 |
-| `hyperspectra convert -i data/raw/unnormalized/unnorm.bsq -n data/raw/unnormalized/unnorm.bsq.hdr -o out.bsq -t bsq` | 38.232 ± 0.587 | 37.494 | 39.451 | 1.03 ± 0.02 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bip -n data/raw/unnormalized/unnorm.bip.hdr -o out.bip -t bip` | 39.153 ± 1.239 | 37.339 | 42.041 | 1.14 ± 0.04 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bip -n data/raw/unnormalized/unnorm.bip.hdr -o out.bil -t bil` | 37.684 ± 0.648 | 36.101 | 38.228 | 1.10 ± 0.02 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bip -n data/raw/unnormalized/unnorm.bip.hdr -o out.bsq -t bsq` | 37.709 ± 0.210 | 37.399 | 38.023 | 1.10 ± 0.01 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bil -n data/raw/unnormalized/unnorm.bil.hdr -o out.bip -t bip` | 36.161 ± 0.980 | 35.244 | 38.292 | 1.05 ± 0.03 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bil -n data/raw/unnormalized/unnorm.bil.hdr -o out.bil -t bil` | 37.131 ± 0.426 | 36.210 | 37.637 | 1.08 ± 0.02 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bil -n data/raw/unnormalized/unnorm.bil.hdr -o out.bsq -t bsq` | 37.029 ± 0.266 | 36.659 | 37.382 | 1.08 ± 0.01 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bsq -n data/raw/unnormalized/unnorm.bsq.hdr -o out.bip -t bip` | 34.321 ± 0.396 | 33.436 | 34.706 | 1.00 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bsq -n data/raw/unnormalized/unnorm.bsq.hdr -o out.bil -t bil` | 36.851 ± 0.395 | 36.236 | 37.493 | 1.07 ± 0.02 |
+| `hyperspectra convert -i data/raw/unnormalized/unnorm.bsq -n data/raw/unnormalized/unnorm.bsq.hdr -o out.bsq -t bsq` | 36.993 ± 0.244 | 36.629 | 37.259 | 1.08 ± 0.01 |
