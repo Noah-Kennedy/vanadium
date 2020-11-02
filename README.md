@@ -1,5 +1,7 @@
-# Hyperspectral
-TODO overview
+# Hyperspectra
+
+`hyperspectra` is a cli tool for manipulating ENVI BIP, BIL, and BSQ files for processing
+hyperspectral image data.
 
 ## Installation
 
@@ -119,4 +121,8 @@ in the cache when the run began.
 | bsq | grey     | 32.010 ± 0.323 | 31.743 | 32.497 |
 
 ## Testing
-TODO
+Tests can be run by invoking `cargo test` on the command line.
+
+Benchmarks currently look for files in `./bench-data/` named `small.bil`, `small.bip`, `small.bsq`,
+`small.bil.hdr`, `small.bip.hdr`, `small.bsq.hdr` and will delete any png, bip, bil, or bsq files
+in the directory in which the benchmarks are run. Benchmarks use the `hyperfine` tool.
