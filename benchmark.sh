@@ -44,5 +44,7 @@ time hyperfine --warmup=2 \
   "$COLOR $COOL" \
   "$COLOR $GREY"
 
+rm *.png *.bil *.bip *.bsq || true
+
 chown noah *.md
 chmod 755 *.md
