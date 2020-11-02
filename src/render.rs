@@ -92,6 +92,20 @@ fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f3
             println!("Saving...");
             out.save(path)?;
         }
+        "mask" => {
+            println!("Allocating output buffer");
+            let mut out = GrayImage::from_raw(
+                width as u32,
+                height as u32,
+                vec![0; height * width],
+            ).unwrap();
+
+            println!("Applying color map");
+            input.mask(&mut out, min[0], bands[0]);
+
+            println!("Saving...");
+            out.save(path)?;
+        }
         _ => unimplemented!()
     };
 

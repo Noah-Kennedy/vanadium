@@ -30,7 +30,7 @@ hyperspectra --help
 hyperspectra convert -i input.bsq -n input.hdr -o out.bil -t bil
 ```
 
-#### Colorization
+#### Image Rendering
 ##### RGB
 
 ```shell script
@@ -47,6 +47,12 @@ hyperspectra color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gra
 
 ```shell script
 hyperspectra color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
+```
+
+##### Masking
+
+```shell script
+hyperspectra color -i input.bsq -n input.hdr -o mask.png -m 0 -x 1.0 -b 3 -c mask
 ```
 
 ## Design

@@ -128,6 +128,27 @@ impl<T, I> Mat<T, I> where T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T> 
         }
     }
 
+    pub fn mask(&self, out: &mut GrayImage, min: f32, band: usize)
+        where I: 'static + FileIndex<f32> + Sync + Send,
+    {
+        let (lines, samples, bands) = self.inner.size();
+        let bar = ProgressBar::new((lines * samples) as u64);
+        assert!(band < bands);
+
+        for l in 0..lines {
+            for s in 0..samples {
+                let val = unsafe {
+                    *self.inner.get_unchecked(l, s, band)
+                };
+
+                let r = num::clamp(val - min, 0.0, 1.0).ceil() * 255.0;
+
+                out.put_pixel(s as u32, l as u32, Luma([r as u8]))
+            }
+            bar.inc(samples as u64)
+        }
+    }
+
     pub fn rgb(&self, out: &mut RgbImage, mins: [f32; 3], maxes: [f32; 3], bands: [usize; 3])
         where I: 'static + FileIndex<f32> + Sync + Send,
     {
