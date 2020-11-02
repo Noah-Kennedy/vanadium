@@ -101,7 +101,7 @@ fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f3
             ).unwrap();
 
             println!("Applying color map");
-            input.mask(&mut out, min[0], bands[0]);
+            input.mask(&mut out, min[0]);
 
             println!("Saving...");
             out.save(path)?;
