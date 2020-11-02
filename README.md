@@ -53,7 +53,9 @@ TODO
 ## Benchmarks
 Benchmarks were performed on a machine running Arch Linux with a Ryzen 3900X, an Nvidia RTX 2080 TI,
 64 GiB of Ram, and SSD storage.
-The machine was running a Linux 5.4 LTS kernel release
+The machine was running a Linux 5.4 LTS kernel release.
+Some testing (not formally benchmarked yet) shows that this <b>might</b> run faster on a 5.8+ kernel
+ir with `mitigations=off` in `grub.cfg`.
 
 Input files had 5 bands and were 28740 x 21954.
 
@@ -95,13 +97,13 @@ in the cache when the run began.
 |:---|:---|---:|---:|---:|
 | bip | rgb         | 23.540 ± 0.052 | 23.478 | 23.642 |
 | bip | coolwarm    | 17.000 ± 1.101 | 16.488 | 20.015 |
-| bip | grey        | 8.746 ± 0.196  | 8.647 | 9.292 |
+| bip | grey        | 8.746 ± 0.196  |  8.647 |  9.292 |
 | bil | rgb         | 23.251 ± 0.040 | 23.197 | 23.329 |
 | bil | coolwarm    | 16.711 ± 1.206 | 16.188 | 20.060 |
-| bil | grey        | 8.878 ± 0.079  | 8.832 | 9.094 |
+| bil | grey        | 8.878 ± 0.079  |  8.832 |  9.094 |
 | bsq | rgb         | 23.405 ± 0.530 | 23.187 | 24.911 |
 | bsq | coolwarm    | 16.758 ± 1.245 | 16.142 | 20.089 |
-| bsq | grey        | 8.995 ± 0.308  | 8.823 | 9.625 |
+| bsq | grey        | 8.995 ± 0.308  |  8.823 |  9.625 |
 
 #### Cold Cache
 | Input| Output | Mean [s] | Min [s] | Max [s] |
