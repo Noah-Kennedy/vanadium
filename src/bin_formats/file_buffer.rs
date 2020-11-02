@@ -73,7 +73,7 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            .populate(true)
+            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_mut(&file)?;
 
