@@ -11,3 +11,4 @@
 *.bil
 
 /.cargo
+/bench-data
