@@ -80,7 +80,7 @@ fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f3
         }
         "gray" | "grey" => {
             println!("Allocating output buffer");
-            let mut out = GrayImage::from_raw(
+            let mut out = GrayImage::from_raw(Moved benchmark files to new dir.
                 width as u32,
                 height as u32,
                 vec![0; height * width],
