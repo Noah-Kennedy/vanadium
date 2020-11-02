@@ -5,13 +5,13 @@ use structopt::StructOpt;
 use crate::bin_formats::WORK_UNIT_SIZE;
 use crate::cli::{Opt, SubcommandOpt};
 use crate::convert::execute_conversion;
-use crate::norm::normalize;
+use crate::render::normalize;
 
 mod headers;
 mod bin_formats;
 mod cli;
 mod convert;
-mod norm;
+mod render;
 
 #[cfg(test)]
 mod tests;
