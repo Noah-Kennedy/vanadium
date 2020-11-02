@@ -41,7 +41,7 @@ impl<T> FileInner<Mmap, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            .populate(true)
+            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map(&file)?;
 
@@ -55,7 +55,7 @@ impl<T> FileInner<Mmap, T> {
     pub unsafe fn _from_dims(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            .populate(true)
+            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map(&file)?;
 
@@ -84,12 +84,12 @@ impl<T> FileInner<MmapMut, T> {
         })
     }
 
-    pub unsafe fn headers_copy(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
+    pub unsafe fn _headers_copy(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
         assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            .populate(true)
+            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_copy(&file)?;
 
@@ -105,7 +105,7 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            .populate(true)
+            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_anon()?;
 
@@ -119,7 +119,7 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn _from_dims_mut(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            .populate(true)
+            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_mut(&file)?;
 
@@ -133,7 +133,7 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn _from_dims_copy(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            .populate(true)
+            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_copy(&file)?;
 
@@ -147,7 +147,7 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn _from_dims_anon(dims: &FileDims) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            .populate(true)
+            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_anon()?;
 
