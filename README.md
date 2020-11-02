@@ -50,9 +50,9 @@ hyperspectra color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c
 ```
 
 ##### Masking
-
+The max (-x) flag currently is required but does nothing.
 ```shell script
-hyperspectra color -i input.bsq -n input.hdr -o mask.png -m 0 -x 1.0 -b 3 -c mask
+hyperspectra color -i input.bsq -n input.hdr -o mask.png -m 0 -x 1.0 -c mask
 ```
 
 ## Design
