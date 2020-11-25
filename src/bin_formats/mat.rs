@@ -10,7 +10,7 @@ use crate::headers::Interleave;
 
 pub type MatType = Interleave;
 
-pub trait FileIndex {
+pub trait FileIndex: {
     fn order(&self) -> MatType;
     fn get_idx(&self, line: usize, pixel: usize, band: usize) -> usize;
 }
@@ -35,6 +35,13 @@ impl<C1, C2, T, I1, I2> PartialEq<Mat<C2, T, I2>> for Mat<C1, T, I1>
 
             let mut res = true;
 
+            let (p1, p2) = unsafe {
+                (
+                    self.inner.get_unchecked(),
+                    other.inner.get_unchecked()
+                )
+            };
+
             for l in 0..lines {
                 for s in 0..samples {
                     for b in 0..bands {
@@ -42,8 +49,8 @@ impl<C1, C2, T, I1, I2> PartialEq<Mat<C2, T, I2>> for Mat<C1, T, I1>
                         let idx_2 = other.index.get_idx(l, s, b);
 
                         unsafe {
-                            let i1 = *self.inner.get_unchecked(idx_1);
-                            let i2 = *other.inner.get_unchecked(idx_2);
+                            let i1 = *p1.0.add(idx_1);
+                            let i2 = *p2.0.add(idx_2);
                             res &= i1 == i2;
                         }
                     }
@@ -58,34 +65,37 @@ impl<C1, C2, T, I1, I2> PartialEq<Mat<C2, T, I2>> for Mat<C1, T, I1>
 }
 
 impl<C1, I1> Mat<C1, f32, I1>
-    where I1: 'static + FileIndex + Sync + Send,
-          C1: Deref<Target=[u8]>,
+    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
+          C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub fn convert<C2, I2>(&self, out: &mut Mat<C2, f32, I2>)
+    pub unsafe fn convert<C2, I2>(&self, out: &mut Mat<C2, f32, I2>)
         where
-            I2: 'static + FileIndex + Sync + Send,
-            C2: DerefMut<Target=[u8]>,
+            I2: 'static + FileIndex + Sync + Send + Copy + Clone,
+            C2: DerefMut<Target=[u8]> + Sync + Send,
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
         let bar = ProgressBar::new((lines * samples * bands) as u64);
 
-        for l in 0..lines {
-            for b in 0..bands {
+        let r_idx_gen = self.index;
+        let w_idx_gen = out.index;
+
+        let r_ptr = self.inner.get_unchecked();
+        let w_ptr = out.inner.get_unchecked_mut();
+
+        for b in 0..bands {
+            for l in 0..lines {
                 for s in 0..samples {
-                    unsafe {
-                        let read_idx = self.index.get_idx(l, s, b);
-                        let write_idx = out.index.get_idx(l, s, b);
+                    let read_idx = r_idx_gen.get_idx(l, s, b);
+                    let write_idx = w_idx_gen.get_idx(l, s, b);
 
-                        let r = self.inner.get_unchecked(read_idx);
-                        let w = out.inner.get_unchecked_mut(write_idx);
+                    let r = r_ptr.0.add(read_idx);
+                    let w = w_ptr.0.add(write_idx);
 
-                        *w = *r;
-                    }
+                    w.write_volatile(r.read_volatile());
                 }
             }
-
-            bar.inc((bands * samples) as u64)
+            bar.inc((lines * samples) as u64)
         }
     }
 
@@ -99,12 +109,16 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let scale = max - min;
 
+        let r_ptr = unsafe {
+            self.inner.get_unchecked()
+        };
+
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
 
                 let val = unsafe {
-                    normify(*self.inner.get_unchecked(idx), scale, min, max)
+                    normify(r_ptr.0.add(idx).read_volatile(), scale, min, max)
                 };
 
                 let r = (val * 255.0).floor() as u8;
@@ -126,12 +140,16 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let scale = max - min;
 
+        let r_ptr = unsafe {
+            self.inner.get_unchecked()
+        };
+
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
 
                 let val = unsafe {
-                    normify(*self.inner.get_unchecked(idx), scale, min, max)
+                    normify(r_ptr.0.add(idx).read_volatile(), scale, min, max)
                 };
 
                 let r = (val * 255.0).floor() as u8;
@@ -150,6 +168,10 @@ impl<C1, I1> Mat<C1, f32, I1>
         let bands = bands.len();
         let bar = ProgressBar::new((lines * samples) as u64);
 
+        let r_ptr = unsafe {
+            self.inner.get_unchecked()
+        };
+
         for l in 0..lines {
             for s in 0..samples {
                 let mut sum = 0.0;
@@ -157,7 +179,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                     let idx = self.index.get_idx(l, s, b);
 
                     let val = unsafe {
-                        *self.inner.get_unchecked(idx)
+                        r_ptr.0.add(idx).read_volatile()
                     };
 
                     sum += val;
@@ -181,6 +203,10 @@ impl<C1, I1> Mat<C1, f32, I1>
         let FileDims { samples, lines, .. } = self.inner.size();
         let bar = ProgressBar::new((lines * samples) as u64);
 
+        let r_ptr = unsafe {
+            self.inner.get_unchecked()
+        };
+
         let scales = [
             maxes[0] - mins[0],
             maxes[1] - mins[1],
@@ -198,9 +224,9 @@ impl<C1, I1> Mat<C1, f32, I1>
 
 
                     let vals = [
-                        *self.inner.get_unchecked(indices[0]),
-                        *self.inner.get_unchecked(indices[1]),
-                        *self.inner.get_unchecked(indices[2]),
+                        r_ptr.0.add(indices[0]).read_volatile(),
+                        r_ptr.0.add(indices[1]).read_volatile(),
+                        r_ptr.0.add(indices[2]).read_volatile(),
                     ];
 
                     let norms = [

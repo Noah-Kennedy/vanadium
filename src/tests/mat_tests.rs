@@ -61,17 +61,19 @@ fn conversion() {
         (bip, bil, bsq)
     };
 
-    bip.convert(&mut bip1);
-    bip.convert(&mut bil1);
-    bip.convert(&mut bsq1);
+    unsafe {
+        bip.convert(&mut bip1);
+        bip.convert(&mut bil1);
+        bip.convert(&mut bsq1);
 
-    bil.convert(&mut bip2);
-    bil.convert(&mut bil2);
-    bil.convert(&mut bsq2);
+        bil.convert(&mut bip2);
+        bil.convert(&mut bil2);
+        bil.convert(&mut bsq2);
 
-    bsq.convert(&mut bip3);
-    bsq.convert(&mut bil3);
-    bsq.convert(&mut bsq3);
+        bsq.convert(&mut bip3);
+        bsq.convert(&mut bil3);
+        bsq.convert(&mut bsq3);
+    }
 
     assert!(bip == bip1);
     assert!(bip == bil2);

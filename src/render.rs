@@ -56,8 +56,8 @@ fn helper<C, I>(
     input: &Mat<C, f32, I>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize],
 )
     -> Result<(), Box<dyn Error>>
-    where I: 'static + FileIndex + Sync + Send,
-          C: Deref<Target=[u8]>,
+    where I: 'static + FileIndex + Sync + Send + Copy + Clone,
+          C: Deref<Target=[u8]> + Sync + Send,
 {
     let FileDims { samples, lines, .. } = input.inner.size();
     let height = lines;

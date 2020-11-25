@@ -18,9 +18,9 @@ num = "0.3.0"
 # Provides status bar
 indicatif = "0.15.0"
 
-# Fork of memmap2 library. I added support for MMAP_POPULATE, to enable page cache preloading.
-[dependencies.memmap2]
-git = "https://github.com/Noah-Kennedy/memmap2-rs"
+rayon = "1.5"
+
+memmap2 = "0.1.0"
 
 # Image processing library, used to generate PNG images.
 [dependencies.image]

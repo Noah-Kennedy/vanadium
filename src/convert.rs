@@ -73,8 +73,8 @@ fn continue_from_input<C, I>(
     headers: &Headers, input: &Mat<C, f32, I>, out: &File, out_type: Interleave,
 )
     -> Result<(), Box<dyn Error>>
-    where I: 'static + FileIndex + Sync + Send,
-          C: Deref<Target=[u8]>,
+    where I: 'static + FileIndex + Sync + Send + Copy + Clone,
+          C: Deref<Target=[u8]> + Sync + Send,
 {
     println!("Mapping output file");
     let inner = unsafe {
@@ -113,14 +113,16 @@ fn continue_from_input<C, I>(
 
 fn finish_conversion<C1, C2, I1, I2>(input: &Mat<C1, f32, I1>, output: &mut Mat<C2, f32, I2>)
                                      -> Result<(), ConversionError>
-    where I1: 'static + FileIndex + Sync + Send,
-          I2: 'static + FileIndex + Sync + Send,
-          C1: Deref<Target=[u8]>,
-          C2: DerefMut<Target=[u8]>
+    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
+          I2: 'static + FileIndex + Sync + Send + Copy + Clone,
+          C1: Deref<Target=[u8]> + Sync + Send,
+          C2: DerefMut<Target=[u8]> + Sync + Send
 {
     if input.inner.size() == output.inner.size() {
         println!("Performing conversion");
-        input.convert(output);
+        unsafe {
+            input.convert(output);
+        }
         println!("finished");
         Ok(())
     } else {
