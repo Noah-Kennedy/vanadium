@@ -193,13 +193,12 @@ impl<C1, I1> Mat<C1, f32, I1>
         }
     }
 
-    pub fn rgb(&self, out: &mut RgbImage, mins: [f32; 3], maxes: [f32; 3], bands: [usize; 3])
+    pub fn rgb(
+        &self, out: &mut RgbImage,
+        minimums: &[f32], maximums: &[f32], channels: &[usize], summation: [&[usize]; 3],
+    )
         where I1: 'static + FileIndex + Sync + Send,
     {
-        assert!(bands[0] < self.inner.dims.bands.len());
-        assert!(bands[1] < self.inner.dims.bands.len());
-        assert!(bands[2] < self.inner.dims.bands.len());
-
         let FileDims { samples, lines, .. } = self.inner.size();
         let bar = ProgressBar::new((lines * samples) as u64);
 
@@ -207,40 +206,45 @@ impl<C1, I1> Mat<C1, f32, I1>
             self.inner.get_unchecked()
         };
 
-        let scales = [
-            maxes[0] - mins[0],
-            maxes[1] - mins[1],
-            maxes[2] - mins[2]
-        ];
+        let scales: Vec<f32> = maximums.iter()
+            .zip(minimums.iter())
+            .map(|(max, min)| *max - *min)
+            .collect();
 
         for l in 0..lines {
             for s in 0..samples {
-                let rgb = unsafe {
-                    let indices = [
-                        self.index.get_idx(l, s, bands[0]),
-                        self.index.get_idx(l, s, bands[1]),
-                        self.index.get_idx(l, s, bands[2]),
-                    ];
+                let norms: Vec<f32> = channels.iter()
+                    .zip(scales.iter())
+                    .zip(maximums.iter())
+                    .zip(minimums.iter())
+                    .map(|(((band, scale), max), min)| unsafe {
+                        let idx = self.index.get_idx(l, s, *band);
+                        let val = r_ptr.0.add(idx).read_volatile();
+                        normify(val, *scale, *min, *max)
+                    })
+                    .collect();
 
+                let mut sums: [f32; 3] = [
+                    summation[0].iter()
+                        .map(|idx| norms[*idx])
+                        .sum(),
+                    summation[1].iter()
+                        .map(|idx| norms[*idx])
+                        .sum(),
+                    summation[2].iter()
+                        .map(|idx| norms[*idx])
+                        .sum(),
+                ];
 
-                    let vals = [
-                        r_ptr.0.add(indices[0]).read_volatile(),
-                        r_ptr.0.add(indices[1]).read_volatile(),
-                        r_ptr.0.add(indices[2]).read_volatile(),
-                    ];
+                sums[0] /= summation[0].len() as f32;
+                sums[1] /= summation[1].len() as f32;
+                sums[2] /= summation[2].len() as f32;
 
-                    let norms = [
-                        normify(vals[0], scales[0], mins[0], maxes[0]),
-                        normify(vals[1], scales[1], mins[1], maxes[1]),
-                        normify(vals[2], scales[2], mins[2], maxes[2])
-                    ];
-
-                    [
-                        (norms[0] * 255.0).floor() as u8,
-                        (norms[1] * 255.0).floor() as u8,
-                        (norms[2] * 255.0).floor() as u8,
-                    ]
-                };
+                let rgb = [
+                    (sums[0] * 255.0) as u8,
+                    (sums[1] * 255.0) as u8,
+                    (sums[2] * 255.0) as u8,
+                ];
 
                 out.put_pixel(s as u32, l as u32, Rgb(rgb))
             }

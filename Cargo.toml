@@ -1,6 +1,6 @@
 [package]
 name = "hyperspectra"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
 
@@ -18,12 +18,10 @@ num = "0.3.0"
 # Provides status bar
 indicatif = "0.15.0"
 
-rayon = "1.5"
-
 memmap2 = "0.1.0"
 
 # Image processing library, used to generate PNG images.
 [dependencies.image]
-version = "0.23.11"
+version = "0.23.12"
 default-features = false
 features = ["png"]

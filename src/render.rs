@@ -18,7 +18,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let input_file = File::open(opt.input)?;
 
     println!("Reading headers");
-    let headers_str = read_to_string(opt.input_header)?;
+    let headers_str = read_to_string(opt.header)?;
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
@@ -31,7 +31,8 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
+                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
@@ -39,7 +40,8 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
+                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
@@ -47,13 +49,16 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
+                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
         }
     }
 }
 
 fn helper<C, I>(
-    input: &Mat<C, f32, I>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize],
+    input: &Mat<C, f32, I>, path: PathBuf, f: &str,
+    min: &[f32], max: &[f32], bands: &[usize],
+    reds: &[usize], blues: &[usize], greens: &[usize],
 )
     -> Result<(), Box<dyn Error>>
     where I: 'static + FileIndex + Sync + Send + Copy + Clone,
@@ -87,11 +92,7 @@ fn helper<C, I>(
             ).unwrap();
 
             println!("Applying color map");
-            input.rgb(&mut out,
-                      [min[0], min[1], min[2]],
-                      [max[0], max[1], max[2]],
-                      [bands[0], bands[1], bands[2]],
-            );
+            input.rgb(&mut out, min, max, bands, [reds, blues, greens]);
 
             println!("Saving...");
             out.save(path)?;
