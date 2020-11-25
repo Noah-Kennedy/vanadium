@@ -120,9 +120,7 @@ fn finish_conversion<C1, C2, I1, I2>(input: &Mat<C1, f32, I1>, output: &mut Mat<
 {
     if input.inner.size() == output.inner.size() {
         println!("Performing conversion");
-        unsafe {
-            input.convert(output);
-        }
+        input.convert(output);
         println!("finished");
         Ok(())
     } else {
