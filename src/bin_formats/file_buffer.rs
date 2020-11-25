@@ -159,20 +159,37 @@ impl<T> FileInner<MmapMut, T> {
     }
 }
 
+impl<C, T> FileInner<C, T> {
+    pub fn size(&self) -> FileDims {
+        self.dims.clone()
+    }
+}
+
 impl<C, T> FileInner<C, T> where C: Deref<Target=[u8]> {
     #[inline(always)]
-    pub fn slice(&self) -> &[T] {
-        let ptr = self.container.as_ptr() as *mut T;
+    pub fn _slice(&self) -> &[T] {
+        let ptr = self.container.as_ptr() as *const T;
         let len = self.dims.lines * self.dims.bands.len() * self.dims.samples;
         unsafe { slice::from_raw_parts(ptr, len) }
+    }
+
+    #[inline(always)]
+    pub unsafe fn get_unchecked(&self, offset: usize) -> *const T {
+        let ptr = self.container.as_ptr() as *const T;
+        ptr.add(offset)
     }
 }
 
 impl<C, T> FileInner<C, T> where C: DerefMut<Target=[u8]> {
     #[inline(always)]
-    pub fn slice_mut(&mut self) -> &mut [T] {
+    pub fn _slice_mut(&mut self) -> &mut [T] {
         let ptr = self.container.as_mut_ptr() as *mut T;
         let len = self.dims.lines * self.dims.bands.len() * self.dims.samples;
         unsafe { slice::from_raw_parts_mut(ptr, len) }
+    }
+
+    pub unsafe fn get_unchecked_mut(&mut self, offset: usize) -> *mut T {
+        let ptr = self.container.as_mut_ptr() as *mut T;
+        ptr.add(offset)
     }
 }

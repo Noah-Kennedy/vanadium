@@ -2,6 +2,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
+use crate::bin_formats::FileDims;
+
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct ConversionError {
     pub input_type: &'static str,
@@ -12,7 +14,7 @@ pub struct ConversionError {
 impl Display for ConversionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Error performing {}->{} conversion!", self.input_type, self.output_type)?;
-        match self.kind {
+        match self.kind.clone() {
             ConversionErrorKind::SizeMismatch(e) => e.fmt(f)
         }
     }
@@ -31,23 +33,19 @@ pub enum ConversionErrorKind {
     SizeMismatch(SizeMismatchError)
 }
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct SizeMismatchError {
-    pub input_size: (usize, usize, usize),
-    pub output_size: (usize, usize, usize),
+    pub input_size: FileDims,
+    pub output_size: FileDims,
 }
 
 impl Display for SizeMismatchError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(
             f,
-            "SizeMismatchError: Input size was ({}, {}, {}), output size was ({}, {}, {}).",
-            self.input_size.0,
-            self.input_size.1,
-            self.input_size.2,
-            self.output_size.0,
-            self.output_size.1,
-            self.output_size.2
+            "SizeMismatchError: Input size was {:?}, output size was {:?}.",
+            &self.input_size,
+            &self.output_size
         )
     }
 }

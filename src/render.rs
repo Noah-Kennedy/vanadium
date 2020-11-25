@@ -1,11 +1,12 @@
 use std::error::Error;
 use std::fs::{File, read_to_string};
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use crate::bin_formats::{FileIndex, FileInner, Mat};
+use crate::bin_formats::{FileDims, FileIndex, FileInner, Mat};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -25,25 +26,42 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
 
     match parsed_headers.interleave {
         Interleave::Bip => {
-            let input = Mat::from(Bip::from(inner));
+            let index = Bip::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
             helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
         Interleave::Bil => {
-            let input = Mat::from(Bil::from(inner));
+            let index = Bil::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
             helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
         Interleave::Bsq => {
-            let input = Mat::from(Bsq::from(inner));
+            let index = Bsq::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
             helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
         }
     }
 }
 
-fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize])
-             -> Result<(), Box<dyn Error>>
-    where F: 'static + FileIndex<f32> + Sync + Send
+fn helper<C, I>(
+    input: &Mat<C, f32, I>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize],
+)
+    -> Result<(), Box<dyn Error>>
+    where I: 'static + FileIndex + Sync + Send,
+          C: Deref<Target=[u8]>,
 {
-    let (height, width, _) = input.inner.size();
+    let FileDims { samples, lines, .. } = input.inner.size();
+    let height = lines;
+    let width = samples;
 
     match f {
         "coolwarm" => {

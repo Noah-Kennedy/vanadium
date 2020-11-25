@@ -7,9 +7,9 @@ use crate::tests::{BIL, BIP, BSQ, make_mat};
 #[test]
 fn equality() {
     let (bip, bil, bsq) = unsafe {
-        let bip = make_mat::<Bip<_, _>>(&BIP);
-        let bil = make_mat::<Bil<_, _>>(&BIL);
-        let bsq = make_mat::<Bsq<_, _>>(&BSQ);
+        let bip = make_mat::<Bip>(&BIP);
+        let bil = make_mat::<Bil>(&BIL);
+        let bsq = make_mat::<Bsq>(&BSQ);
 
         (bip, bil, bsq)
     };
@@ -30,33 +30,33 @@ fn equality() {
 #[test]
 fn conversion() {
     let (bip, bil, bsq) = unsafe {
-        let bip = make_mat::<Bip<_, _>>(&BIP);
-        let bil = make_mat::<Bil<_, _>>(&BIL);
-        let bsq = make_mat::<Bsq<_, _>>(&BSQ);
+        let bip = make_mat::<Bip>(&BIP);
+        let bil = make_mat::<Bil>(&BIL);
+        let bsq = make_mat::<Bsq>(&BSQ);
 
         (bip, bil, bsq)
     };
 
     let (mut bip1, mut bil1, mut bsq1) = unsafe {
-        let bip = make_mat::<Bip<_, _>>(&BIP);
-        let bil = make_mat::<Bil<_, _>>(&BIL);
-        let bsq = make_mat::<Bsq<_, _>>(&BSQ);
+        let bip = make_mat::<Bip>(&BIP);
+        let bil = make_mat::<Bil>(&BIL);
+        let bsq = make_mat::<Bsq>(&BSQ);
 
         (bip, bil, bsq)
     };
 
     let (mut bip2, mut bil2, mut bsq2) = unsafe {
-        let bip = make_mat::<Bip<_, _>>(&BIP);
-        let bil = make_mat::<Bil<_, _>>(&BIL);
-        let bsq = make_mat::<Bsq<_, _>>(&BSQ);
+        let bip = make_mat::<Bip>(&BIP);
+        let bil = make_mat::<Bil>(&BIL);
+        let bsq = make_mat::<Bsq>(&BSQ);
 
         (bip, bil, bsq)
     };
 
     let (mut bip3, mut bil3, mut bsq3) = unsafe {
-        let bip = make_mat::<Bip<_, _>>(&BIP);
-        let bil = make_mat::<Bil<_, _>>(&BIL);
-        let bsq = make_mat::<Bsq<_, _>>(&BSQ);
+        let bip = make_mat::<Bip>(&BIP);
+        let bil = make_mat::<Bil>(&BIL);
+        let bsq = make_mat::<Bsq>(&BSQ);
 
         (bip, bil, bsq)
     };

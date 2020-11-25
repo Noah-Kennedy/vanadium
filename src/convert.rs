@@ -1,8 +1,9 @@
 use std::error::Error;
 use std::fs::{File, OpenOptions, read_to_string};
+use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use crate::bin_formats::{FileIndex, FileIndexMut, FileInner, Mat, MatType};
+use crate::bin_formats::{FileIndex, FileInner, Mat, MatType};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -42,23 +43,38 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let inner = unsafe { FileInner::headers(&parsed_headers, &input_file)? };
     match parsed_headers.interleave {
         Interleave::Bip => {
-            let input = Mat::from(Bip::from(inner));
+            let index = Bip::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
             continue_from_input(&parsed_headers, &input, &output_file, output_type)
         }
         Interleave::Bil => {
-            let input = Mat::from(Bil::from(inner));
+            let index = Bil::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
             continue_from_input(&parsed_headers, &input, &output_file, output_type)
         }
         Interleave::Bsq => {
-            let input = Mat::from(Bsq::from(inner));
+            let index = Bsq::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
             continue_from_input(&parsed_headers, &input, &output_file, output_type)
         }
     }
 }
 
-fn continue_from_input<F>(headers: &Headers, input: &Mat<f32, F>, out: &File, out_type: Interleave)
-                          -> Result<(), Box<dyn Error>>
-    where F: 'static + FileIndex<f32> + Sync + Send,
+fn continue_from_input<C, I>(
+    headers: &Headers, input: &Mat<C, f32, I>, out: &File, out_type: Interleave,
+)
+    -> Result<(), Box<dyn Error>>
+    where I: 'static + FileIndex + Sync + Send,
+          C: Deref<Target=[u8]>,
 {
     println!("Mapping output file");
     let inner = unsafe {
@@ -67,15 +83,27 @@ fn continue_from_input<F>(headers: &Headers, input: &Mat<f32, F>, out: &File, ou
 
     match out_type {
         Interleave::Bip => {
-            let mut out = Mat::from(Bip::from(inner));
+            let index = Bip::from(inner.dims.clone());
+            let mut out = Mat {
+                inner,
+                index,
+            };
             finish_conversion(&input, &mut out)
         }
         Interleave::Bil => {
-            let mut out = Mat::from(Bil::from(inner));
+            let index = Bil::from(inner.dims.clone());
+            let mut out = Mat {
+                inner,
+                index,
+            };
             finish_conversion(&input, &mut out)
         }
         Interleave::Bsq => {
-            let mut out = Mat::from(Bil::from(inner));
+            let index = Bsq::from(inner.dims.clone());
+            let mut out = Mat {
+                inner,
+                index,
+            };
             finish_conversion(&input, &mut out)
         }
     }?;
@@ -83,9 +111,12 @@ fn continue_from_input<F>(headers: &Headers, input: &Mat<f32, F>, out: &File, ou
     Ok(())
 }
 
-fn finish_conversion<I, O>(input: &Mat<f32, I>, output: &mut Mat<f32, O>) -> Result<(), ConversionError>
-    where I: 'static + FileIndex<f32> + Sync + Send,
-          O: 'static + FileIndexMut<f32> + Sync + Send,
+fn finish_conversion<C1, C2, I1, I2>(input: &Mat<C1, f32, I1>, output: &mut Mat<C2, f32, I2>)
+                                     -> Result<(), ConversionError>
+    where I1: 'static + FileIndex + Sync + Send,
+          I2: 'static + FileIndex + Sync + Send,
+          C1: Deref<Target=[u8]>,
+          C2: DerefMut<Target=[u8]>
 {
     if input.inner.size() == output.inner.size() {
         println!("Performing conversion");
@@ -94,7 +125,7 @@ fn finish_conversion<I, O>(input: &Mat<f32, I>, output: &mut Mat<f32, O>) -> Res
         Ok(())
     } else {
         Err(ConversionError {
-            input_type: match input.inner.order() {
+            input_type: match input.index.order() {
                 MatType::Bip => "bip",
                 MatType::Bil => "bil",
                 MatType::Bsq => "bsq",
