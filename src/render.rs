@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use crate::bin_formats::{FileDims, FileIndex, FileInner, Mat};
+use crate::bin_formats::{ColorFlag, FileDims, FileIndex, FileInner, Mat};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -77,8 +77,7 @@ fn helper<C, I>(
                 vec![0; height * width * 3],
             ).unwrap();
 
-            println!("Applying color map");
-            input.cool_warm(&mut out, min[0], max[0], bands[0]);
+            input.cool_warm_stat(&mut out, min[0], max[0], bands[0]);
 
             println!("Saving...");
             out.save(path)?;
@@ -92,7 +91,7 @@ fn helper<C, I>(
             ).unwrap();
 
             println!("Applying color map");
-            input.rgb(&mut out, min, max, bands, [reds, blues, greens]);
+            input.rgb(&mut out, min, max, bands, [reds, greens, blues]);
 
             println!("Saving...");
             out.save(path)?;
@@ -107,6 +106,30 @@ fn helper<C, I>(
 
             println!("Applying color map");
             input.gray(&mut out, min[0], max[0], bands[0]);
+
+            println!("Saving...");
+            out.save(path)?;
+        }
+        "green" | "red" | "blue" | "purple" | "yellow" | "teal" => {
+            println!("Allocating output buffer");
+            let mut out = RgbImage::from_raw(
+                width as u32,
+                height as u32,
+                vec![0; height * width * 3],
+            ).unwrap();
+
+            let flag = match f {
+                "green" => ColorFlag::Green,
+                "red" => ColorFlag::Red,
+                "blue" => ColorFlag::Blue,
+                "purple" => ColorFlag::Purple,
+                "yellow" => ColorFlag::Yellow,
+                "teal" => ColorFlag::Teal,
+                _ => unreachable!()
+            };
+
+            println!("Applying color map");
+            input.solid(&mut out, min[0], max[0], bands[0], flag);
 
             println!("Saving...");
             out.save(path)?;

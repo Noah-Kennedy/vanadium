@@ -3,10 +3,12 @@ use std::ops::{Deref, DerefMut, Div, Sub};
 
 use image::{GrayImage, Luma, Rgb, RgbImage};
 use indicatif::ProgressBar;
+use num::integer::Roots;
 use num::Zero;
 
 use crate::bin_formats::{FileDims, FileInner};
 use crate::headers::Interleave;
+use std::cmp::Ordering;
 
 pub type MatType = Interleave;
 
@@ -18,6 +20,16 @@ pub trait FileIndex: {
 pub struct Mat<C, T, I> {
     pub inner: FileInner<C, T>,
     pub index: I,
+}
+
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash)]
+pub enum ColorFlag {
+    Red,
+    Green,
+    Blue,
+    Purple,
+    Yellow,
+    Teal
 }
 
 impl<C1, C2, T, I1, I2> PartialEq<Mat<C2, T, I2>> for Mat<C1, T, I1>
@@ -103,12 +115,67 @@ impl<C1, I1> Mat<C1, f32, I1>
         }
     }
 
-    pub fn cool_warm(&self, out: &mut RgbImage, min: f32, max: f32, band: usize)
+    pub fn cool_warm_stat(&self, out: &mut RgbImage, min: f32, max: f32, band: usize)
         where I1: 'static + FileIndex + Sync + Send,
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
+        assert!(band < bands);
+
+        let r_ptr = unsafe {
+            self.inner.get_unchecked()
+        };
+
+        let std_dev = unsafe {
+            self.std_dev(band, min, max)
+        };
+
+        let max_z = max / std_dev;
+        let min_z = min / std_dev;
+        let scale = max_z - min_z;
+
+        println!("Applying color map");
         let bar = ProgressBar::new((lines * samples) as u64);
+        for l in 0..lines {
+            for s in 0..samples {
+                let idx = self.index.get_idx(l, s, band);
+
+                let val = unsafe {
+                    r_ptr.0.add(idx).read_volatile()
+                };
+
+                let normed = (normify(val / std_dev, scale, min_z, max_z) * 2.0) - 1.0;
+
+                let direction = normed.partial_cmp(&0.0).unwrap();
+
+                let mag = normed.abs();
+
+                let pri = (mag.sqrt() * 255.0).floor() as u8;
+                let alt = ((1.0 - mag) * 255.0).floor() as u8;
+
+                let pix = match direction {
+                    Ordering::Less => {
+                        [alt, alt, pri]
+                    }
+                    Ordering::Equal => {
+                        [255, 255, 255]
+                    }
+                    Ordering::Greater => {
+                        [pri, alt, alt]
+                    }
+                };
+
+                out.put_pixel(s as u32, l as u32, Rgb(pix))
+            }
+            bar.inc(samples as u64)
+        }
+    }
+
+    pub fn cool_warm_norm(&self, out: &mut RgbImage, min: f32, max: f32, band: usize)
+        where I1: 'static + FileIndex + Sync + Send,
+    {
+        let FileDims { bands, samples, lines } = self.inner.size();
+        let bands = bands.len();
         assert!(band < bands);
 
         let scale = max - min;
@@ -117,21 +184,92 @@ impl<C1, I1> Mat<C1, f32, I1>
             self.inner.get_unchecked()
         };
 
+        println!("Applying color map");
+        let bar = ProgressBar::new((lines * samples) as u64);
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
 
                 let val = unsafe {
-                    normify(r_ptr.0.add(idx).read_volatile(), scale, min, max)
+                    r_ptr.0.add(idx).read_volatile().sqrt()
                 };
 
-                let r = (val * 255.0).floor() as u8;
-                let b = ((1.0 - val) * 255.0).floor() as u8;
+                let normed = (normify(val, scale, min.sqrt(), max.sqrt()) * 2.0) - 1.0;
 
-                out.put_pixel(s as u32, l as u32, Rgb([r, 0, b]))
+                let pix = if normed > 0.0 {
+                    let r = (normed * 255.0).floor() as u8;
+                    let alt = (255 - r).sqrt();
+                    [r, alt, alt]
+                } else if normed < 0.0 {
+                    let b = ((1.0 - normed) * 255.0).floor() as u8;
+                    let alt = (255 - b).sqrt();
+                    [alt, b, alt]
+                } else {
+                    [255, 255, 255]
+                };
+
+                out.put_pixel(s as u32, l as u32, Rgb(pix))
             }
             bar.inc(samples as u64)
         }
+    }
+
+    unsafe fn mean(&self, band: usize, min: f32, max: f32) -> f32 {
+        let FileDims { bands, samples, lines } = self.inner.size();
+
+        let r_ptr = self.inner.get_unchecked();
+
+        let mut sum = 0.0;
+        let mut count = 0.0;
+
+        println!("Computing mean");
+        let bar = ProgressBar::new((lines * samples) as u64);
+        for l in 0..lines {
+            for s in 0..samples {
+                let idx = self.index.get_idx(l, s, band);
+                let x = r_ptr.0.add(idx).read_volatile();
+
+                let cmp = (x < max) as u8 as f32 * (x > min) as u8 as f32;
+                let n = x * cmp;
+
+                sum += n;
+                count += cmp;
+            }
+            bar.inc(samples as u64)
+        }
+
+        sum / count
+    }
+
+    unsafe fn std_dev(&self, band: usize, min: f32, max: f32) -> f32 {
+        let FileDims { bands, samples, lines } = self.inner.size();
+
+        let r_ptr = self.inner.get_unchecked();
+
+        let mean = self.mean(band, min, max);
+        let mut sum = 0.0;
+        let mut count = 0.0;
+
+        println!("Computing standard deviation");
+        let bar = ProgressBar::new((lines * samples) as u64);
+        for l in 0..lines {
+            for s in 0..samples {
+                let idx = self.index.get_idx(l, s, band);
+                let x = r_ptr.0.add(idx).read_volatile();
+
+                let cmp = (x < max) as u8 as f32 * (x > min) as u8 as f32;
+
+                let dif = (x - mean) * cmp;
+
+                sum += dif * dif;
+                count += cmp;
+            }
+            bar.inc(samples as u64)
+        }
+
+        sum /= count - 1.0;
+
+        sum.sqrt()
     }
 
     pub fn gray(&self, out: &mut GrayImage, min: f32, max: f32, band: usize)
@@ -159,6 +297,47 @@ impl<C1, I1> Mat<C1, f32, I1>
                 let r = (val * 255.0).floor() as u8;
 
                 out.put_pixel(s as u32, l as u32, Luma([r]))
+            }
+
+            bar.inc(samples as u64)
+        }
+    }
+
+    pub fn solid(&self, out: &mut RgbImage, min: f32, max: f32, band: usize, flag: ColorFlag)
+        where I1: 'static + FileIndex + Sync + Send,
+    {
+        let FileDims { bands, samples, lines } = self.inner.size();
+        let bands = bands.len();
+        let bar = ProgressBar::new((lines * samples) as u64);
+        assert!(band < bands);
+
+        let scale = max - min;
+
+        let r_ptr = unsafe {
+            self.inner.get_unchecked()
+        };
+
+        for l in 0..lines {
+            for s in 0..samples {
+                let idx = self.index.get_idx(l, s, band);
+
+                let val = unsafe {
+                    normify(r_ptr.0.add(idx).read_volatile(), scale, min, max)
+                };
+
+                let pri = (val.sqrt() * 255.0).floor() as u8;
+                let alt = (val * 255.0).floor() as u8;
+
+                let pixel = match flag {
+                    ColorFlag::Red       => [pri, alt, alt],
+                    ColorFlag::Green     => [alt, pri, alt],
+                    ColorFlag::Blue      => [alt, alt, pri],
+                    ColorFlag::Purple    => [pri, alt, pri],
+                    ColorFlag::Yellow    => [pri, pri, alt],
+                    ColorFlag::Teal => [alt, pri, pri],
+                };
+
+                out.put_pixel(s as u32, l as u32, Rgb(pixel));
             }
 
             bar.inc(samples as u64)
@@ -203,9 +382,9 @@ impl<C1, I1> Mat<C1, f32, I1>
     )
         where I1: 'static + FileIndex + Sync + Send,
     {
-        assert_eq!(channels.len(), minimums.len());
-        assert_eq!(channels.len(), maximums.len());
-        assert_eq!(channels.len(), summation.len());
+        assert_eq!(channels.len(), minimums.len(), "mins");
+        assert_eq!(channels.len(), maximums.len(), "Maxes");
+        // assert_eq!(channels.len(), summation.len(), "Summation length");
 
         let FileDims { samples, lines, .. } = self.inner.size();
         let bar = ProgressBar::new((lines * samples) as u64);
