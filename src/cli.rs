@@ -54,7 +54,7 @@ pub struct PcaOpt {
     pub input: PathBuf,
 
     /// The path to the input header file.
-    #[structopt(short = "n", long, parse(from_os_str))]
+    #[structopt(short = "d", long, parse(from_os_str))]
     pub input_header: PathBuf,
 
     /// The path to the output binary file.
@@ -65,6 +65,9 @@ pub struct PcaOpt {
     /// Currently this flag does nothing.
     #[structopt(short = "u", long, parse(from_os_str))]
     pub output_header: Option<PathBuf>,
+
+    #[structopt(short = "b", long)]
+    pub bands: u64,
 
     /// The output file type to use.
     /// Must be bip, bsq or bil.

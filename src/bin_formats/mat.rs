@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::f32::NAN;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut, Div, Sub};
 use std::sync::Arc;

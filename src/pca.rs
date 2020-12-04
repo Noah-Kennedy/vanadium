@@ -17,7 +17,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         input_header: header,
         output,
         output_header: _output_header,
-        output_type
+        bands, output_type
     } = op;
 
     println!("{:?}->{:?}", input.as_os_str(), output.as_os_str());
@@ -37,7 +37,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
 
     println!("Reading headers");
     let headers_str = read_to_string(header)?;
-    let parsed_headers = Headers::from_str(&headers_str)?;
+    let mut parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
     let inner = unsafe { FileInner::headers(&parsed_headers, &input_file)? };
@@ -48,7 +48,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            continue_from_input(&parsed_headers, &input, &output_file, output_type)
+            continue_from_input(&mut parsed_headers, &input, &output_file, output_type, bands)
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
@@ -56,7 +56,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            continue_from_input(&parsed_headers, &input, &output_file, output_type)
+            continue_from_input(&mut parsed_headers, &input, &output_file, output_type, bands)
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
@@ -64,19 +64,22 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            continue_from_input(&parsed_headers, &input, &output_file, output_type)
+            continue_from_input(&mut parsed_headers, &input, &output_file, output_type, bands)
         }
     }
 }
 
 fn continue_from_input<C, I>(
-    headers: &Headers, input: &Mat<C, f32, I>, out: &File, out_type: Interleave,
+    headers: &mut Headers, input: &Mat<C, f32, I>, out: &File, out_type: Interleave, bands: u64,
 )
     -> Result<(), Box<dyn Error>>
     where I: 'static + FileIndex + Sync + Send + Copy + Clone,
           C: Deref<Target=[u8]> + Sync + Send,
 {
     println!("Mapping output file");
+
+    headers.bands = bands as usize;
+
     let inner = unsafe {
         FileInner::headers_mut(&headers, &out)?
     };
