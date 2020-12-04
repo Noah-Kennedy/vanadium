@@ -1,13 +1,18 @@
 [package]
 name = "hyperspectra"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
+
+[profile.release]
+lto = "fat"
 
 # Runtime dependencies
 [dependencies]
 # CLI arg parsing
 structopt = "0.3.18"
+
+rayon = "1.5"
 
 # Regex library
 regex = "1.4"
@@ -15,15 +20,15 @@ regex = "1.4"
 # Provides numeric traits and generic numeric functions
 num = "0.3.0"
 
-# Provides status bar
-indicatif = "0.15.0"
+memmap2 = "0.1.0"
 
-# Fork of memmap2 library. I added support for MMAP_POPULATE, to enable page cache preloading.
-[dependencies.memmap2]
-git = "https://github.com/Noah-Kennedy/memmap2-rs"
+# Provides status bar
+[dependencies.indicatif]
+version = "0.15.0"
+features = ["rayon", "improved_unicode"]
 
 # Image processing library, used to generate PNG images.
 [dependencies.image]
-version = "0.23.11"
+version = "0.23.12"
 default-features = false
 features = ["png"]

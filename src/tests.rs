@@ -39,18 +39,21 @@ const BIL: [u8; 108] = unsafe {
         )
 };
 
-unsafe fn make_mat<F>(bytes: &[u8; 108]) -> Mat<f32, F>
-    where F: FileIndex<f32> + From<FileInner<MmapMut, f32>>
+unsafe fn make_mat<I>(bytes: &[u8; 108]) -> Mat<MmapMut, f32, I>
+    where I: FileIndex + From<FileDims>
 {
-    let mut f = FileInner::_from_dims_anon(&FileDims {
+    let mut inner = FileInner::_from_dims_anon(&FileDims {
         bands: vec![0, 1, 2],
         samples: 3,
         lines: 3,
     }).unwrap();
 
-    f.container.clone_from_slice(&mut bytes.to_vec());
+    inner.container.clone_from_slice(&mut bytes.to_vec());
 
-    let c = F::from(f);
+    let index = I::from(inner.dims.clone());
 
-    Mat::from(c)
+    Mat {
+        inner,
+        index
+    }
 }

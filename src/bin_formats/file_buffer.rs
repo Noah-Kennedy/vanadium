@@ -1,4 +1,4 @@
-use std::{mem, slice};
+use std::mem;
 use std::error::Error;
 use std::fs::File;
 use std::marker::PhantomData;
@@ -7,6 +7,16 @@ use std::ops::{Deref, DerefMut};
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
 use crate::headers::{FileByteOrder, Headers};
+
+#[derive(Copy, Clone)]
+pub struct FileBuf<T>(pub(crate) *const T);
+
+#[derive(Copy, Clone)]
+pub struct FileBufMut<T>(pub(crate) *mut T);
+
+unsafe impl<T> Send for FileBuf<T> where T: Send {}
+
+unsafe impl<T> Send for FileBufMut<T> where T: Send {}
 
 pub struct FileInner<C, T> {
     pub dims: FileDims,
@@ -41,7 +51,6 @@ impl<T> FileInner<Mmap, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map(&file)?;
 
@@ -55,7 +64,6 @@ impl<T> FileInner<Mmap, T> {
     pub unsafe fn _from_dims(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map(&file)?;
 
@@ -73,7 +81,6 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_mut(&file)?;
 
@@ -89,7 +96,6 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_copy(&file)?;
 
@@ -105,7 +111,6 @@ impl<T> FileInner<MmapMut, T> {
 
         let raw = MmapOptions::new()
             .offset(headers.header_offset as u64)
-            // .populate(true)
             .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
             .map_anon()?;
 
@@ -119,7 +124,6 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn _from_dims_mut(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_mut(&file)?;
 
@@ -133,7 +137,6 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn _from_dims_copy(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_copy(&file)?;
 
@@ -147,7 +150,6 @@ impl<T> FileInner<MmapMut, T> {
     pub unsafe fn _from_dims_anon(dims: &FileDims) -> Result<Self, Box<dyn Error>> {
         let raw = MmapOptions::new()
             .offset(0)
-            // .populate(true)
             .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
             .map_anon()?;
 
@@ -159,20 +161,22 @@ impl<T> FileInner<MmapMut, T> {
     }
 }
 
+impl<C, T> FileInner<C, T> {
+    pub fn size(&self) -> FileDims {
+        self.dims.clone()
+    }
+}
+
 impl<C, T> FileInner<C, T> where C: Deref<Target=[u8]> {
     #[inline(always)]
-    pub fn slice(&self) -> &[T] {
-        let ptr = self.container.as_ptr() as *mut T;
-        let len = self.dims.lines * self.dims.bands.len() * self.dims.samples;
-        unsafe { slice::from_raw_parts(ptr, len) }
+    pub unsafe fn get_unchecked(&self) -> FileBuf<T> {
+        FileBuf(self.container.as_ptr() as *const T)
     }
 }
 
 impl<C, T> FileInner<C, T> where C: DerefMut<Target=[u8]> {
     #[inline(always)]
-    pub fn slice_mut(&mut self) -> &mut [T] {
-        let ptr = self.container.as_mut_ptr() as *mut T;
-        let len = self.dims.lines * self.dims.bands.len() * self.dims.samples;
-        unsafe { slice::from_raw_parts_mut(ptr, len) }
+    pub unsafe fn get_unchecked_mut(&mut self) -> FileBufMut<T> {
+        FileBufMut(self.container.as_mut_ptr() as *mut T)
     }
 }

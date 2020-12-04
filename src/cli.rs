@@ -15,12 +15,40 @@ pub struct Opt {
 pub enum SubcommandOpt {
     Convert(ConvertOpt),
     Color(ColorOpt),
+    Pca(PcaOpt)
 }
 
 /// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "convert")]
 pub struct ConvertOpt {
+    /// The path to the input binary file.
+    #[structopt(short, long, parse(from_str))]
+    pub input: PathBuf,
+
+    /// The path to the input header file.
+    #[structopt(short = "n", long, parse(from_os_str))]
+    pub input_header: PathBuf,
+
+    /// The path to the output binary file.
+    #[structopt(short = "o", long, parse(from_os_str))]
+    pub output: PathBuf,
+
+    /// The path to the output header file to be generated.
+    /// Currently this flag does nothing.
+    #[structopt(short = "u", long, parse(from_os_str))]
+    pub output_header: Option<PathBuf>,
+
+    /// The output file type to use.
+    /// Must be bip, bsq or bil.
+    #[structopt(short = "t", long, parse(try_from_str))]
+    pub output_type: Interleave,
+}
+
+/// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
+#[derive(StructOpt, Debug)]
+#[structopt(name = "pca")]
+pub struct PcaOpt {
     /// The path to the input binary file.
     #[structopt(short, long, parse(from_str))]
     pub input: PathBuf,
@@ -73,34 +101,43 @@ pub struct ColorOpt {
     pub input: PathBuf,
 
     /// The path to the input header file.
-    #[structopt(short = "n", long, parse(from_os_str))]
-    pub input_header: PathBuf,
+    #[structopt(short = "d", long, parse(from_os_str))]
+    pub header: PathBuf,
 
     /// The path to the output image file.
     /// The file should have a .png, .jpg, or .jpeg extension
-    #[structopt(short = "o", long, parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     pub output: PathBuf,
 
     /// The floor to clamp to for each band.
     ///
     /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
     /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(short = "m", long)]
-    pub min: Vec<f32>,
+    #[structopt(long)]
+    pub minimums: Vec<f32>,
 
     /// The ceiling to clamp to for each band.
     ///
     /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
     /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(short = "x", long)]
-    pub max: Vec<f32>,
+    #[structopt(long)]
+    pub maximums: Vec<f32>,
 
     /// The bands to work with.
     ///
     /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
     /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(short = "b", long)]
+    #[structopt(long)]
     pub bands: Vec<usize>,
+
+    #[structopt(short = "r", long)]
+    pub red_bands: Vec<usize>,
+
+    #[structopt(short = "b", long)]
+    pub blue_bands: Vec<usize>,
+
+    #[structopt(short = "g", long)]
+    pub green_bands: Vec<usize>,
 
     /// The color map of the image.
     ///

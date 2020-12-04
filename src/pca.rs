@@ -3,22 +3,22 @@ use std::fs::{File, OpenOptions, read_to_string};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use crate::bin_formats::{FileIndex, FileInner, Mat, MatType};
+use crate::bin_formats::{FileIndex, FileInner, Mat};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
-use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
-use crate::cli::ConvertOpt;
+use crate::bin_formats::error::{ConversionError};
+use crate::cli::PcaOpt;
 use crate::headers::{Headers, Interleave};
 
-pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
-    let ConvertOpt {
+pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
+    let PcaOpt {
         input,
         input_header: header,
         output,
         output_header: _output_header,
         output_type
-    } = cvt;
+    } = op;
 
     println!("{:?}->{:?}", input.as_os_str(), output.as_os_str());
 
@@ -118,25 +118,10 @@ fn finish_conversion<C1, C2, I1, I2>(input: &Mat<C1, f32, I1>, output: &mut Mat<
           C1: Deref<Target=[u8]> + Sync + Send,
           C2: DerefMut<Target=[u8]> + Sync + Send
 {
-    if input.inner.size() == output.inner.size() {
-        println!("Performing conversion");
-        input.convert(output);
-        println!("finished");
-        Ok(())
-    } else {
-        Err(ConversionError {
-            input_type: match input.index.order() {
-                MatType::Bip => "bip",
-                MatType::Bil => "bil",
-                MatType::Bsq => "bsq",
-            },
-            output_type: "",
-            kind: ConversionErrorKind::SizeMismatch(
-                SizeMismatchError {
-                    input_size: input.inner.size(),
-                    output_size: output.inner.size(),
-                }
-            ),
-        })
+    println!("Performing PCA");
+    unsafe {
+        input.pca();
     }
+    println!("finished");
+    Ok(())
 }

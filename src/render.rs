@@ -1,11 +1,12 @@
 use std::error::Error;
 use std::fs::{File, read_to_string};
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use crate::bin_formats::{FileIndex, FileInner, Mat};
+use crate::bin_formats::{ColorFlag, FileDims, FileIndex, FileInner, Mat};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -17,7 +18,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let input_file = File::open(opt.input)?;
 
     println!("Reading headers");
-    let headers_str = read_to_string(opt.input_header)?;
+    let headers_str = read_to_string(opt.header)?;
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
@@ -25,25 +26,47 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
 
     match parsed_headers.interleave {
         Interleave::Bip => {
-            let input = Mat::from(Bip::from(inner));
-            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            let index = Bip::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
+            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
+                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
         }
         Interleave::Bil => {
-            let input = Mat::from(Bil::from(inner));
-            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            let index = Bil::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
+            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
+                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
         }
         Interleave::Bsq => {
-            let input = Mat::from(Bsq::from(inner));
-            helper(&input, opt.output, &opt.color_map, &opt.min, &opt.max, &opt.bands)
+            let index = Bsq::from(inner.dims.clone());
+            let input = Mat {
+                inner,
+                index,
+            };
+            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
+                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
         }
     }
 }
 
-fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f32], bands: &[usize])
-             -> Result<(), Box<dyn Error>>
-    where F: 'static + FileIndex<f32> + Sync + Send
+fn helper<C, I>(
+    input: &Mat<C, f32, I>, path: PathBuf, f: &str,
+    min: &[f32], max: &[f32], bands: &[usize],
+    reds: &[usize], blues: &[usize], greens: &[usize],
+)
+    -> Result<(), Box<dyn Error>>
+    where I: 'static + FileIndex + Sync + Send + Copy + Clone,
+          C: Deref<Target=[u8]> + Sync + Send,
 {
-    let (height, width, _) = input.inner.size();
+    let FileDims { samples, lines, .. } = input.inner.size();
+    let height = lines;
+    let width = samples;
 
     match f {
         "coolwarm" => {
@@ -54,8 +77,7 @@ fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f3
                 vec![0; height * width * 3],
             ).unwrap();
 
-            println!("Applying color map");
-            input.cool_warm(&mut out, min[0], max[0], bands[0]);
+            input.cool_warm_stat(&mut out, min[0], max[0], bands[0]);
 
             println!("Saving...");
             out.save(path)?;
@@ -69,11 +91,7 @@ fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f3
             ).unwrap();
 
             println!("Applying color map");
-            input.rgb(&mut out,
-                      [min[0], min[1], min[2]],
-                      [max[0], max[1], max[2]],
-                      [bands[0], bands[1], bands[2]],
-            );
+            input.rgb(&mut out, min, max, bands, [reds, greens, blues]);
 
             println!("Saving...");
             out.save(path)?;
@@ -88,6 +106,30 @@ fn helper<F>(input: &Mat<f32, F>, path: PathBuf, f: &str, min: &[f32], max: &[f3
 
             println!("Applying color map");
             input.gray(&mut out, min[0], max[0], bands[0]);
+
+            println!("Saving...");
+            out.save(path)?;
+        }
+        "green" | "red" | "blue" | "purple" | "yellow" | "teal" => {
+            println!("Allocating output buffer");
+            let mut out = RgbImage::from_raw(
+                width as u32,
+                height as u32,
+                vec![0; height * width * 3],
+            ).unwrap();
+
+            let flag = match f {
+                "green" => ColorFlag::Green,
+                "red" => ColorFlag::Red,
+                "blue" => ColorFlag::Blue,
+                "purple" => ColorFlag::Purple,
+                "yellow" => ColorFlag::Yellow,
+                "teal" => ColorFlag::Teal,
+                _ => unreachable!()
+            };
+
+            println!("Applying color map");
+            input.solid(&mut out, min[0], max[0], bands[0], flag);
 
             println!("Saving...");
             out.save(path)?;
