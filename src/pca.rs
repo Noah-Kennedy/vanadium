@@ -7,7 +7,7 @@ use crate::bin_formats::{FileIndex, FileInner, Mat};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
-use crate::bin_formats::error::{ConversionError};
+use crate::bin_formats::error::ConversionError;
 use crate::cli::PcaOpt;
 use crate::headers::{Headers, Interleave};
 
@@ -31,9 +31,6 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         .write(true)
         .read(true)
         .open(output)?;
-
-    println!("Allocating output file");
-    output_file.set_len(input_file.metadata()?.len())?;
 
     println!("Reading headers");
     let headers_str = read_to_string(header)?;
@@ -79,6 +76,9 @@ fn continue_from_input<C, I>(
     println!("Mapping output file");
 
     headers.bands = bands as usize;
+
+    println!("Allocating output file");
+    out.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
 
     let inner = unsafe {
         FileInner::headers_mut(&headers, &out)?
