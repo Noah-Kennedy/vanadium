@@ -384,7 +384,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             .name("progbar-manager".to_owned())
             .spawn(move || {
             mm2.join().unwrap();
-        });
+        }).unwrap();
 
         let means: Vec<f32> = self.average_bulk(&sty, &mp);
         stages_bar.inc(1);
