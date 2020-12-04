@@ -56,9 +56,15 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
 }
 
 fn helper<C, I>(
-    input: &Mat<C, f32, I>, path: PathBuf, f: &str,
-    min: &[f32], max: &[f32], bands: &[usize],
-    reds: &[usize], blues: &[usize], greens: &[usize],
+    input: &Mat<C, f32, I>,
+    path: PathBuf,
+    f: &str,
+    min: &[f32],
+    max: &[f32],
+    bands: &[usize],
+    reds: &[usize],
+    blues: &[usize],
+    greens: &[usize],
 )
     -> Result<(), Box<dyn Error>>
     where I: 'static + FileIndex + Sync + Send + Copy + Clone,

@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::fmt::{Debug, format};
+use std::fmt::Debug;
 use std::ops::{Deref, DerefMut, Div, Sub};
 use std::sync::Arc;
 use std::thread;
@@ -366,7 +366,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
     // , other: &mut Mat<C2, f32, Bsq>
     pub unsafe fn pca(&self) {
-        let FileDims { bands, samples, lines } = self.inner.size();
+        let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let sty = ProgressStyle::default_bar()
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
