@@ -408,9 +408,9 @@ impl<C1, I1> Mat<C1, f32, I1>
                     }
                 }
 
-                if !found {
-                    print!("0.00 ");
-                }
+                // if !found {
+                //     print!("0.00 ");
+                // }
             }
 
             println!("]");
