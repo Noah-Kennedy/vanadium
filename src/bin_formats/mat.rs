@@ -1,14 +1,17 @@
+use std::cmp::Ordering;
+use std::f32::NAN;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut, Div, Sub};
+use std::sync::Arc;
+use std::thread;
 
 use image::{GrayImage, Luma, Rgb, RgbImage};
-use indicatif::ProgressBar;
-use num::integer::Roots;
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use num::Zero;
+use rayon::prelude::*;
 
 use crate::bin_formats::{FileDims, FileInner};
 use crate::headers::Interleave;
-use std::cmp::Ordering;
 
 pub type MatType = Interleave;
 
@@ -29,7 +32,7 @@ pub enum ColorFlag {
     Blue,
     Purple,
     Yellow,
-    Teal
+    Teal,
 }
 
 impl<C1, C2, T, I1, I2> PartialEq<Mat<C2, T, I2>> for Mat<C1, T, I1>
@@ -127,7 +130,8 @@ impl<C1, I1> Mat<C1, f32, I1>
         };
 
         let std_dev = unsafe {
-            self.std_dev(band, min, max)
+            let bar = ProgressBar::new((lines * samples) as u64);
+            self.std_dev(&bar, band, None)
         };
 
         let max_z = max / std_dev;
@@ -171,105 +175,222 @@ impl<C1, I1> Mat<C1, f32, I1>
         }
     }
 
-    pub fn cool_warm_norm(&self, out: &mut RgbImage, min: f32, max: f32, band: usize)
-        where I1: 'static + FileIndex + Sync + Send,
-    {
-        let FileDims { bands, samples, lines } = self.inner.size();
-        let bands = bands.len();
-        assert!(band < bands);
+    unsafe fn mean(&self, bar: &ProgressBar, band: usize) -> f32 {
+        let FileDims { bands: _, samples, lines } = self.inner.size();
 
-        let scale = max - min;
+        let r_ptr = self.inner.get_unchecked();
 
-        let r_ptr = unsafe {
-            self.inner.get_unchecked()
+        let mut sum = 0.0;
+        let count = lines * samples;
+
+        bar.set_message(&format!("Band {}", band));
+        bar.reset();
+        for l in 0..lines {
+            for s in 0..samples {
+                let idx = self.index.get_idx(l, s, band);
+                let x = r_ptr.0.add(idx).read_volatile();
+
+                sum += x;
+            }
+            bar.inc(samples as u64)
+        }
+
+        sum / count as f32
+    }
+
+    unsafe fn std_dev(&self, bar: &ProgressBar, band: usize, mean: Option<f32>) -> f32 {
+        let FileDims { bands: _, samples, lines } = self.inner.size();
+
+        let r_ptr = self.inner.get_unchecked();
+
+        let mean = if let Some(mean) = mean {
+            mean
+        } else {
+            self.mean(&bar, band)
         };
 
-        println!("Applying color map");
-        let bar = ProgressBar::new((lines * samples) as u64);
-        for l in 0..lines {
-            for s in 0..samples {
-                let idx = self.index.get_idx(l, s, band);
-
-                let val = unsafe {
-                    r_ptr.0.add(idx).read_volatile().sqrt()
-                };
-
-                let normed = (normify(val, scale, min.sqrt(), max.sqrt()) * 2.0) - 1.0;
-
-                let pix = if normed > 0.0 {
-                    let r = (normed * 255.0).floor() as u8;
-                    let alt = (255 - r).sqrt();
-                    [r, alt, alt]
-                } else if normed < 0.0 {
-                    let b = ((1.0 - normed) * 255.0).floor() as u8;
-                    let alt = (255 - b).sqrt();
-                    [alt, b, alt]
-                } else {
-                    [255, 255, 255]
-                };
-
-                out.put_pixel(s as u32, l as u32, Rgb(pix))
-            }
-            bar.inc(samples as u64)
-        }
-    }
-
-    unsafe fn mean(&self, band: usize, min: f32, max: f32) -> f32 {
-        let FileDims { bands, samples, lines } = self.inner.size();
-
-        let r_ptr = self.inner.get_unchecked();
 
         let mut sum = 0.0;
-        let mut count = 0.0;
+        let count = lines * samples;
 
-        println!("Computing mean");
-        let bar = ProgressBar::new((lines * samples) as u64);
+        bar.set_message(&format!("Band {}", band));
+        bar.reset();
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
                 let x = r_ptr.0.add(idx).read_volatile();
 
-                let cmp = (x < max) as u8 as f32 * (x > min) as u8 as f32;
-                let n = x * cmp;
-
-                sum += n;
-                count += cmp;
-            }
-            bar.inc(samples as u64)
-        }
-
-        sum / count
-    }
-
-    unsafe fn std_dev(&self, band: usize, min: f32, max: f32) -> f32 {
-        let FileDims { bands, samples, lines } = self.inner.size();
-
-        let r_ptr = self.inner.get_unchecked();
-
-        let mean = self.mean(band, min, max);
-        let mut sum = 0.0;
-        let mut count = 0.0;
-
-        println!("Computing standard deviation");
-        let bar = ProgressBar::new((lines * samples) as u64);
-        for l in 0..lines {
-            for s in 0..samples {
-                let idx = self.index.get_idx(l, s, band);
-                let x = r_ptr.0.add(idx).read_volatile();
-
-                let cmp = (x < max) as u8 as f32 * (x > min) as u8 as f32;
-
-                let dif = (x - mean) * cmp;
+                let dif = x - mean;
 
                 sum += dif * dif;
-                count += cmp;
             }
             bar.inc(samples as u64)
         }
 
-        sum /= count - 1.0;
+        sum /= count as f32;
 
         sum.sqrt()
+    }
+
+    unsafe fn covariances(
+        &self, bar: &ProgressBar, bands: [usize; 2], means: [f32; 2], std_devs: [f32; 2],
+    ) -> f32
+    {
+        let FileDims { bands: _, samples, lines } = self.inner.size();
+
+        let r_ptr = self.inner.get_unchecked();
+
+        let mut sum = 0.0;
+        let count = lines * samples;
+
+        bar.set_message(&format!("Bands ({}, {})", bands[0], bands[1]));
+        bar.reset();
+
+        for l in 0..lines {
+            for s in 0..samples {
+                let indices = [
+                    self.index.get_idx(l, s, bands[0]),
+                    self.index.get_idx(l, s, bands[1])
+                ];
+
+                let xs = [
+                    (r_ptr.0.add(indices[0]).read_volatile() - means[0]) / std_devs[0],
+                    (r_ptr.0.add(indices[1]).read_volatile() - means[1]) / std_devs[1]
+                ];
+
+                sum += xs[0] * xs[1];
+            }
+            bar.inc(samples as u64)
+        }
+
+        sum /= count as f32;
+
+        sum.sqrt()
+    }
+
+    // , other: &mut Mat<C2, f32, Bsq>
+    pub unsafe fn pca(&self) {
+        let FileDims { bands, samples, lines } = self.inner.size();
+
+        let sty = ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
+            .progress_chars("##-");
+
+        let means: Vec<f32> = {
+            let means_mp = Arc::new(MultiProgress::new());
+
+            let total_bar = means_mp.add(ProgressBar::new(bands.len() as u64));
+            total_bar.set_style(sty.clone());
+            total_bar.set_message("Averages");
+
+            let mm2 = means_mp.clone();
+
+            let j = thread::spawn(move || {
+                mm2.join().unwrap();
+            });
+
+            let means = (0..bands.len())
+                .into_par_iter()
+                .map(|b| {
+                    let bar = means_mp.add(ProgressBar::new((lines * samples) as u64));
+                    bar.set_style(sty.clone());
+
+                    let out = self.mean(&bar, b);
+
+                    bar.finish_and_clear();
+                    total_bar.inc(1);
+                    out
+                })
+                .collect();
+
+            total_bar.finish();
+            j.join().unwrap();
+
+            means
+        };
+
+        let std_devs: Vec<f32> = {
+            let status = Arc::new(MultiProgress::new());
+            let total = status.add(ProgressBar::new(bands.len() as u64));
+            total.set_style(sty.clone());
+            total.set_message("Std. Devs");
+
+            let mm2 = status.clone();
+
+            let j = thread::spawn(move || {
+                mm2.join().unwrap();
+            });
+
+            let devs = (0..bands.len())
+                .into_par_iter()
+                .zip(means.par_iter())
+                .map(|(b, m)| {
+                    let bar = status.add(ProgressBar::new((lines * samples) as u64));
+                    bar.set_style(sty.clone());
+
+                    let out = self.std_dev(&bar, b, Some(*m));
+
+                    bar.finish_and_clear();
+                    total.inc(1);
+                    out
+                })
+                .collect();
+
+            total.finish();
+            j.join().unwrap();
+
+            devs
+        };
+
+        let covariances: Vec<Vec<f32>> = {
+            let status = Arc::new(MultiProgress::new());
+
+            let mut tot_val = 0;
+
+            for i in 0..((bands.len() + 1) / 2) {
+                tot_val += i + 1;
+            }
+
+            let total = status.add(ProgressBar::new(tot_val as u64));
+            total.set_style(sty.clone());
+            total.set_message("Covariances");
+
+            let mm2 = status.clone();
+
+            let j = thread::spawn(move || {
+                mm2.join().unwrap();
+            });
+
+            let covs = (0..((bands.len() + 1) / 2))
+                .into_par_iter()
+                .map(|b1| {
+                    (0..=b1)
+                        .map(|b2| {
+                            let bar = status.add(ProgressBar::new((lines * samples) as u64));
+                            bar.set_style(sty.clone());
+
+                            let out = self.covariances(
+                                &bar,
+                                [b1, b2],
+                                [means[b1], means[b2]],
+                                [std_devs[b1], std_devs[b2]],
+                            );
+
+                            bar.finish_and_clear();
+                            total.inc(1);
+                            out
+                        })
+                        .collect()
+                })
+                .collect();
+
+            total.finish();
+            j.join().unwrap();
+
+            covs
+        };
+
+
     }
 
     pub fn gray(&self, out: &mut GrayImage, min: f32, max: f32, band: usize)
@@ -329,11 +450,11 @@ impl<C1, I1> Mat<C1, f32, I1>
                 let alt = (val * 255.0).floor() as u8;
 
                 let pixel = match flag {
-                    ColorFlag::Red       => [pri, alt, alt],
-                    ColorFlag::Green     => [alt, pri, alt],
-                    ColorFlag::Blue      => [alt, alt, pri],
-                    ColorFlag::Purple    => [pri, alt, pri],
-                    ColorFlag::Yellow    => [pri, pri, alt],
+                    ColorFlag::Red => [pri, alt, alt],
+                    ColorFlag::Green => [alt, pri, alt],
+                    ColorFlag::Blue => [alt, alt, pri],
+                    ColorFlag::Purple => [pri, alt, pri],
+                    ColorFlag::Yellow => [pri, pri, alt],
                     ColorFlag::Teal => [alt, pri, pri],
                 };
 
