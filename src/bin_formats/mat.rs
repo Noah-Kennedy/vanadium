@@ -267,82 +267,64 @@ impl<C1, I1> Mat<C1, f32, I1>
         sum.sqrt()
     }
 
-    unsafe fn average_bulk(&self, sty: &ProgressStyle) -> Vec<f32> {
+    unsafe fn average_bulk(&self, sty: &ProgressStyle, mp: &MultiProgress) -> Vec<f32> {
         let FileDims { bands, samples, lines } = self.inner.size();
-        let means_mp = Arc::new(MultiProgress::new());
 
-        let total_bar = means_mp.add(ProgressBar::new(bands.len() as u64));
-        total_bar.set_style(sty.clone());
-        total_bar.set_message("Averages");
-
-        let mm2 = means_mp.clone();
-
-        let j = thread::spawn(move || {
-            mm2.join().unwrap();
-        });
+        let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
+        status_bar.set_style(sty.clone());
+        status_bar.set_message("Averages");
 
         let means = (0..bands.len())
             .into_par_iter()
             .map(|b| {
-                let bar = means_mp.add(ProgressBar::new((lines * samples) as u64));
+                let bar = mp.add(ProgressBar::new((lines * samples) as u64));
                 bar.set_style(sty.clone());
 
                 let out = self.mean(&bar, b);
 
                 bar.finish_and_clear();
-                total_bar.inc(1);
+                status_bar.inc(1);
                 out
             })
             .collect();
 
-        total_bar.finish();
-        j.join().unwrap();
+        status_bar.finish();
 
         means
     }
 
-    pub unsafe fn std_dev_bulk(&self, sty: &ProgressStyle, means: &[f32]) -> Vec<f32> {
+    pub unsafe fn std_dev_bulk(&self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f32]) -> Vec<f32> {
         let FileDims { bands, samples, lines } = self.inner.size();
 
-        let status = Arc::new(MultiProgress::new());
-        let total = status.add(ProgressBar::new(bands.len() as u64));
-        total.set_style(sty.clone());
-        total.set_message("Std. Devs");
-
-        let mm2 = status.clone();
-
-        let j = thread::spawn(move || {
-            mm2.join().unwrap();
-        });
+        let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
+        status_bar.set_style(sty.clone());
+        status_bar.set_message("Std. Devs");
 
         let devs = (0..bands.len())
             .into_par_iter()
             .zip(means.par_iter())
             .map(|(b, m)| {
-                let bar = status.add(ProgressBar::new((lines * samples) as u64));
+                let bar = mp.add(ProgressBar::new((lines * samples) as u64));
                 bar.set_style(sty.clone());
 
                 let out = self.std_dev(&bar, b, Some(*m));
 
                 bar.finish_and_clear();
-                total.inc(1);
+                status_bar.inc(1);
                 out
             })
             .collect();
 
-        total.finish();
-        j.join().unwrap();
+        status_bar.finish();
 
         devs
     }
 
     pub unsafe fn covariances_bulk(
-        &self, sty: &ProgressStyle, means: &[f32], std_devs: &[f32],
+        &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f32], std_devs: &[f32],
     ) -> Vec<Vec<f32>>
     {
         let FileDims { bands, samples, lines } = self.inner.size();
-
-        let status = Arc::new(MultiProgress::new());
 
         let mut tot_val = 0;
 
@@ -350,22 +332,16 @@ impl<C1, I1> Mat<C1, f32, I1>
             tot_val += i + 1;
         }
 
-        let total = status.add(ProgressBar::new(tot_val as u64));
-        total.set_style(sty.clone());
-        total.set_message("Covariances");
-
-        let mm2 = status.clone();
-
-        let j = thread::spawn(move || {
-            mm2.join().unwrap();
-        });
+        let status_bar = mp.add(ProgressBar::new(tot_val as u64));
+        status_bar.set_style(sty.clone());
+        status_bar.set_message("Covariances");
 
         let covariances = (0..((bands.len() + 1) / 2))
             .into_par_iter()
             .map(|b1| {
                 (0..=b1)
                     .map(|b2| {
-                        let bar = status.add(ProgressBar::new((lines * samples) as u64));
+                        let bar = mp.add(ProgressBar::new((lines * samples) as u64));
                         bar.set_style(sty.clone());
 
                         let out = self.covariances(
@@ -376,15 +352,14 @@ impl<C1, I1> Mat<C1, f32, I1>
                         );
 
                         bar.finish_and_clear();
-                        total.inc(1);
+                        status_bar.inc(1);
                         out
                     })
                     .collect()
             })
             .collect();
 
-        total.finish();
-        j.join().unwrap();
+        status_bar.finish();
 
         covariances
     }
@@ -397,11 +372,30 @@ impl<C1, I1> Mat<C1, f32, I1>
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
             .progress_chars("##-");
 
-        let means: Vec<f32> = self.average_bulk(&sty);
+        let mp = Arc::new(MultiProgress::new());
 
-        let std_devs: Vec<f32> = self.std_dev_bulk(&sty, &means);
+        let stages_bar = mp.add(ProgressBar::new(5));
+        stages_bar.set_style(sty.clone());
+        stages_bar.set_message("Stages");
 
-        let covariances: Vec<Vec<f32>> = self.covariances_bulk(&sty, &means, &std_devs);
+        let mm2 = mp.clone();
+
+        let j = thread::spawn(move || {
+            mm2.join().unwrap();
+        });
+
+        let means: Vec<f32> = self.average_bulk(&sty, &mp);
+        stages_bar.inc(1);
+
+        let std_devs: Vec<f32> = self.std_dev_bulk(&sty, &mp, &means);
+        stages_bar.inc(1);
+
+        let covariances: Vec<Vec<f32>> = self.covariances_bulk(&sty, &mp, &means, &std_devs);
+        stages_bar.inc(1);
+
+        stages_bar.finish();
+
+        j.join().unwrap();
 
         println!("[");
         for r in 0..bands.len() {
