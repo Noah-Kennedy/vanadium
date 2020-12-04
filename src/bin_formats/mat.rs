@@ -395,10 +395,6 @@ impl<C1, I1> Mat<C1, f32, I1>
         let covariances: Vec<Vec<f32>> = self.covariances_bulk(&sty, &mp, &means, &std_devs);
         stages_bar.inc(1);
 
-        stages_bar.finish();
-
-        j.join().unwrap();
-
         println!("[");
         for r in 0..bands.len() {
             print!("[ ");
@@ -420,6 +416,11 @@ impl<C1, I1> Mat<C1, f32, I1>
             println!("]");
         }
         println!("]");
+        stages_bar.inc(1);
+
+        stages_bar.finish();
+
+        j.join().unwrap();
     }
 
     pub fn gray(&self, out: &mut GrayImage, min: f32, max: f32, band: usize)
