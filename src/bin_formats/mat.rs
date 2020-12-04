@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::fmt::Debug;
+use std::fmt::{Debug, format};
 use std::ops::{Deref, DerefMut, Div, Sub};
 use std::sync::Arc;
 use std::thread;
@@ -395,27 +395,24 @@ impl<C1, I1> Mat<C1, f32, I1>
         let covariances: Vec<Vec<f32>> = self.covariances_bulk(&sty, &mp, &means, &std_devs);
         stages_bar.inc(1);
 
-        println!("[");
+        stages_bar.println("[");
         for r in 0..bands.len() {
-            print!("[ ");
+            let mut line = String::from("[ ");
 
             for c in 0..bands.len() {
-                let mut found = false;
                 if let Some(row) = covariances.get(r) {
                     if let Some(val) = row.get(c) {
-                        print!("{:.*} ", 2, val);
-                        found = true;
+                        let message = format!("{:.*} ", 2, val);
+                        line.push_str(&message);
                     }
                 }
-
-                // if !found {
-                //     print!("0.00 ");
-                // }
             }
 
-            println!("]");
+            line.push(']');
+
+            stages_bar.println(&line);
         }
-        println!("]");
+        stages_bar.println("]");
         stages_bar.inc(1);
 
         stages_bar.finish();
