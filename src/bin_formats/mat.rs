@@ -380,7 +380,9 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let mm2 = mp.clone();
 
-        let j = thread::spawn(move || {
+        let j = thread::Builder::new()
+            .name("progbar-manager".to_owned())
+            .spawn(move || {
             mm2.join().unwrap();
         });
 
