@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::thread;
 
@@ -9,6 +9,7 @@ pub use conversion::*;
 
 use crate::bin_formats::{FileDims, FileInner};
 use crate::headers::Interleave;
+use crate::bin_formats::bsq::Bsq;
 
 mod conversion;
 mod color_maps;
@@ -75,8 +76,9 @@ impl<C1, I1> Mat<C1, f32, I1>
     where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    // , other: &mut Mat<C2, f32, Bsq>
-    pub unsafe fn pca(&self) {
+    pub unsafe fn pca<C2>(&self, other: &mut Mat<C2, f32, Bsq>, bands: u64)
+        where C2: DerefMut<Target=[u8]> + Send + Sync
+    {
         let FileDims { bands: _, samples: _, lines: _ } = self.inner.size();
 
         let sty = ProgressStyle::default_bar()
@@ -95,7 +97,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let j = thread::Builder::new()
             .name("progbar-manager".to_owned())
             .spawn(move || {
-                mm2.join().unwrap();
+                mm2.join_and_clear().unwrap();
             }).unwrap();
 
         let means: Vec<f32> = self.average_bulk(&sty, &mp);
@@ -111,9 +113,8 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         stages_bar.println("Finding eigenvectors and eigenvalues...");
         let eigen = covariances.clone().symmetric_eigen();
-        // let message = format!("{:#?}", eigen);
-        // stages_bar.println(message);
-
+        let message = format!("{:#?}", eigen);
+        stages_bar.println(message);
         stages_bar.inc(1);
 
         stages_bar.finish();
@@ -121,7 +122,6 @@ impl<C1, I1> Mat<C1, f32, I1>
         j.join().unwrap();
 
         println!("Cov: {}", covariances);
-
-        println!("Eig: {:#?}", eigen)
+        println!("Eig: {:#?}", eigen);
     }
 }

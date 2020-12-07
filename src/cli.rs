@@ -68,11 +68,6 @@ pub struct PcaOpt {
 
     #[structopt(short = "b", long)]
     pub bands: u64,
-
-    /// The output file type to use.
-    /// Must be bip, bsq or bil.
-    #[structopt(short = "t", long, parse(try_from_str))]
-    pub output_type: Interleave,
 }
 
 /// Subcommand for outputting color images.
