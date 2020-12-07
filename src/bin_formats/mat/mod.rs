@@ -94,6 +94,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let stages_bar = mp.add(ProgressBar::new(5));
         stages_bar.set_style(sty.clone());
+        stages_bar.enable_steady_tick(200);
         stages_bar.set_message("Stages");
 
         let mm2 = mp.clone();

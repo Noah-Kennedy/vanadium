@@ -108,6 +108,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
         status_bar.set_style(sty.clone());
+        status_bar.enable_steady_tick(200);
         status_bar.set_message("Averages");
 
         let means = (0..bands.len())
@@ -134,6 +135,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
         status_bar.set_style(sty.clone());
+        status_bar.enable_steady_tick(200);
         status_bar.set_message("Std. Devs");
 
         let devs = (0..bands.len())
@@ -170,6 +172,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let status_bar = mp.add(ProgressBar::new(tot_val as u64));
         status_bar.set_style(sty.clone());
+        status_bar.enable_steady_tick(200);
         status_bar.set_message("Covariances");
 
         let covariances: Vec<f32> = (0..((bands.len() + 1) / 2))
