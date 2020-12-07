@@ -91,7 +91,7 @@ fn continue_from_input<C, I>(
                 inner,
                 index,
             };
-            finish_conversion(&input, &mut out)
+            finish_pca(&input, &mut out)
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
@@ -99,7 +99,7 @@ fn continue_from_input<C, I>(
                 inner,
                 index,
             };
-            finish_conversion(&input, &mut out)
+            finish_pca(&input, &mut out)
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
@@ -107,15 +107,15 @@ fn continue_from_input<C, I>(
                 inner,
                 index,
             };
-            finish_conversion(&input, &mut out)
+            finish_pca(&input, &mut out)
         }
     }?;
 
     Ok(())
 }
 
-fn finish_conversion<C1, C2, I1, I2>(input: &Mat<C1, f32, I1>, output: &mut Mat<C2, f32, I2>)
-                                     -> Result<(), ConversionError>
+fn finish_pca<C1, C2, I1, I2>(input: &Mat<C1, f32, I1>, output: &mut Mat<C2, f32, I2>)
+                              -> Result<(), ConversionError>
     where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
           I2: 'static + FileIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,

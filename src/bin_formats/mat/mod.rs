@@ -1,17 +1,11 @@
-use std::cmp::Ordering;
-use std::fmt::Debug;
-use std::ops::{Deref, DerefMut, Div, Sub};
+use std::ops::Deref;
 use std::sync::Arc;
 use std::thread;
 
-use image::{GrayImage, Luma, Rgb, RgbImage};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use nalgebra::DMatrix;
-use num::Zero;
-use rayon::prelude::*;
 
-pub use conversion::*;
 pub use color_maps::*;
+pub use conversion::*;
 
 use crate::bin_formats::{FileDims, FileInner};
 use crate::headers::Interleave;
@@ -19,7 +13,6 @@ use crate::headers::Interleave;
 mod conversion;
 mod color_maps;
 mod stat;
-
 
 pub type MatType = Interleave;
 
@@ -84,7 +77,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 {
     // , other: &mut Mat<C2, f32, Bsq>
     pub unsafe fn pca(&self) {
-        let FileDims { bands, samples: _, lines: _ } = self.inner.size();
+        let FileDims { bands: _, samples: _, lines: _ } = self.inner.size();
 
         let sty = ProgressStyle::default_bar()
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
@@ -111,23 +104,24 @@ impl<C1, I1> Mat<C1, f32, I1>
         let std_devs: Vec<f32> = self.std_dev_bulk(&sty, &mp, &means);
         stages_bar.inc(1);
 
-        let mut covariances = self.covariances_bulk(&sty, &mp, &means, &std_devs);
-        covariances.fill_upper_triangle_with_lower_triangle();
+        let covariances = self.covariances_bulk(&sty, &mp, &means, &std_devs);
         let message = format!("{}", covariances);
         stages_bar.println(message);
         stages_bar.inc(1);
 
         stages_bar.println("Finding eigenvectors and eigenvalues...");
-        let eigen = covariances.symmetric_eigen();
-        let message = format!("{:#?}", eigen);
-        stages_bar.println(message);
+        let eigen = covariances.clone().symmetric_eigen();
+        // let message = format!("{:#?}", eigen);
+        // stages_bar.println(message);
 
         stages_bar.inc(1);
 
         stages_bar.finish();
 
         j.join().unwrap();
+
+        println!("Cov: {}", covariances);
+
+        println!("Eig: {:#?}", eigen)
     }
-
-
 }

@@ -207,7 +207,8 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         status_bar.finish();
 
-        let out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);
+        let mut out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);
+        out.fill_upper_triangle_with_lower_triangle();
 
         out
     }
