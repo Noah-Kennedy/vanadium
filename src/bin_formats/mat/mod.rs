@@ -118,6 +118,9 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         stages_bar.println("Finding eigenvectors and eigenvalues...");
         let eigen = covariances.symmetric_eigen();
+        let message = format!("{:#?}", eigen);
+        stages_bar.println(message);
+
         stages_bar.inc(1);
 
         stages_bar.finish();
