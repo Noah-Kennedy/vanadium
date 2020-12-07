@@ -164,16 +164,16 @@ impl<C1, I1> Mat<C1, f32, I1>
     {
         let FileDims { bands, samples, lines } = self.inner.size();
 
-        let mut tot_val = 0;
-
-        for i in 0..((bands.len() + 1) / 2) {
-            tot_val += i + 1;
-        }
-
-        let status_bar = mp.add(ProgressBar::new(tot_val as u64));
-        status_bar.set_style(sty.clone());
-        status_bar.enable_steady_tick(200);
-        status_bar.set_message("Covariances");
+        // let mut tot_val = 0;
+        //
+        // for i in 0..((bands.len() + 1) / 2) {
+        //     tot_val += i + 1;
+        // }
+        //
+        // let status_bar = mp.add(ProgressBar::new(tot_val as u64));
+        // status_bar.set_style(sty.clone());
+        // status_bar.enable_steady_tick(200);
+        // status_bar.set_message("Covariances");
 
         let covariances: Vec<f32> = (0..((bands.len() + 1) / 2))
             .into_par_iter()
@@ -191,7 +191,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                         );
 
                         bar.finish_and_clear();
-                        status_bar.inc(1);
+                        // status_bar.inc(1);
                         out
                     })
                     .collect();
@@ -205,7 +205,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             .flatten()
             .collect();
 
-        status_bar.finish();
+        // status_bar.finish();
 
         let mut out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);
         out.fill_upper_triangle_with_lower_triangle();
