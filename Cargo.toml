@@ -22,6 +22,9 @@ num = "0.3.0"
 
 memmap2 = "0.1.0"
 
+[dependencies.nalgebra]
+version = "0.23.1"
+
 # Provides status bar
 [dependencies.indicatif]
 version = "0.15.0"
