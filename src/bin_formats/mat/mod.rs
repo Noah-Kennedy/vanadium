@@ -109,14 +109,14 @@ impl<C1, I1> Mat<C1, f32, I1>
         stages_bar.println(message);
 
         let covariances = self.covariances_bulk(&sty, &mp, &means, &std_devs);
-        // let message = format!("{}", covariances);
-        // stages_bar.println(message);
+        let message = format!("{}", covariances);
+        stages_bar.println(message);
         stages_bar.inc(1);
 
         stages_bar.println("Finding eigenvectors and eigenvalues...");
         let eigen = covariances.clone().symmetric_eigen();
-        // let message = format!("{:#?}", eigen);
-        // stages_bar.println(message);
+        let message = format!("{:#?}", eigen);
+        stages_bar.println(message);
         stages_bar.inc(1);
 
         let r_ptr = self.inner.get_unchecked();
