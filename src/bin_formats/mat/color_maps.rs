@@ -34,8 +34,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         };
 
         let std_dev = unsafe {
-            let bar = ProgressBar::new((lines * samples) as u64);
-            self.std_dev(&bar, band, None)
+            self.std_dev(band, None)
         };
 
         let max_z = max / std_dev;
