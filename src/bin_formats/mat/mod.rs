@@ -2,14 +2,14 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::thread;
 
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle, ProgressIterator};
 
 pub use color_maps::*;
 pub use conversion::*;
 
 use crate::bin_formats::{FileDims, FileInner};
-use crate::headers::Interleave;
 use crate::bin_formats::bsq::Bsq;
+use crate::headers::Interleave;
 
 mod conversion;
 mod color_maps;
@@ -76,10 +76,10 @@ impl<C1, I1> Mat<C1, f32, I1>
     where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub unsafe fn pca<C2>(&self, other: &mut Mat<C2, f32, Bsq>, bands: u64)
+    pub unsafe fn pca<C2>(&self, other: &mut Mat<C2, f32, Bsq>, kept_bands: u64)
         where C2: DerefMut<Target=[u8]> + Send + Sync
     {
-        let FileDims { bands: _, samples: _, lines: _ } = self.inner.size();
+        let FileDims { bands, samples, lines} = self.inner.size();
 
         let sty = ProgressStyle::default_bar()
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
@@ -117,9 +117,43 @@ impl<C1, I1> Mat<C1, f32, I1>
         stages_bar.println(message);
         stages_bar.inc(1);
 
+        let r_ptr = self.inner.get_unchecked();
+        let w_ptr = other.inner.get_unchecked_mut();
+
+        let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
+        status_bar.set_style(sty.clone());
+        status_bar.enable_steady_tick(200);
+        status_bar.set_message("Writes");
+
+        eigen.eigenvectors.column_iter()
+            .zip(0..kept_bands)
+            .for_each(|(col, b1)| {
+                for l in 0..lines {
+                    for s in 0..samples {
+                        let read: Vec<f32> = (0..bands.len())
+                            .map(|b2| self.index.get_idx(l, s, b2))
+                            .map(|read_idx| r_ptr.0.add(read_idx).read_volatile())
+                            .collect();
+
+                        let w_val: f32 = read.iter().zip(col.iter())
+                            .enumerate()
+                            .map(|(b2, (d, s))| (((*d) * (*s)) - means[b2]) / std_devs[b2])
+                            .sum();
+
+                        let w_idx = other.index.get_idx(l, s, b1 as usize);
+                        w_ptr.0.add(w_idx).write_volatile(w_val);
+                    }
+                }
+
+                status_bar.inc(1);
+            });
+
+        status_bar.finish();
+
+        stages_bar.inc(1);
+
         stages_bar.finish_and_clear();
 
         j.join().unwrap();
-
     }
 }
