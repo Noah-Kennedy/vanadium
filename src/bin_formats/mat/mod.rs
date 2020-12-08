@@ -171,7 +171,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         stages_bar.inc(1);
 
-        stages_bar.finish_and_clear();
+        stages_bar.finish();
 
         j.join().unwrap();
     }
