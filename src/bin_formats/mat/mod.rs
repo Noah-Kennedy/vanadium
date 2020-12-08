@@ -120,7 +120,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let r_ptr = self.inner.get_unchecked();
         let w_ptr = other.inner.get_unchecked_mut();
 
-        let status_bar = mp.add(ProgressBar::new(kept_bands as u64));
+        let status_bar = mp.add(ProgressBar::new(lines as u64 * kept_bands));
         status_bar.set_style(sty.clone());
         status_bar.enable_steady_tick(200);
         status_bar.set_message("Writes");
@@ -133,18 +133,19 @@ impl<C1, I1> Mat<C1, f32, I1>
             (0..kept_bands)
                 .into_iter()
                 .for_each(|b1| {
-                    let eig = eigen.eigenvectors.clone();
                     let r_ptr = r_ptr.clone();
                     let w_ptr = w_ptr.clone();
                     let band_len = bands.len();
-                    let means = means.clone();
-                    let std_devs = std_devs.clone();
                     let status_bar = status_bar.clone();
                     let o_index = other.index.clone();
-                    s.spawn(move |_| {
-                        let col = eig.column(b1 as usize);
 
-                        for l in 0..lines {
+                    for l in 0..lines {
+                        let eig = eigen.eigenvectors.clone();
+                        let means = means.clone();
+                        let std_devs = std_devs.clone();
+
+                        s.spawn(move |_| {
+                            let col = eig.column(b1 as usize);
                             for s in 0..samples {
                                 let read: Vec<f32> = (0..band_len)
                                     .map(|b2| self.index.get_idx(l, s, b2))
@@ -159,10 +160,10 @@ impl<C1, I1> Mat<C1, f32, I1>
                                 let w_idx = o_index.get_idx(l, s, b1 as usize);
                                 w_ptr.0.add(w_idx).write_volatile(w_val);
                             }
-                        }
+                        });
 
                         status_bar.inc(1);
-                    })
+                    }
                 });
         });
 
