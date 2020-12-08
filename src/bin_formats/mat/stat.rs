@@ -10,7 +10,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub unsafe fn mean(&self, bar: &ProgressBar, band: usize) -> f32 {
+    pub unsafe fn mean(&self, band: usize) -> f32 {
         let FileDims { bands: _, samples, lines } = self.inner.size();
 
         let r_ptr = self.inner.get_unchecked();
@@ -18,8 +18,6 @@ impl<C1, I1> Mat<C1, f32, I1>
         let mut sum = 0.0;
         let count = lines * samples;
 
-        bar.set_message(&format!("Band {}", band));
-        bar.reset();
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
@@ -27,16 +25,12 @@ impl<C1, I1> Mat<C1, f32, I1>
 
                 sum += x;
             }
-
-            if lines % 8 == 7 {
-                bar.inc(samples as u64 * 8)
-            }
         }
 
         sum / count as f32
     }
 
-    pub unsafe fn std_dev(&self, bar: &ProgressBar, band: usize, mean: Option<f32>) -> f32 {
+    pub unsafe fn std_dev(&self, band: usize, mean: Option<f32>) -> f32 {
         let FileDims { bands: _, samples, lines } = self.inner.size();
 
         let r_ptr = self.inner.get_unchecked();
@@ -44,15 +38,13 @@ impl<C1, I1> Mat<C1, f32, I1>
         let mean = if let Some(mean) = mean {
             mean
         } else {
-            self.mean(&bar, band)
+            self.mean(band)
         };
 
 
         let mut sum = 0.0;
         let count = lines * samples;
 
-        bar.set_message(&format!("Band {}", band));
-        bar.reset();
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
@@ -62,10 +54,6 @@ impl<C1, I1> Mat<C1, f32, I1>
 
                 sum += dif * dif;
             }
-
-            if lines % 8 == 7 {
-                bar.inc(samples as u64 * 8)
-            }
         }
 
         sum /= count as f32;
@@ -74,7 +62,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     }
 
     pub unsafe fn covariance(
-        &self, bar: &ProgressBar, bands: [usize; 2], means: [f32; 2], std_devs: [f32; 2],
+        &self, bands: [usize; 2], means: [f32; 2], std_devs: [f32; 2],
     ) -> f32
     {
         let FileDims { bands: _, samples, lines } = self.inner.size();
@@ -83,9 +71,6 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let mut sum = 0.0;
         let count = lines * samples;
-
-        bar.set_message(&format!("Bands ({}, {})", bands[0], bands[1]));
-        bar.reset();
 
         for l in 0..lines {
             for s in 0..samples {
@@ -100,10 +85,6 @@ impl<C1, I1> Mat<C1, f32, I1>
                 ];
 
                 sum += xs[0] * xs[1];
-            }
-
-            if lines % 8 == 7 {
-                bar.inc(samples as u64 * 8)
             }
         }
 
@@ -126,7 +107,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                 let bar = mp.add(ProgressBar::new((lines * samples) as u64));
                 bar.set_style(sty.clone());
 
-                let out = self.mean(&bar, b);
+                let out = self.mean(b);
 
                 bar.finish_and_clear();
                 status_bar.inc(1);
@@ -154,7 +135,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                 let bar = mp.add(ProgressBar::new((lines * samples) as u64));
                 bar.set_style(sty.clone());
 
-                let out = self.std_dev(&bar, b, Some(*m));
+                let out = self.std_dev(b, Some(*m));
 
                 bar.finish_and_clear();
                 status_bar.inc(1);
@@ -193,7 +174,6 @@ impl<C1, I1> Mat<C1, f32, I1>
                         bar.set_style(sty.clone());
 
                         let out = self.covariance(
-                            &bar,
                             [b1, b2],
                             [means[b1], means[b2]],
                             [std_devs[b1], std_devs[b2]],
