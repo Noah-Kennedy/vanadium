@@ -16,7 +16,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
 
-        let bar = ProgressBar::new((lines * samples * bands) as u64);
+        let bar = ProgressBar::new( bands as u64);
 
         let r_idx_gen = self.index;
         let w_idx_gen = out.index;
@@ -39,7 +39,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                 }
             }
 
-            bar.inc((lines * samples) as u64)
+            bar.inc(1)
         }
     }
 }

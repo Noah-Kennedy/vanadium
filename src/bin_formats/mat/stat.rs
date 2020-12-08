@@ -25,7 +25,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                 let idx = self.index.get_idx(l, s, band);
                 let x = r_ptr.0.add(idx).read_volatile();
 
-                let include = x > 0.005 && x <= 1.0;
+                let include = x > f32::EPSILON && x <= 1.0;
 
                 sum += x as f64 * include as usize as f64;
 
