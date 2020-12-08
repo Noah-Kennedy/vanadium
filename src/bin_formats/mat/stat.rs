@@ -104,18 +104,13 @@ impl<C1, I1> Mat<C1, f32, I1>
         let means = (0..bands.len())
             .into_par_iter()
             .map(|b| {
-                let bar = mp.add(ProgressBar::new((lines * samples) as u64));
-                bar.set_style(sty.clone());
-
                 let out = self.mean(b);
-
-                bar.finish_and_clear();
                 status_bar.inc(1);
                 out
             })
             .collect();
 
-        status_bar.finish_and_clear();
+        status_bar.finish();
 
         means
     }
@@ -132,18 +127,13 @@ impl<C1, I1> Mat<C1, f32, I1>
             .into_par_iter()
             .zip(means.par_iter())
             .map(|(b, m)| {
-                let bar = mp.add(ProgressBar::new((lines * samples) as u64));
-                bar.set_style(sty.clone());
-
                 let out = self.std_dev(b, Some(*m));
-
-                bar.finish_and_clear();
                 status_bar.inc(1);
                 out
             })
             .collect();
 
-        status_bar.finish_and_clear();
+        status_bar.finish();
 
         devs
     }
@@ -170,16 +160,11 @@ impl<C1, I1> Mat<C1, f32, I1>
             .map(|b1| {
                 let mut v: Vec<f32> = (0..=b1)
                     .map(|b2| {
-                        let bar = mp.add(ProgressBar::new((lines * samples) as u64));
-                        bar.set_style(sty.clone());
-
                         let out = self.covariance(
                             [b1, b2],
                             [means[b1], means[b2]],
                             [std_devs[b1], std_devs[b2]],
                         );
-
-                        bar.finish_and_clear();
                         status_bar.inc(1);
                         out
                     })
@@ -195,7 +180,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             .collect();
 
         status_bar.println(format!("{}, {}", covariances.len(), bands.len() * bands.len()));
-        status_bar.finish_and_clear();
+        status_bar.finish();
 
         let mut out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);
         out.fill_upper_triangle_with_lower_triangle();
