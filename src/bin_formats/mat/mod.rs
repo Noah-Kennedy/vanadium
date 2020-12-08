@@ -79,8 +79,6 @@ impl<C1, I1> Mat<C1, f32, I1>
     pub unsafe fn pca<C2>(&self, other: &mut Mat<C2, f32, Bsq>, kept_bands: u64)
         where C2: DerefMut<Target=[u8]> + Send + Sync
     {
-        let FileDims { bands, samples, lines } = self.inner.size();
-
         let sty = ProgressStyle::default_bar()
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
             .progress_chars("##-");
@@ -90,7 +88,6 @@ impl<C1, I1> Mat<C1, f32, I1>
         let stages_bar = mp.add(ProgressBar::new(5));
         stages_bar.set_style(sty.clone());
         stages_bar.enable_steady_tick(200);
-        stages_bar.set_message("Stages");
 
         let mm2 = mp.clone();
 
@@ -100,77 +97,30 @@ impl<C1, I1> Mat<C1, f32, I1>
                 mm2.join_and_clear().unwrap();
             }).unwrap();
 
+        stages_bar.set_message("Stage: Averages");
         let means: Vec<f32> = self.average_bulk(&sty, &mp);
         stages_bar.inc(1);
 
+        stages_bar.set_message("Stage: Standard Deviations");
         let std_devs: Vec<f32> = self.std_dev_bulk(&sty, &mp, &means);
         stages_bar.inc(1);
         let message = format!("{:#?}", &std_devs);
         stages_bar.println(message);
 
+        stages_bar.set_message("Stage: Covariances");
         let covariances = self.covariances_bulk(&sty, &mp, &means, &std_devs);
         let message = format!("{}", covariances);
         stages_bar.println(message);
         stages_bar.inc(1);
 
-        stages_bar.println("Finding eigenvectors and eigenvalues...");
-        let eigen = covariances.clone().symmetric_eigen();
+        stages_bar.set_message("Stage: Eigendecomposition");
+        let eigen = covariances.symmetric_eigen();
         let message = format!("{:#?}", eigen);
         stages_bar.println(message);
         stages_bar.inc(1);
 
-        let r_ptr = self.inner.get_unchecked();
-        let w_ptr = other.inner.get_unchecked_mut();
-
-        let status_bar = mp.add(ProgressBar::new(lines as u64 * kept_bands));
-        status_bar.set_style(sty.clone());
-        status_bar.enable_steady_tick(200);
-        status_bar.set_message("Writes");
-
-        let r_ptr = r_ptr.clone();
-        let w_ptr = w_ptr.clone();
-        let status_bar_c = status_bar.clone();
-
-        rayon::scope(move |s| {
-            (0..kept_bands)
-                .into_iter()
-                .for_each(|b1| {
-                    let r_ptr = r_ptr.clone();
-                    let w_ptr = w_ptr.clone();
-                    let band_len = bands.len();
-                    let status_bar = status_bar.clone();
-                    let o_index = other.index.clone();
-
-                    for l in 0..lines {
-                        let eig = eigen.eigenvectors.clone();
-                        let means = means.clone();
-                        let std_devs = std_devs.clone();
-
-                        s.spawn(move |_| {
-                            let col = eig.column(b1 as usize);
-                            for s in 0..samples {
-                                let read: Vec<f32> = (0..band_len)
-                                    .map(|b2| self.index.get_idx(l, s, b2))
-                                    .map(|read_idx| r_ptr.0.add(read_idx).read_volatile())
-                                    .collect();
-
-                                let w_val: f32 = read.iter().zip(col.iter())
-                                    .enumerate()
-                                    .map(|(b2, (d, s))| (((*d) * (*s)) - means[b2]) / std_devs[b2])
-                                    .sum();
-
-                                let w_idx = o_index.get_idx(l, s, b1 as usize);
-                                w_ptr.0.add(w_idx).write_volatile(w_val);
-                            }
-                        });
-
-                        status_bar.inc(1);
-                    }
-                });
-        });
-
-        status_bar_c.finish();
-
+        stages_bar.set_message("Stage: Writes");
+        self.pca_write(other, &sty, &mp, kept_bands, &means, &std_devs, &eigen);
         stages_bar.inc(1);
 
         stages_bar.finish();

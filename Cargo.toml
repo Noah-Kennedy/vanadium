@@ -4,33 +4,20 @@ version = "0.3.0"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
 
-[profile.release]
-lto = "fat"
-
-# Runtime dependencies
 [dependencies]
-# CLI arg parsing
 structopt = "0.3.18"
-
 rayon = "1.5"
-
-# Regex library
 regex = "1.4"
-
-# Provides numeric traits and generic numeric functions
 num = "0.3.0"
-
 memmap2 = "0.1.0"
 
 [dependencies.nalgebra]
 version = "0.23.1"
 
-# Provides status bar
 [dependencies.indicatif]
 version = "0.15.0"
 features = ["rayon", "improved_unicode"]
 
-# Image processing library, used to generate PNG images.
 [dependencies.image]
 version = "0.23.12"
 default-features = false

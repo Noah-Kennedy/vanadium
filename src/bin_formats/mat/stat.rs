@@ -1,10 +1,11 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use nalgebra::DMatrix;
+use nalgebra::{DMatrix, Dynamic, SymmetricEigen};
 use rayon::prelude::*;
 
 use crate::bin_formats::{FileDims, FileIndex, Mat};
+use crate::bin_formats::bsq::Bsq;
 
 impl<C1, I1> Mat<C1, f32, I1>
     where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
@@ -111,7 +112,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
         status_bar.set_style(sty.clone());
         status_bar.enable_steady_tick(200);
-        status_bar.set_message("Averages");
+        status_bar.set_message("Band Means");
 
         let means = (0..bands.len())
             .into_par_iter()
@@ -133,7 +134,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
         status_bar.set_style(sty.clone());
         status_bar.enable_steady_tick(200);
-        status_bar.set_message("Std. Devs");
+        status_bar.set_message("Band Standard Deviations");
 
         let devs = (0..bands.len())
             .into_par_iter()
@@ -165,7 +166,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let status_bar = mp.add(ProgressBar::new(tot_val as u64));
         status_bar.set_style(sty.clone());
         status_bar.enable_steady_tick(200);
-        status_bar.set_message("Covariances");
+        status_bar.set_message("Band Covariances");
 
         let covariances: Vec<f32> = (0..bands.len())
             .into_par_iter()
@@ -200,5 +201,70 @@ impl<C1, I1> Mat<C1, f32, I1>
         out.fill_upper_triangle_with_lower_triangle();
 
         out
+    }
+
+    pub fn pca_write<C2>(
+        &self, other: &mut Mat<C2, f32, Bsq>,
+        sty: &ProgressStyle, mp: &MultiProgress,
+        kept_bands: u64,
+        means: &[f32], std_devs: &[f32],
+        eigen: &SymmetricEigen<f32, Dynamic>,
+    )
+        where C2: DerefMut<Target=[u8]> + Send + Sync
+    {
+        let FileDims { bands, samples, lines } = self.inner.size();
+
+        let r_ptr = unsafe { self.inner.get_unchecked() };
+        let w_ptr = unsafe { other.inner.get_unchecked_mut() };
+
+        let status_bar = mp.add(ProgressBar::new(kept_bands));
+        status_bar.set_style(sty.clone());
+        status_bar.enable_steady_tick(200);
+        status_bar.set_message("Band Writes");
+
+        rayon::scope(move |s| {
+            (0..kept_bands)
+                .into_iter()
+                .for_each(|b1| {
+                    let r_ptr = r_ptr.clone();
+                    let w_ptr = w_ptr.clone();
+                    let band_len = bands.len();
+                    let o_index = other.index.clone();
+
+                    for l in 0..lines {
+                        let eig = eigen.eigenvectors.clone();
+                        let means = means.clone();
+                        let std_devs = std_devs.clone();
+
+                        s.spawn(move |_| {
+                            let col = eig.column(b1 as usize);
+                            for s in 0..samples {
+                                let read: Vec<f32> = (0..band_len)
+                                    .map(|b2| self.index.get_idx(l, s, b2))
+                                    .map(|read_idx| unsafe {
+                                        r_ptr.0.add(read_idx).read_volatile()
+                                    })
+                                    .collect();
+
+                                let w_val: f32 = read.into_iter().zip(col.iter())
+                                    .enumerate()
+                                    .map(|(b2, (d, s))| ((d * s) - means[b2]) / std_devs[b2])
+                                    .sum();
+
+                                let w_idx = o_index.get_idx(l, s, b1 as usize);
+
+                                unsafe {
+                                    w_ptr.0.add(w_idx).write_volatile(w_val);
+                                }
+                            }
+                        });
+                    }
+
+                    status_bar.inc(1);
+                    status_bar.println("Updated!");
+                });
+
+            status_bar.finish();
+        });
     }
 }
