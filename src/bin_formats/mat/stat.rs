@@ -194,6 +194,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             .flatten()
             .collect();
 
+        status_bar.println(format!("{}, {}", covariances.len(), bands.len() * bands.len()));
         status_bar.finish_and_clear();
 
         let mut out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);

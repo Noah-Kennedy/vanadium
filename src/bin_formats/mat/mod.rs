@@ -121,7 +121,5 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         j.join().unwrap();
 
-        // println!("Cov: {}", covariances);
-        // println!("Eig: {:#?}", eigen);
     }
 }
