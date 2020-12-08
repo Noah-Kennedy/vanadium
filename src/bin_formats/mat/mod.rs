@@ -101,20 +101,30 @@ impl<C1, I1> Mat<C1, f32, I1>
         let means: Vec<f32> = self.average_bulk(&sty, &mp);
         stages_bar.inc(1);
 
+        stages_bar.println("Averages:");
+        let message = format!("{:#?}", &means);
+        stages_bar.println(message);
+
         stages_bar.set_message("Stage: Standard Deviations");
         let std_devs: Vec<f32> = self.std_dev_bulk(&sty, &mp, &means);
         stages_bar.inc(1);
+
+        stages_bar.println("Standard Deviations:");
         let message = format!("{:#?}", &std_devs);
         stages_bar.println(message);
 
         stages_bar.set_message("Stage: Covariances");
         let covariances = self.covariances_bulk(&sty, &mp, &means, &std_devs);
+        stages_bar.inc(1);
+
+        stages_bar.println("Covariances:");
         let message = format!("{}", covariances);
         stages_bar.println(message);
-        stages_bar.inc(1);
 
         stages_bar.set_message("Stage: Eigendecomposition");
         let eigen = covariances.symmetric_eigen();
+
+        stages_bar.println("Eigen:");
         let message = format!("{:#?}", eigen);
         stages_bar.println(message);
         stages_bar.inc(1);

@@ -24,9 +24,11 @@ impl<C1, I1> Mat<C1, f32, I1>
                 let idx = self.index.get_idx(l, s, band);
                 let x = r_ptr.0.add(idx).read_volatile();
 
-                sum += x;
+                let include = x > 0.005;
 
-                count += (x != 0.0) as usize;
+                sum += x * include as u8 as f32;
+
+                count += include as usize;
             }
         }
 
@@ -56,9 +58,11 @@ impl<C1, I1> Mat<C1, f32, I1>
                 if x > 0.0 {
                     let dif = x - mean;
 
-                    sum += dif * dif;
+                    let include = x > 0.005;
 
-                    count += (x != 0.0) as usize;
+                    sum += dif * dif * include as u8 as f32;
+
+                    count += include as usize;
                 }
             }
         }
@@ -91,13 +95,15 @@ impl<C1, I1> Mat<C1, f32, I1>
                     r_ptr.0.add(indices[1]).read_volatile(),
                 ];
 
+                let include = r_vals[0] > 0.005 && r_vals[1] > 0.005;
+
                 let xs = [
                     (r_vals[0] - means[0]) / std_devs[0],
                     (r_vals[1] - means[1]) / std_devs[1]
                 ];
 
-                sum += xs[0] * xs[1] * (r_vals[0] != 0.0 && r_vals[1] != 0.0) as u8 as f32;
-                count += (r_vals[0] != 0.0 && r_vals[1] != 0.0) as usize;
+                sum += xs[0] * xs[1] * include as u8 as f32;
+                count += include as usize;
             }
         }
 
@@ -261,7 +267,6 @@ impl<C1, I1> Mat<C1, f32, I1>
                     }
 
                     status_bar.inc(1);
-                    status_bar.println("Updated!");
                 });
 
             status_bar.finish();
