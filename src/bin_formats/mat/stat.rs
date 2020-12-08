@@ -174,6 +174,8 @@ impl<C1, I1> Mat<C1, f32, I1>
                     v.push(0.0)
                 }
 
+                status_bar.println(format!("{}", v.len()));
+
                 v
             })
             .flatten()
