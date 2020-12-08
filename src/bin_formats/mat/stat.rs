@@ -170,7 +170,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                     })
                     .collect();
 
-                while v.len() < bands.len() {
+                while v.len() < bands.len() * bands.len() {
                     v.push(0.0);
                 }
 
