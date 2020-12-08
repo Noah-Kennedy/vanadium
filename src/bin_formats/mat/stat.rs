@@ -125,7 +125,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             })
             .collect();
 
-        status_bar.finish();
+        status_bar.finish_and_clear();
 
         means
     }
@@ -153,7 +153,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             })
             .collect();
 
-        status_bar.finish();
+        status_bar.finish_and_clear();
 
         devs
     }
@@ -205,7 +205,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             .flatten()
             .collect();
 
-        status_bar.finish();
+        status_bar.finish_and_clear();
 
         let mut out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);
         out.fill_upper_triangle_with_lower_triangle();
