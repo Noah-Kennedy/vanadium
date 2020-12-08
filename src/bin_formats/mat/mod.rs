@@ -120,7 +120,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let r_ptr = self.inner.get_unchecked();
         let w_ptr = other.inner.get_unchecked_mut();
 
-        let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
+        let status_bar = mp.add(ProgressBar::new(kept_bands as u64));
         status_bar.set_style(sty.clone());
         status_bar.enable_steady_tick(200);
         status_bar.set_message("Writes");
