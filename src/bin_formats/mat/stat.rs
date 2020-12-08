@@ -212,7 +212,8 @@ impl<C1, I1> Mat<C1, f32, I1>
 
     pub fn pca_write<C2>(
         &self, other: &mut Mat<C2, f32, Bsq>,
-        sty: &ProgressStyle, mp: &MultiProgress,
+        sty: &ProgressStyle,
+        mp: &MultiProgress,
         kept_bands: u64,
         means: &[f64], std_devs: &[f64],
         eigen: &SymmetricEigen<f64, Dynamic>,
@@ -233,15 +234,13 @@ impl<C1, I1> Mat<C1, f32, I1>
             (0..kept_bands)
                 .into_iter()
                 .for_each(|b1| {
-                    let r_ptr = r_ptr.clone();
-                    let w_ptr = w_ptr.clone();
+                    let r_ptr = r_ptr;
+                    let w_ptr = w_ptr;
                     let band_len = bands.len();
-                    let o_index = other.index.clone();
+                    let o_index = other.index;
 
                     for l in 0..lines {
                         let eig = eigen.eigenvectors.clone();
-                        let means = means.clone();
-                        let std_devs = std_devs.clone();
 
                         s.spawn(move |_| {
                             let col = eig.column(b1 as usize);
@@ -256,7 +255,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                                         let z_val = (val - means[b2]) / std_devs[b2];
                                         let z_off = (0.0 - means[b2]) / std_devs[b2];
 
-                                        if z_val == z_off {
+                                        if (z_val - z_off).abs() < f64::EPSILON {
                                             f64::neg_infinity()
                                         } else {
                                             z_val

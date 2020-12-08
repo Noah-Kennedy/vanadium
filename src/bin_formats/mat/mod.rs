@@ -123,11 +123,11 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         stages_bar.set_message("Stage: Eigendecomposition");
         let eigen = covariances.symmetric_eigen();
+        stages_bar.inc(1);
 
         stages_bar.println("Eigen:");
         let message = format!("{:#?}", eigen);
         stages_bar.println(message);
-        stages_bar.inc(1);
 
         stages_bar.set_message("Stage: Writes");
         self.pca_write(other, &sty, &mp, kept_bands, &means, &std_devs, &eigen);
