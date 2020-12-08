@@ -27,7 +27,9 @@ impl<C1, I1> Mat<C1, f32, I1>
 
                 sum += x;
             }
-            bar.inc(samples as u64)
+            if lines % 8 == 0 {
+                bar.inc(samples as u64 * 8)
+            }
         }
 
         sum / count as f32
@@ -59,7 +61,9 @@ impl<C1, I1> Mat<C1, f32, I1>
 
                 sum += dif * dif;
             }
-            bar.inc(samples as u64)
+            if lines % 8 == 0 {
+                bar.inc(samples as u64 * 8)
+            }
         }
 
         sum /= count as f32;
@@ -95,7 +99,10 @@ impl<C1, I1> Mat<C1, f32, I1>
 
                 sum += xs[0] * xs[1];
             }
-            bar.inc(samples as u64)
+
+            if lines % 8 == 0 {
+                bar.inc(samples as u64 * 8)
+            }
         }
 
         sum /= count as f32;
