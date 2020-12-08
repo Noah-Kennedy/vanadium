@@ -155,7 +155,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         status_bar.enable_steady_tick(200);
         status_bar.set_message("Covariances");
 
-        let covariances: Vec<f32> = (0..((bands.len() + 1) / 2))
+        let covariances: Vec<f32> = (0..bands.len())
             .into_par_iter()
             .map(|b1| {
                 let mut v: Vec<f32> = (0..=b1)
@@ -170,8 +170,8 @@ impl<C1, I1> Mat<C1, f32, I1>
                     })
                     .collect();
 
-                while v.len() < bands.len() * bands.len() {
-                    v.push(0.0);
+                while v.len() < bands.len() {
+                    v.push(0.0)
                 }
 
                 v
