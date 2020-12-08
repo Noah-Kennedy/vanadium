@@ -37,8 +37,8 @@ impl<C1, I1> Mat<C1, f32, I1>
             self.std_dev(band, None)
         };
 
-        let max_z = max / std_dev;
-        let min_z = min / std_dev;
+        let max_z = max / std_dev as f32;
+        let min_z = min / std_dev as f32;
         let scale = max_z - min_z;
 
         println!("Applying color map");
@@ -51,7 +51,7 @@ impl<C1, I1> Mat<C1, f32, I1>
                     r_ptr.0.add(idx).read_volatile()
                 };
 
-                let normed = (normify(val / std_dev, scale, min_z, max_z) * 2.0) - 1.0;
+                let normed = (normify(val / std_dev as f32, scale, min_z, max_z) * 2.0) - 1.0;
 
                 let direction = normed.partial_cmp(&0.0).unwrap();
 

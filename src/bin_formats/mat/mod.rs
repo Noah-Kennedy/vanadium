@@ -98,7 +98,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             }).unwrap();
 
         stages_bar.set_message("Stage: Averages");
-        let means: Vec<f32> = self.average_bulk(&sty, &mp);
+        let means: Vec<_> = self.average_bulk(&sty, &mp);
         stages_bar.inc(1);
 
         stages_bar.println("Averages:");
@@ -106,7 +106,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         stages_bar.println(message);
 
         stages_bar.set_message("Stage: Standard Deviations");
-        let std_devs: Vec<f32> = self.std_dev_bulk(&sty, &mp, &means);
+        let std_devs: Vec<_> = self.std_dev_bulk(&sty, &mp, &means);
         stages_bar.inc(1);
 
         stages_bar.println("Standard Deviations:");
@@ -114,7 +114,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         stages_bar.println(message);
 
         stages_bar.set_message("Stage: Covariances");
-        let covariances = self.covariances_bulk(&sty, &mp, &means, &std_devs);
+        let covariances = self.covariances_bulk(&sty, &mp, &means);
         stages_bar.inc(1);
 
         stages_bar.println("Covariances:");
