@@ -16,7 +16,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let r_ptr = self.inner.get_unchecked();
 
         let mut sum = 0.0;
-        let count = lines * samples;
+        let mut count = 0;
 
         for l in 0..lines {
             for s in 0..samples {
@@ -24,6 +24,8 @@ impl<C1, I1> Mat<C1, f32, I1>
                 let x = r_ptr.0.add(idx).read_volatile();
 
                 sum += x;
+
+                count += (x != 0.0) as usize;
             }
         }
 
@@ -43,16 +45,20 @@ impl<C1, I1> Mat<C1, f32, I1>
 
 
         let mut sum = 0.0;
-        let count = lines * samples;
+        let mut count = 0;
 
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
                 let x = r_ptr.0.add(idx).read_volatile();
 
-                let dif = x - mean;
+                if x > 0.0 {
+                    let dif = x - mean;
 
-                sum += dif * dif;
+                    sum += dif * dif;
+
+                    count += (x != 0.0) as usize;
+                }
             }
         }
 
@@ -70,7 +76,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let r_ptr = self.inner.get_unchecked();
 
         let mut sum = 0.0;
-        let count = lines * samples;
+        let mut count = 0;
 
         for l in 0..lines {
             for s in 0..samples {
@@ -79,12 +85,18 @@ impl<C1, I1> Mat<C1, f32, I1>
                     self.index.get_idx(l, s, bands[1])
                 ];
 
-                let xs = [
-                    (r_ptr.0.add(indices[0]).read_volatile() - means[0]) / std_devs[0],
-                    (r_ptr.0.add(indices[1]).read_volatile() - means[1]) / std_devs[1]
+                let r_vals = [
+                    r_ptr.0.add(indices[0]).read_volatile(),
+                    r_ptr.0.add(indices[1]).read_volatile(),
                 ];
 
-                sum += xs[0] * xs[1];
+                let xs = [
+                    (r_vals[0] - means[0]) / std_devs[0],
+                    (r_vals[1] - means[1]) / std_devs[1]
+                ];
+
+                sum += xs[0] * xs[1] * (r_vals[0] != 0.0 && r_vals[1] != 0.0) as u8 as f32;
+                count += (r_vals[0] != 0.0 && r_vals[1] != 0.0) as usize;
             }
         }
 
