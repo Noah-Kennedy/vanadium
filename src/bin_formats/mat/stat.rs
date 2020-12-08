@@ -170,18 +170,18 @@ impl<C1, I1> Mat<C1, f32, I1>
                     })
                     .collect();
 
+                v.reserve(bands.len() - v.len());
+
                 while v.len() < bands.len() {
                     v.push(0.0)
                 }
-
-                status_bar.println(format!("{}", v.len()));
 
                 v
             })
             .flatten()
             .collect();
 
-        status_bar.println(format!("{}, {}", covariances.len(), bands.len() * bands.len()));
+        status_bar.println(format!("{}", covariances.len()));
         status_bar.finish();
 
         let mut out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);
