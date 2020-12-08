@@ -22,6 +22,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let bar = ProgressBar::new( bands as u64);
         bar.set_style(sty);
+        bar.set_message("Converted bands");
         bar.enable_steady_tick(200);
 
         let r_idx_gen = self.index;
@@ -30,22 +31,30 @@ impl<C1, I1> Mat<C1, f32, I1>
         let r_ptr = unsafe { self.inner.get_unchecked() };
         let w_ptr = unsafe { out.inner.get_unchecked_mut() };
 
-        for b in 0..bands {
-            for l in 0..lines {
-                for s in 0..samples {
-                    let read_idx = r_idx_gen.get_idx(l, s, b);
-                    let write_idx = w_idx_gen.get_idx(l, s, b);
+        let bc = bar.clone();
+        rayon::scope(move |s| {
+            for b in 0..bands {
+                let bar = bar.clone();
+                s.spawn(move |_| {
+                    for l in 0..lines {
+                        for s in 0..samples {
+                            let read_idx = r_idx_gen.get_idx(l, s, b);
+                            let write_idx = w_idx_gen.get_idx(l, s, b);
 
-                    unsafe {
-                        let r = r_ptr.0.add(read_idx);
-                        let w = w_ptr.0.add(write_idx);
+                            unsafe {
+                                let r = r_ptr.0.add(read_idx);
+                                let w = w_ptr.0.add(write_idx);
 
-                        w.write_volatile(r.read_volatile());
+                                w.write_volatile(r.read_volatile());
+                            }
+                        }
                     }
-                }
-            }
 
-            bar.inc(1)
-        }
+                    bar.inc(1)
+                });
+            }
+        });
+
+        bc.finish();
     }
 }
