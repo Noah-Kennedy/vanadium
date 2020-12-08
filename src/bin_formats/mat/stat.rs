@@ -94,7 +94,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     }
 
     pub unsafe fn average_bulk(&self, sty: &ProgressStyle, mp: &MultiProgress) -> Vec<f32> {
-        let FileDims { bands, samples, lines } = self.inner.size();
+        let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
         status_bar.set_style(sty.clone());
@@ -116,7 +116,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     }
 
     pub unsafe fn std_dev_bulk(&self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f32]) -> Vec<f32> {
-        let FileDims { bands, samples, lines } = self.inner.size();
+        let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
         status_bar.set_style(sty.clone());
@@ -142,11 +142,11 @@ impl<C1, I1> Mat<C1, f32, I1>
         &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f32], std_devs: &[f32],
     ) -> DMatrix<f32>
     {
-        let FileDims { bands, samples, lines } = self.inner.size();
+        let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let mut tot_val = 0;
 
-        for i in 0..((bands.len() + 1) / 2) {
+        for i in 0..bands.len() {
             tot_val += i + 1;
         }
 
