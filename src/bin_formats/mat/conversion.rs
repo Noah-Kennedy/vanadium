@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::bin_formats::{FileDims, FileIndex, Mat};
 
@@ -16,7 +16,13 @@ impl<C1, I1> Mat<C1, f32, I1>
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
 
+        let sty = ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
+            .progress_chars("##-");
+
         let bar = ProgressBar::new( bands as u64);
+        bar.set_style(sty);
+        bar.enable_steady_tick(200);
 
         let r_idx_gen = self.index;
         let w_idx_gen = out.index;
