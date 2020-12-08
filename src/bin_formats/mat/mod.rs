@@ -102,6 +102,8 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let means: Vec<f32> = self.average_bulk(&sty, &mp);
         stages_bar.inc(1);
+        let message = format!("{:#?}", &means);
+        stages_bar.println(message);
 
         let std_devs: Vec<f32> = self.std_dev_bulk(&sty, &mp, &means);
         stages_bar.inc(1);
