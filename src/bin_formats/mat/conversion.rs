@@ -2,15 +2,15 @@ use std::ops::{Deref, DerefMut};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::bin_formats::{FileDims, FileIndex, Mat};
+use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
 
-impl<C1, I1> Mat<C1, f32, I1>
-    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
+impl<C1, I1> SpectralImage<C1, f32, I1>
+    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub fn convert<C2, I2>(&self, out: &mut Mat<C2, f32, I2>)
+    pub fn convert<C2, I2>(&self, out: &mut SpectralImage<C2, f32, I2>)
         where
-            I2: 'static + FileIndex + Sync + Send + Copy + Clone,
+            I2: 'static + ImageIndex + Sync + Send + Copy + Clone,
             C2: DerefMut<Target=[u8]> + Sync + Send,
     {
         let FileDims { bands, samples, lines } = self.inner.size();

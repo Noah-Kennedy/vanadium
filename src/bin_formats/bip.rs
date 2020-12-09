@@ -1,4 +1,4 @@
-use crate::bin_formats::{FileDims, FileIndex, MatType};
+use crate::bin_formats::{FileDims, ImageIndex, MatType};
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct Bip {
@@ -15,7 +15,7 @@ impl From<FileDims> for Bip {
     }
 }
 
-impl FileIndex for Bip {
+impl ImageIndex for Bip {
     #[inline(always)]
     fn order(&self) -> MatType {
         MatType::Bip

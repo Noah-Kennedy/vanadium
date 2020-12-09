@@ -3,7 +3,7 @@ use std::fs::{File, OpenOptions, read_to_string};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use crate::bin_formats::{FileIndex, FileInner, Mat, MatType};
+use crate::bin_formats::{ImageIndex, SpectralImageContainer, SpectralImage, MatType};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -40,11 +40,11 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let inner = unsafe { FileInner::headers(&parsed_headers, &input_file)? };
+    let inner = unsafe { SpectralImageContainer::headers(&parsed_headers, &input_file)? };
     match parsed_headers.interleave {
         Interleave::Bip => {
             let index = Bip::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -52,7 +52,7 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -60,7 +60,7 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -70,21 +70,21 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
 }
 
 fn continue_from_input<C, I>(
-    headers: &Headers, input: &Mat<C, f32, I>, out: &File, out_type: Interleave,
+    headers: &Headers, input: &SpectralImage<C, f32, I>, out: &File, out_type: Interleave,
 )
     -> Result<(), Box<dyn Error>>
-    where I: 'static + FileIndex + Sync + Send + Copy + Clone,
+    where I: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C: Deref<Target=[u8]> + Sync + Send,
 {
     println!("Mapping output file");
     let inner = unsafe {
-        FileInner::headers_mut(&headers, &out)?
+        SpectralImageContainer::headers_mut(&headers, &out)?
     };
 
     match out_type {
         Interleave::Bip => {
             let index = Bip::from(inner.dims.clone());
-            let mut out = Mat {
+            let mut out = SpectralImage {
                 inner,
                 index,
             };
@@ -92,7 +92,7 @@ fn continue_from_input<C, I>(
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
-            let mut out = Mat {
+            let mut out = SpectralImage {
                 inner,
                 index,
             };
@@ -100,7 +100,7 @@ fn continue_from_input<C, I>(
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
-            let mut out = Mat {
+            let mut out = SpectralImage {
                 inner,
                 index,
             };
@@ -111,10 +111,10 @@ fn continue_from_input<C, I>(
     Ok(())
 }
 
-fn finish_conversion<C1, C2, I1, I2>(input: &Mat<C1, f32, I1>, output: &mut Mat<C2, f32, I2>)
+fn finish_conversion<C1, C2, I1, I2>(input: &SpectralImage<C1, f32, I1>, output: &mut SpectralImage<C2, f32, I2>)
                                      -> Result<(), ConversionError>
-    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
-          I2: 'static + FileIndex + Sync + Send + Copy + Clone,
+    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
+          I2: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
           C2: DerefMut<Target=[u8]> + Sync + Send
 {

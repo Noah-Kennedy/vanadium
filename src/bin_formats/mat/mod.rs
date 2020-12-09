@@ -4,7 +4,7 @@ pub use color_maps::*;
 pub use conversion::*;
 pub use pca::*;
 
-use crate::bin_formats::{FileDims, FileInner, FileIndex};
+use crate::bin_formats::{FileDims, ImageIndex, SpectralImageContainer};
 use crate::headers::Interleave;
 
 mod conversion;
@@ -14,21 +14,20 @@ mod pca;
 
 pub type MatType = Interleave;
 
-pub struct Mat<C, T, I> {
-    pub inner: FileInner<C, T>,
+pub struct SpectralImage<C, T, I> {
+    pub inner: SpectralImageContainer<C, T>,
     pub index: I,
 }
 
-
-impl<C1, C2, T, I1, I2> PartialEq<Mat<C2, T, I2>> for Mat<C1, T, I1>
+impl<C1, C2, T, I1, I2> PartialEq<SpectralImage<C2, T, I2>> for SpectralImage<C1, T, I1>
     where
-        I1: FileIndex,
-        I2: FileIndex,
+        I1: ImageIndex,
+        I2: ImageIndex,
         T: Copy + PartialEq,
         C1: Deref<Target=[u8]>,
         C2: Deref<Target=[u8]>,
 {
-    fn eq(&self, other: &Mat<C2, T, I2>) -> bool {
+    fn eq(&self, other: &SpectralImage<C2, T, I2>) -> bool {
         if self.inner.size() == other.inner.size() {
             let FileDims { bands, samples, lines } = self.inner.size();
             let bands = bands.len();

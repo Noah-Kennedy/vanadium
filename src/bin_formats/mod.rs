@@ -8,7 +8,7 @@ pub mod error;
 mod file_buffer;
 mod mat;
 
-pub trait FileIndex: {
+pub trait ImageIndex: {
     fn order(&self) -> MatType;
     fn get_idx(&self, line: usize, pixel: usize, band: usize) -> usize;
 }

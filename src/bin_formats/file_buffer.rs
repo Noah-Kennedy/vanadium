@@ -18,7 +18,7 @@ unsafe impl<T> Send for FileBuf<T> where T: Send {}
 
 unsafe impl<T> Send for FileBufMut<T> where T: Send {}
 
-pub struct FileInner<C, T> {
+pub struct SpectralImageContainer<C, T> {
     pub dims: FileDims,
     pub container: C,
     pub phantom: PhantomData<T>,
@@ -45,7 +45,7 @@ impl From<&Headers> for FileDims {
     }
 }
 
-impl<T> FileInner<Mmap, T> {
+impl<T> SpectralImageContainer<Mmap, T> {
     pub unsafe fn headers(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
         assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
@@ -75,7 +75,7 @@ impl<T> FileInner<Mmap, T> {
     }
 }
 
-impl<T> FileInner<MmapMut, T> {
+impl<T> SpectralImageContainer<MmapMut, T> {
     pub unsafe fn headers_mut(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
         assert_eq!(FileByteOrder::Intel, headers.byte_order);
 
@@ -161,20 +161,20 @@ impl<T> FileInner<MmapMut, T> {
     }
 }
 
-impl<C, T> FileInner<C, T> {
+impl<C, T> SpectralImageContainer<C, T> {
     pub fn size(&self) -> FileDims {
         self.dims.clone()
     }
 }
 
-impl<C, T> FileInner<C, T> where C: Deref<Target=[u8]> {
+impl<C, T> SpectralImageContainer<C, T> where C: Deref<Target=[u8]> {
     #[inline(always)]
     pub unsafe fn get_unchecked(&self) -> FileBuf<T> {
         FileBuf(self.container.as_ptr() as *const T)
     }
 }
 
-impl<C, T> FileInner<C, T> where C: DerefMut<Target=[u8]> {
+impl<C, T> SpectralImageContainer<C, T> where C: DerefMut<Target=[u8]> {
     #[inline(always)]
     pub unsafe fn get_unchecked_mut(&mut self) -> FileBufMut<T> {
         FileBufMut(self.container.as_mut_ptr() as *mut T)

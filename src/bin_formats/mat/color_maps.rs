@@ -6,7 +6,7 @@ use image::{GrayImage, Luma, Rgb, RgbImage};
 use indicatif::ProgressBar;
 use num::Zero;
 
-use crate::bin_formats::{FileDims, FileIndex, Mat};
+use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash)]
 pub enum ColorFlag {
@@ -18,12 +18,12 @@ pub enum ColorFlag {
     Teal,
 }
 
-impl<C1, I1> Mat<C1, f32, I1>
-    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
+impl<C1, I1> SpectralImage<C1, f32, I1>
+    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
     pub fn cool_warm_stat(&self, out: &mut RgbImage, min: f32, max: f32, band: usize)
-        where I1: 'static + FileIndex + Sync + Send,
+        where I1: 'static + ImageIndex + Sync + Send,
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
@@ -79,7 +79,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     }
 
     pub fn gray(&self, out: &mut GrayImage, min: f32, max: f32, band: usize)
-        where I1: 'static + FileIndex + Sync + Send,
+        where I1: 'static + ImageIndex + Sync + Send,
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
@@ -110,7 +110,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     }
 
     pub fn solid(&self, out: &mut RgbImage, min: f32, max: f32, band: usize, flag: ColorFlag)
-        where I1: 'static + FileIndex + Sync + Send,
+        where I1: 'static + ImageIndex + Sync + Send,
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
@@ -151,7 +151,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     }
 
     pub fn mask(&self, out: &mut GrayImage, min: f32)
-        where I1: 'static + FileIndex + Sync + Send,
+        where I1: 'static + ImageIndex + Sync + Send,
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
@@ -186,7 +186,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         &self, out: &mut RgbImage,
         minimums: &[f32], maximums: &[f32], channels: &[usize], summation: [&[usize]; 3],
     )
-        where I1: 'static + FileIndex + Sync + Send,
+        where I1: 'static + ImageIndex + Sync + Send,
     {
         assert_eq!(channels.len(), minimums.len(), "mins");
         assert_eq!(channels.len(), maximums.len(), "Maxes");

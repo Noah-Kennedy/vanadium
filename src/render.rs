@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use crate::bin_formats::{ColorFlag, FileDims, FileIndex, FileInner, Mat};
+use crate::bin_formats::{ColorFlag, FileDims, ImageIndex, SpectralImageContainer, SpectralImage};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -22,12 +22,12 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let inner: FileInner<_, f32> = unsafe { FileInner::headers(&parsed_headers, &input_file)? };
+    let inner: SpectralImageContainer<_, f32> = unsafe { SpectralImageContainer::headers(&parsed_headers, &input_file)? };
 
     match parsed_headers.interleave {
         Interleave::Bip => {
             let index = Bip::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -36,7 +36,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -45,7 +45,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -56,7 +56,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
 }
 
 fn helper<C, I>(
-    input: &Mat<C, f32, I>,
+    input: &SpectralImage<C, f32, I>,
     path: PathBuf,
     f: &str,
     min: &[f32],
@@ -67,7 +67,7 @@ fn helper<C, I>(
     greens: &[usize],
 )
     -> Result<(), Box<dyn Error>>
-    where I: 'static + FileIndex + Sync + Send + Copy + Clone,
+    where I: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C: Deref<Target=[u8]> + Sync + Send,
 {
     let FileDims { samples, lines, .. } = input.inner.size();

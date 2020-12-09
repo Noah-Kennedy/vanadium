@@ -1,7 +1,7 @@
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
-pub use crate::bin_formats::Mat;
+pub use crate::bin_formats::SpectralImage;
 use crate::tests::{BIL, BIP, BSQ, make_mat};
 
 #[test]

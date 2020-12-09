@@ -3,7 +3,7 @@ use std::fs::{File, OpenOptions, read_to_string};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use crate::bin_formats::{FileIndex, FileInner, Mat};
+use crate::bin_formats::{ImageIndex, SpectralImageContainer, SpectralImage};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -37,11 +37,11 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     let mut parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let inner = unsafe { FileInner::headers(&parsed_headers, &input_file)? };
+    let inner = unsafe { SpectralImageContainer::headers(&parsed_headers, &input_file)? };
     match parsed_headers.interleave {
         Interleave::Bip => {
             let index = Bip::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -49,7 +49,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -57,7 +57,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
-            let input = Mat {
+            let input = SpectralImage {
                 inner,
                 index,
             };
@@ -67,10 +67,10 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
 }
 
 fn continue_from_input<C, I>(
-    headers: &mut Headers, input: &Mat<C, f32, I>, out: &File, bands: u64,
+    headers: &mut Headers, input: &SpectralImage<C, f32, I>, out: &File, bands: u64,
 )
     -> Result<(), Box<dyn Error>>
-    where I: 'static + FileIndex + Sync + Send + Copy + Clone,
+    where I: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C: Deref<Target=[u8]> + Sync + Send,
 {
     println!("Mapping output file");
@@ -81,12 +81,12 @@ fn continue_from_input<C, I>(
     out.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
 
     let inner = unsafe {
-        FileInner::headers_mut(&headers, &out)?
+        SpectralImageContainer::headers_mut(&headers, &out)?
     };
 
 
     let index = Bsq::from(inner.dims.clone());
-    let mut out = Mat {
+    let mut out = SpectralImage {
         inner,
         index,
     };
@@ -96,9 +96,9 @@ fn continue_from_input<C, I>(
     Ok(())
 }
 
-fn finish_pca<C1, C2, I1>(input: &Mat<C1, f32, I1>, output: &mut Mat<C2, f32, Bsq>, bands: u64)
+fn finish_pca<C1, C2, I1>(input: &SpectralImage<C1, f32, I1>, output: &mut SpectralImage<C2, f32, Bsq>, bands: u64)
                           -> Result<(), ConversionError>
-    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
+    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
           C2: DerefMut<Target=[u8]> + Sync + Send
 {

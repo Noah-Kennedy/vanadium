@@ -6,14 +6,14 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use nalgebra::{Dynamic, SymmetricEigen};
 use num::Float;
 
-use crate::bin_formats::{FileDims, FileIndex, Mat};
+use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
 use crate::bin_formats::bsq::Bsq;
 
-impl<C1, I1> Mat<C1, f32, I1>
-    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
+impl<C1, I1> SpectralImage<C1, f32, I1>
+    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub unsafe fn pca<C2>(&self, other: &mut Mat<C2, f32, Bsq>, kept_bands: u64)
+    pub unsafe fn pca<C2>(&self, other: &mut SpectralImage<C2, f32, Bsq>, kept_bands: u64)
         where C2: DerefMut<Target=[u8]> + Send + Sync
     {
         let sty = ProgressStyle::default_bar()
@@ -76,7 +76,7 @@ impl<C1, I1> Mat<C1, f32, I1>
     }
 
     pub fn write_standardized_results<C2>(
-        &self, output: &mut Mat<C2, f32, Bsq>,
+        &self, output: &mut SpectralImage<C2, f32, Bsq>,
         sty: &ProgressStyle,
         mp: &MultiProgress,
         kept_bands: u64,

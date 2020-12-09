@@ -4,10 +4,10 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use nalgebra::DMatrix;
 use rayon::prelude::*;
 
-use crate::bin_formats::{FileDims, FileIndex, Mat};
+use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
 
-impl<C1, I1> Mat<C1, f32, I1>
-    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
+impl<C1, I1> SpectralImage<C1, f32, I1>
+    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
     pub unsafe fn band_mean(&self, band: usize) -> f64 {
