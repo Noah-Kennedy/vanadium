@@ -61,6 +61,9 @@ pub struct PcaOpt {
     #[structopt(short = "o", long, parse(from_os_str))]
     pub output: PathBuf,
 
+    #[structopt(short, long)]
+    pub verbose: bool,
+
     #[structopt(short = "b", long)]
     pub bands: u64,
 }

@@ -2,29 +2,25 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::thread;
 
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar};
 use nalgebra::{Dynamic, SymmetricEigen};
 use num::Float;
 
 use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
 use crate::bin_formats::bsq::Bsq;
+use crate::util::config_bar;
 
 impl<C1, I1> SpectralImage<C1, f32, I1>
     where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub fn pca<C2>(&self, other: &mut SpectralImage<C2, f32, Bsq>, kept_bands: u64)
+    pub fn pca<C2>(&self, other: &mut SpectralImage<C2, f32, Bsq>, kept_bands: u64, verbose: bool)
         where C2: DerefMut<Target=[u8]> + Send + Sync
     {
-        let sty = ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
-            .progress_chars("##-");
-
         let mp = Arc::new(MultiProgress::new());
 
         let stages_bar = mp.add(ProgressBar::new(5));
-        stages_bar.set_style(sty.clone());
-        stages_bar.enable_steady_tick(200);
+        config_bar(&stages_bar, "Performing PCA stages...");
 
         let mm2 = mp.clone();
 
@@ -35,39 +31,47 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
             }).unwrap();
 
         stages_bar.set_message("Stage: Averages");
-        let means: Vec<_> = self.all_band_averages(&sty, &mp);
+        let means: Vec<_> = self.all_band_averages(&mp);
         stages_bar.inc(1);
 
-        stages_bar.println("Averages:");
-        let message = format!("{:#?}", &means);
-        stages_bar.println(message);
+        if verbose {
+            stages_bar.println("Averages:");
+            let message = format!("{:#?}", &means);
+            stages_bar.println(message);
+        }
 
         stages_bar.set_message("Stage: Standard Deviations");
-        let std_devs: Vec<_> = self.all_band_standard_deviations(&sty, &mp, &means);
+        let std_devs: Vec<_> = self.all_band_standard_deviations(&mp, &means);
         stages_bar.inc(1);
 
-        stages_bar.println("Standard Deviations:");
-        let message = format!("{:#?}", &std_devs);
-        stages_bar.println(message);
+        if verbose {
+            stages_bar.println("Standard Deviations:");
+            let message = format!("{:#?}", &std_devs);
+            stages_bar.println(message);
+        }
 
         stages_bar.set_message("Stage: Covariances");
-        let covariances = self.calculate_covariance_matrix(&sty, &mp, &means);
+        let covariances = self.calculate_covariance_matrix(&mp, &means);
         stages_bar.inc(1);
 
-        stages_bar.println("Covariances:");
-        let message = format!("{}", covariances);
-        stages_bar.println(message);
+        if verbose {
+            stages_bar.println("Covariances:");
+            let message = format!("{}", covariances);
+            stages_bar.println(message);
+        }
 
         stages_bar.set_message("Stage: Eigendecomposition");
         let eigen = covariances.symmetric_eigen();
         stages_bar.inc(1);
 
-        stages_bar.println("Eigen:");
-        let message = format!("{:#?}", eigen);
-        stages_bar.println(message);
+        if verbose {
+            stages_bar.println("Eigen:");
+            let message = format!("{:#?}", eigen);
+            stages_bar.println(message);
+        }
 
         stages_bar.set_message("Stage: Writes");
-        self.write_standardized_results(other, &sty, &mp, kept_bands, &means, &std_devs, &eigen);
+        self.write_standardized_results(other, &mp, kept_bands, &means, &std_devs, &eigen);
         stages_bar.inc(1);
 
         stages_bar.finish();
@@ -77,7 +81,6 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
 
     pub fn write_standardized_results<C2>(
         &self, output: &mut SpectralImage<C2, f32, Bsq>,
-        sty: &ProgressStyle,
         mp: &MultiProgress,
         kept_bands: u64,
         means: &[f64], std_devs: &[f64],
@@ -91,9 +94,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         let w_ptr = unsafe { output.inner.get_unchecked_mut() };
 
         let status_bar = mp.add(ProgressBar::new(kept_bands));
-        status_bar.set_style(sty.clone());
-        status_bar.enable_steady_tick(200);
-        status_bar.set_message("Band Writes");
+        config_bar(&status_bar, "Writing standardized output bands...");
         let sc = status_bar.clone();
 
         (0..kept_bands)

@@ -13,6 +13,7 @@ mod cli;
 mod convert;
 mod pca;
 mod render;
+mod util;
 
 #[cfg(test)]
 mod tests;

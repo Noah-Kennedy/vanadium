@@ -14,6 +14,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         header,
         output,
         bands,
+        verbose,
     } = op;
 
     // parse headers
@@ -55,7 +56,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         index,
     };
 
-    input.pca(&mut out, bands);
+    input.pca(&mut out, bands, verbose);
 
     Ok(())
 }

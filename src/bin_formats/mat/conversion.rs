@@ -1,8 +1,9 @@
 use std::ops::{Deref, DerefMut};
 
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::ProgressBar;
 
 use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
+use crate::util::config_bar;
 
 impl<C1, I1> SpectralImage<C1, f32, I1>
     where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
@@ -16,14 +17,8 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
 
-        let sty = ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
-            .progress_chars("##-");
-
-        let bar = ProgressBar::new( bands as u64);
-        bar.set_style(sty);
-        bar.set_message("Converted bands");
-        bar.enable_steady_tick(200);
+        let bar = ProgressBar::new(bands as u64);
+        config_bar(&bar, "Converted bands");
 
         let r_idx_gen = self.index;
         let w_idx_gen = out.index;

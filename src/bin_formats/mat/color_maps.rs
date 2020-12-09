@@ -7,6 +7,7 @@ use indicatif::ProgressBar;
 use num::Zero;
 
 use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
+use crate::util::config_bar;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash)]
 pub enum ColorFlag {
@@ -41,8 +42,9 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         let min_z = min / std_dev as f32;
         let scale = max_z - min_z;
 
-        println!("Applying color map");
         let bar = ProgressBar::new((lines * samples) as u64);
+        config_bar(&bar, "Mapping Pixels");
+
         for l in 0..lines {
             for s in 0..samples {
                 let idx = self.index.get_idx(l, s, band);
@@ -76,6 +78,8 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
             }
             bar.inc(samples as u64)
         }
+
+        bar.finish();
     }
 
     pub fn gray(&self, out: &mut GrayImage, min: f32, max: f32, band: usize)
@@ -83,8 +87,10 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
-        let bar = ProgressBar::new((lines * samples) as u64);
         assert!(band < bands);
+
+        let bar = ProgressBar::new((lines * samples) as u64);
+        config_bar(&bar, "Mapping Pixels");
 
         let scale = max - min;
 
@@ -114,8 +120,10 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
-        let bar = ProgressBar::new((lines * samples) as u64);
         assert!(band < bands);
+
+        let bar = ProgressBar::new((lines * samples) as u64);
+        config_bar(&bar, "Mapping Pixels");
 
         let scale = max - min;
 
@@ -155,7 +163,9 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     {
         let FileDims { bands, samples, lines } = self.inner.size();
         let bands = bands.len();
+
         let bar = ProgressBar::new((lines * samples) as u64);
+        config_bar(&bar, "Mapping Pixels");
 
         let r_ptr = unsafe {
             self.inner.get_unchecked()
@@ -194,6 +204,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
 
         let FileDims { samples, lines, .. } = self.inner.size();
         let bar = ProgressBar::new((lines * samples) as u64);
+        config_bar(&bar, "Mapping Pixels");
 
         let r_ptr = unsafe {
             self.inner.get_unchecked()

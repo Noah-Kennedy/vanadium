@@ -1,10 +1,11 @@
 use std::ops::Deref;
 
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar};
 use nalgebra::DMatrix;
 use rayon::prelude::*;
 
 use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
+use crate::util::config_bar;
 
 impl<C1, I1> SpectralImage<C1, f32, I1>
     where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
@@ -108,13 +109,11 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         sum.sqrt()
     }
 
-    pub fn all_band_averages(&self, sty: &ProgressStyle, mp: &MultiProgress) -> Vec<f64> {
+    pub fn all_band_averages(&self, mp: &MultiProgress) -> Vec<f64> {
         let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
-        status_bar.set_style(sty.clone());
-        status_bar.enable_steady_tick(200);
-        status_bar.set_message("Band Means");
+        config_bar(&status_bar, "Calculating band means...");
 
         let means = (0..bands.len())
             .into_par_iter()
@@ -131,16 +130,14 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     }
 
     pub fn all_band_standard_deviations(
-        &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f64],
+        &self, mp: &MultiProgress, means: &[f64],
     )
         -> Vec<f64>
     {
         let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
-        status_bar.set_style(sty.clone());
-        status_bar.enable_steady_tick(200);
-        status_bar.set_message("Band Standard Deviations");
+        config_bar(&status_bar, "Calculating band standard deviations...");
 
         let devs = (0..bands.len())
             .into_par_iter()
@@ -158,7 +155,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     }
 
     pub fn calculate_covariance_matrix(
-        &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f64],
+        &self, mp: &MultiProgress, means: &[f64],
     ) -> DMatrix<f64>
     {
         let FileDims { bands, samples: _, lines: _ } = self.inner.size();
@@ -171,9 +168,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         }
 
         let status_bar = mp.add(ProgressBar::new(tot_val as u64));
-        status_bar.set_style(sty.clone());
-        status_bar.enable_steady_tick(200);
-        status_bar.set_message("Band Covariances");
+        config_bar(&status_bar, "Calculating band covariances...");
 
         let covariances: Vec<f64> = (0..bands.len())
             .into_par_iter()
@@ -202,7 +197,6 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
             .flatten()
             .collect();
 
-        status_bar.println(format!("{}", covariances.len()));
         status_bar.finish();
 
         let mut out = DMatrix::from_row_slice(bands.len(), bands.len(), &covariances);
