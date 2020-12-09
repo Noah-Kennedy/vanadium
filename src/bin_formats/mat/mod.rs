@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-pub use color_maps::*;
+pub use render::*;
 pub use conversion::*;
 pub use pca::*;
 
@@ -8,7 +8,7 @@ use crate::bin_formats::{FileDims, ImageIndex, SpectralImageContainer};
 use crate::headers::Interleave;
 
 mod conversion;
-mod color_maps;
+mod render;
 mod stat;
 mod pca;
 
