@@ -14,9 +14,17 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub fn pca<C2>(&self, other: &mut SpectralImage<C2, f32, Bsq>, kept_bands: u64, verbose: bool)
+    pub fn pca<C2>(
+        &self, other: &mut SpectralImage<C2, f32, Bsq>,
+        kept_bands: u64, verbose: bool,
+        min: Option<f32>,
+        max: Option<f32>,
+    )
         where C2: DerefMut<Target=[u8]> + Send + Sync
     {
+        let min = min.unwrap_or(f32::neg_infinity());
+        let max = max.unwrap_or(f32::infinity());
+
         let mp = Arc::new(MultiProgress::new());
 
         let stages_bar = mp.add(ProgressBar::new(5));
@@ -31,7 +39,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
             }).unwrap();
 
         stages_bar.set_message("Stage: Averages");
-        let means: Vec<_> = self.all_band_averages(&mp);
+        let means: Vec<_> = self.all_band_averages(&mp, min, max);
         stages_bar.inc(1);
 
         if verbose {
@@ -41,7 +49,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         }
 
         stages_bar.set_message("Stage: Standard Deviations");
-        let std_devs: Vec<_> = self.all_band_standard_deviations(&mp, &means);
+        let std_devs: Vec<_> = self.all_band_standard_deviations(&mp, &means, min, max);
         stages_bar.inc(1);
 
         if verbose {
@@ -51,7 +59,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         }
 
         stages_bar.set_message("Stage: Covariances");
-        let covariances = self.calculate_covariance_matrix(&mp, &means);
+        let covariances = self.calculate_covariance_matrix(&mp, &means, min, max);
         stages_bar.inc(1);
 
         if verbose {

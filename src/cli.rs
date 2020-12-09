@@ -45,7 +45,14 @@ pub struct ConvertOpt {
     pub output_type: Interleave,
 }
 
-/// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
+/// Perform Principal Component Analysis on an image.
+///
+/// This will write out a BSQ file with the top PCA dims.
+///
+/// The output will be standardized to z-score to maintain a uniform scale between bands.
+/// As a result, the output will contain negative values.
+///
+/// The background of the image will be negative infinity.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "pca")]
 pub struct PcaOpt {
@@ -54,18 +61,24 @@ pub struct PcaOpt {
     pub input: PathBuf,
 
     /// The path to the input header file.
-    #[structopt(short = "d", long, parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     pub header: PathBuf,
 
     /// The path to the output binary file.
-    #[structopt(short = "o", long, parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     pub output: PathBuf,
 
     #[structopt(short, long)]
     pub verbose: bool,
 
-    #[structopt(short = "b", long)]
-    pub bands: u64,
+    #[structopt(short, long)]
+    pub dims: u64,
+
+    #[structopt(long)]
+    pub max: Option<f32>,
+
+    #[structopt(long)]
+    pub min: Option<f32>,
 }
 
 /// Subcommand for outputting color images.

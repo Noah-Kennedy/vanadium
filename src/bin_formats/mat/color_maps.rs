@@ -35,7 +35,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         };
 
         let std_dev = unsafe {
-            self.band_std_dev(band, None)
+            self.band_std_dev(band, None, 0.0, 1.0)
         };
 
         let max_z = max / std_dev as f32;

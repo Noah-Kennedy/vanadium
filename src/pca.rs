@@ -13,8 +13,10 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         input,
         header,
         output,
-        bands,
+        dims,
         verbose,
+        max,
+        min,
     } = op;
 
     // parse headers
@@ -45,7 +47,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         index,
     };
 
-    headers.bands = bands as usize;
+    headers.bands = dims as usize;
 
     output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
 
@@ -59,7 +61,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         index,
     };
 
-    input.pca(&mut out, bands, verbose);
+    input.pca(&mut out, dims, verbose, min, max);
 
     Ok(())
 }
