@@ -3,7 +3,7 @@ use std::fs::{File, OpenOptions, read_to_string};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use crate::bin_formats::{ImageIndex, SpectralImageContainer, SpectralImage, MatType};
+use crate::bin_formats::{ImageIndex, MatType, SpectralImage, SpectralImageContainer};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -40,7 +40,7 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let inner = unsafe { SpectralImageContainer::headers(&parsed_headers, &input_file)? };
+    let inner = SpectralImageContainer::headers(&parsed_headers, &input_file)?;
     match parsed_headers.interleave {
         Interleave::Bip => {
             let index = Bip::from(inner.dims.clone());
@@ -77,9 +77,7 @@ fn continue_from_input<C, I>(
           C: Deref<Target=[u8]> + Sync + Send,
 {
     println!("Mapping output file");
-    let inner = unsafe {
-        SpectralImageContainer::headers_mut(&headers, &out)?
-    };
+    let inner = SpectralImageContainer::headers_mut(&headers, &out)?;
 
     match out_type {
         Interleave::Bip => {

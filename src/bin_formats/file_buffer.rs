@@ -1,7 +1,7 @@
-use std::mem;
 use std::error::Error;
 use std::fs::File;
 use std::marker::PhantomData;
+use std::mem;
 use std::ops::{Deref, DerefMut};
 
 use memmap2::{Mmap, MmapMut, MmapOptions};
@@ -45,30 +45,35 @@ impl From<&Headers> for FileDims {
     }
 }
 
-impl<T> SpectralImageContainer<Mmap, T> {
-    pub unsafe fn headers(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
-        assert_eq!(FileByteOrder::Intel, headers.byte_order);
+impl<C, T> SpectralImageContainer<C, T> {
+    fn check_header_preconditions(headers: &Headers, file: &File) -> Result<(), Box<dyn Error>> {
+        assert_eq!(
+            FileByteOrder::Intel, headers.byte_order,
+            "Only Intel byte order is supported"
+        );
+        assert_eq!(
+            headers.bands * headers.lines * headers.samples * mem::size_of::<T>(),
+            file.metadata()?.len() as usize,
+            "File size does not match that expected from header"
+        );
 
-        let raw = MmapOptions::new()
-            .offset(headers.header_offset as u64)
-            .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
-            .map(&file)?;
+        Ok(())
+    }
+}
+
+impl<T> SpectralImageContainer<Mmap, T> {
+    pub fn headers(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
+        Self::check_header_preconditions(headers, file)?;
+
+        let raw = unsafe {
+            MmapOptions::new()
+                .offset(headers.header_offset as u64)
+                .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
+                .map(&file)?
+        };
 
         Ok(Self {
             dims: FileDims::from(headers),
-            container: raw,
-            phantom: Default::default(),
-        })
-    }
-
-    pub unsafe fn _from_dims(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
-        let raw = MmapOptions::new()
-            .offset(0)
-            .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
-            .map(&file)?;
-
-        Ok(Self {
-            dims: dims.clone(),
             container: raw,
             phantom: Default::default(),
         })
@@ -76,85 +81,18 @@ impl<T> SpectralImageContainer<Mmap, T> {
 }
 
 impl<T> SpectralImageContainer<MmapMut, T> {
-    pub unsafe fn headers_mut(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
-        assert_eq!(FileByteOrder::Intel, headers.byte_order);
+    pub fn headers_mut(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
+        Self::check_header_preconditions(headers, file)?;
 
-        let raw = MmapOptions::new()
-            .offset(headers.header_offset as u64)
-            .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
-            .map_mut(&file)?;
-
-        Ok(Self {
-            dims: FileDims::from(headers),
-            container: raw,
-            phantom: Default::default(),
-        })
-    }
-
-    pub unsafe fn _headers_copy(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
-        assert_eq!(FileByteOrder::Intel, headers.byte_order);
-
-        let raw = MmapOptions::new()
-            .offset(headers.header_offset as u64)
-            .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
-            .map_copy(&file)?;
+        let raw = unsafe {
+            MmapOptions::new()
+                .offset(headers.header_offset as u64)
+                .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
+                .map_mut(&file)?
+        };
 
         Ok(Self {
             dims: FileDims::from(headers),
-            container: raw,
-            phantom: Default::default(),
-        })
-    }
-
-    pub unsafe fn _headers_anon(headers: &Headers) -> Result<Self, Box<dyn Error>> {
-        assert_eq!(FileByteOrder::Intel, headers.byte_order);
-
-        let raw = MmapOptions::new()
-            .offset(headers.header_offset as u64)
-            .len(headers.bands * headers.samples * headers.lines * mem::size_of::<T>())
-            .map_anon()?;
-
-        Ok(Self {
-            dims: FileDims::from(headers),
-            container: raw,
-            phantom: Default::default(),
-        })
-    }
-
-    pub unsafe fn _from_dims_mut(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
-        let raw = MmapOptions::new()
-            .offset(0)
-            .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
-            .map_mut(&file)?;
-
-        Ok(Self {
-            dims: dims.clone(),
-            container: raw,
-            phantom: Default::default(),
-        })
-    }
-
-    pub unsafe fn _from_dims_copy(dims: &FileDims, file: &File) -> Result<Self, Box<dyn Error>> {
-        let raw = MmapOptions::new()
-            .offset(0)
-            .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
-            .map_copy(&file)?;
-
-        Ok(Self {
-            dims: dims.clone(),
-            container: raw,
-            phantom: Default::default(),
-        })
-    }
-
-    pub unsafe fn _from_dims_anon(dims: &FileDims) -> Result<Self, Box<dyn Error>> {
-        let raw = MmapOptions::new()
-            .offset(0)
-            .len(dims.bands.len() * dims.samples * dims.lines * mem::size_of::<T>())
-            .map_anon()?;
-
-        Ok(Self {
-            dims: dims.clone(),
             container: raw,
             phantom: Default::default(),
         })

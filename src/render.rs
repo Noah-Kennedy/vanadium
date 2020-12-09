@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use crate::bin_formats::{ColorFlag, FileDims, ImageIndex, SpectralImageContainer, SpectralImage};
+use crate::bin_formats::{ColorFlag, FileDims, ImageIndex, SpectralImage, SpectralImageContainer};
 use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
@@ -22,7 +22,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let inner: SpectralImageContainer<_, f32> = unsafe { SpectralImageContainer::headers(&parsed_headers, &input_file)? };
+    let inner: SpectralImageContainer<_, f32> = SpectralImageContainer::headers(&parsed_headers, &input_file)?;
 
     match parsed_headers.interleave {
         Interleave::Bip => {

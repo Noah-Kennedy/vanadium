@@ -1,89 +1,60 @@
 use std::error::Error;
 use std::fs::{File, OpenOptions, read_to_string};
-use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use crate::bin_formats::{ImageIndex, SpectralImageContainer, SpectralImage};
-use crate::bin_formats::bil::Bil;
-use crate::bin_formats::bip::Bip;
+use crate::bin_formats::{SpectralImage, SpectralImageContainer};
 use crate::bin_formats::bsq::Bsq;
-use crate::bin_formats::error::ConversionError;
 use crate::cli::PcaOpt;
 use crate::headers::{Headers, Interleave};
 
 pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
+    // unpack PCA cli options
     let PcaOpt {
         input,
-        input_header: header,
+        header,
         output,
-        output_header: _output_header,
         bands,
     } = op;
 
-    println!("{:?}->{:?}", input.as_os_str(), output.as_os_str());
+    // parse headers
+    let headers_str = read_to_string(header)?;
+    let mut headers = Headers::from_str(&headers_str)?;
 
-    println!("Opening input file");
     let input_file = File::open(input)?;
 
-    println!("Opening output file");
+    // validate preconditions
+    assert_eq!(headers.interleave, Interleave::Bsq,
+               "Only BSQ files are supported, please use the 'convert' subcommand to convert your \
+                file into a BSQ file."
+    );
+
+    // validate preconditions
+    assert_eq!(headers.interleave, Interleave::Bsq,
+               "Only BSQ files are supported, please use the 'convert' subcommand to convert your \
+                file into a BSQ file."
+    );
+
     let output_file = OpenOptions::new()
         .create(true)
         .write(true)
         .read(true)
         .open(output)?;
 
-    println!("Reading headers");
-    let headers_str = read_to_string(header)?;
-    let mut parsed_headers = Headers::from_str(&headers_str)?;
+    let inner = SpectralImageContainer::headers(&headers, &input_file)?;
 
-    println!("Mapping input file");
-    let inner = unsafe { SpectralImageContainer::headers(&parsed_headers, &input_file)? };
-    match parsed_headers.interleave {
-        Interleave::Bip => {
-            let index = Bip::from(inner.dims.clone());
-            let input = SpectralImage {
-                inner,
-                index,
-            };
-            continue_from_input(&mut parsed_headers, &input, &output_file, bands)
-        }
-        Interleave::Bil => {
-            let index = Bil::from(inner.dims.clone());
-            let input = SpectralImage {
-                inner,
-                index,
-            };
-            continue_from_input(&mut parsed_headers, &input, &output_file, bands)
-        }
-        Interleave::Bsq => {
-            let index = Bsq::from(inner.dims.clone());
-            let input = SpectralImage {
-                inner,
-                index,
-            };
-            continue_from_input(&mut parsed_headers, &input, &output_file, bands)
-        }
-    }
-}
-
-fn continue_from_input<C, I>(
-    headers: &mut Headers, input: &SpectralImage<C, f32, I>, out: &File, bands: u64,
-)
-    -> Result<(), Box<dyn Error>>
-    where I: 'static + ImageIndex + Sync + Send + Copy + Clone,
-          C: Deref<Target=[u8]> + Sync + Send,
-{
-    println!("Mapping output file");
+    let index = Bsq::from(inner.dims.clone());
+    let input = SpectralImage {
+        inner,
+        index,
+    };
 
     headers.bands = bands as usize;
 
-    println!("Allocating output file");
-    out.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
+    output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
 
-    let inner = unsafe {
-        SpectralImageContainer::headers_mut(&headers, &out)?
-    };
+    headers.interleave = Interleave::Bsq;
 
+    let inner = SpectralImageContainer::headers_mut(&headers, &output_file)?;
 
     let index = Bsq::from(inner.dims.clone());
     let mut out = SpectralImage {
@@ -91,21 +62,9 @@ fn continue_from_input<C, I>(
         index,
     };
 
-    finish_pca(&input, &mut out, bands)?;
-
-    Ok(())
-}
-
-fn finish_pca<C1, C2, I1>(input: &SpectralImage<C1, f32, I1>, output: &mut SpectralImage<C2, f32, Bsq>, bands: u64)
-                          -> Result<(), ConversionError>
-    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
-          C1: Deref<Target=[u8]> + Sync + Send,
-          C2: DerefMut<Target=[u8]> + Sync + Send
-{
-    println!("Performing PCA");
     unsafe {
-        input.pca(output, bands);
+        input.pca(&mut out, bands);
     }
-    println!("finished");
+
     Ok(())
 }
