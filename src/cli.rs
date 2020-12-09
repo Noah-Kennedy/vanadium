@@ -15,7 +15,7 @@ pub struct Opt {
 pub enum SubcommandOpt {
     Convert(ConvertOpt),
     Color(ColorOpt),
-    Pca(PcaOpt)
+    Pca(PcaOpt),
 }
 
 /// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
@@ -90,7 +90,7 @@ pub struct PcaOpt {
 /// hyperspectra color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
 /// ```
 #[derive(StructOpt, Debug)]
-#[structopt(name = "color", settings = &[structopt::clap::AppSettings::AllowNegativeNumbers])]
+#[structopt(name = "color", settings = & [structopt::clap::AppSettings::AllowNegativeNumbers])]
 pub struct ColorOpt {
     /// The path to the input binary file.
     #[structopt(short, long, parse(from_os_str))]
