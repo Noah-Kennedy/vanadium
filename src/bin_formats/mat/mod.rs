@@ -4,7 +4,7 @@ pub use color_maps::*;
 pub use conversion::*;
 pub use pca::*;
 
-use crate::bin_formats::{FileDims, FileInner};
+use crate::bin_formats::{FileDims, FileInner, FileIndex};
 use crate::headers::Interleave;
 
 mod conversion;
@@ -13,11 +13,6 @@ mod stat;
 mod pca;
 
 pub type MatType = Interleave;
-
-pub trait FileIndex: {
-    fn order(&self) -> MatType;
-    fn get_idx(&self, line: usize, pixel: usize, band: usize) -> usize;
-}
 
 pub struct Mat<C, T, I> {
     pub inner: FileInner<C, T>,
