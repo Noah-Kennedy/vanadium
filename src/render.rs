@@ -69,19 +69,6 @@ fn helper<C, I>(
     let blues = &opt.blue_bands;
 
     match color {
-        "coolwarm" => {
-            let mut out = RgbImage::from_raw(
-                width as u32,
-                height as u32,
-                vec![0; height * width * 3],
-            ).unwrap();
-
-            println!("Applying color map");
-            input.cool_warm_stat(&mut out, min[0], max[0], bands[0]);
-
-            println!("Saving...");
-            out.save(path)?;
-        }
         "rgb" => {
             let mut out = RgbImage::from_raw(
                 width as u32,
