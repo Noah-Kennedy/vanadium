@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::fs::{File, read_to_string};
 use std::ops::Deref;
-use std::path::PathBuf;
 use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
@@ -14,9 +13,9 @@ use crate::cli::ColorOpt;
 use crate::headers::{Headers, Interleave};
 
 pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
-    let input_file = File::open(opt.input)?;
+    let input_file = File::open(opt.input.clone())?;
 
-    let headers_str = read_to_string(opt.header)?;
+    let headers_str = read_to_string(opt.header.clone())?;
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     let inner: SpectralImageContainer<_, f32> = SpectralImageContainer::headers(&parsed_headers, &input_file)?;
@@ -28,8 +27,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
-                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
+            helper(&input, &opt)
         }
         Interleave::Bil => {
             let index = Bil::from(inner.dims.clone());
@@ -37,8 +35,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
-                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
+            helper(&input, &opt)
         }
         Interleave::Bsq => {
             let index = Bsq::from(inner.dims.clone());
@@ -46,22 +43,14 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
                 inner,
                 index,
             };
-            helper(&input, opt.output, &opt.color_map, &opt.minimums, &opt.maximums, &opt.bands,
-                   &opt.red_bands, &opt.blue_bands, &opt.green_bands)
+            helper(&input, &opt)
         }
     }
 }
 
 fn helper<C, I>(
     input: &SpectralImage<C, f32, I>,
-    path: PathBuf,
-    f: &str,
-    min: &[f32],
-    max: &[f32],
-    bands: &[usize],
-    reds: &[usize],
-    blues: &[usize],
-    greens: &[usize],
+    opt: &ColorOpt
 )
     -> Result<(), Box<dyn Error>>
     where I: 'static + ImageIndex + Sync + Send + Copy + Clone,
@@ -70,8 +59,16 @@ fn helper<C, I>(
     let FileDims { samples, lines, .. } = input.inner.size();
     let height = lines;
     let width = samples;
+    let min = &opt.minimums;
+    let max = &opt.maximums;
+    let bands = &opt.bands;
+    let path = &opt.output;
+    let color = opt.color_map.as_str();
+    let reds = &opt.red_bands;
+    let greens = &opt.green_bands;
+    let blues = &opt.blue_bands;
 
-    match f {
+    match color {
         "coolwarm" => {
             let mut out = RgbImage::from_raw(
                 width as u32,
@@ -119,7 +116,7 @@ fn helper<C, I>(
                 vec![0; height * width * 3],
             ).unwrap();
 
-            let flag = match f {
+            let flag = match color {
                 "green" => ColorFlag::Green,
                 "red" => ColorFlag::Red,
                 "blue" => ColorFlag::Blue,
