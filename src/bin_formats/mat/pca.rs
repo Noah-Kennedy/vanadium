@@ -22,8 +22,8 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     )
         where C2: DerefMut<Target=[u8]> + Send + Sync
     {
-        let min = min.unwrap_or(f32::neg_infinity());
-        let max = max.unwrap_or(f32::infinity());
+        let min = min.unwrap_or_else(f32::neg_infinity);
+        let max = max.unwrap_or_else(f32::infinity);
 
         let mp = Arc::new(MultiProgress::new());
 
