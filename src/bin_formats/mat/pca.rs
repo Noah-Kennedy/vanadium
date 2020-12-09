@@ -13,7 +13,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub unsafe fn pca<C2>(&self, other: &mut SpectralImage<C2, f32, Bsq>, kept_bands: u64)
+    pub fn pca<C2>(&self, other: &mut SpectralImage<C2, f32, Bsq>, kept_bands: u64)
         where C2: DerefMut<Target=[u8]> + Send + Sync
     {
         let sty = ProgressStyle::default_bar()

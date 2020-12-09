@@ -108,7 +108,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         sum.sqrt()
     }
 
-    pub unsafe fn all_band_averages(&self, sty: &ProgressStyle, mp: &MultiProgress) -> Vec<f64> {
+    pub fn all_band_averages(&self, sty: &ProgressStyle, mp: &MultiProgress) -> Vec<f64> {
         let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
@@ -119,7 +119,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         let means = (0..bands.len())
             .into_par_iter()
             .map(|b| {
-                let out = self.band_mean(b);
+                let out = unsafe { self.band_mean(b) };
                 status_bar.inc(1);
                 out
             })
@@ -130,7 +130,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         means
     }
 
-    pub unsafe fn all_band_standard_deviations(
+    pub fn all_band_standard_deviations(
         &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f64],
     )
         -> Vec<f64>
@@ -146,7 +146,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
             .into_par_iter()
             .zip(means.par_iter())
             .map(|(b, m)| {
-                let out = self.band_std_dev(b, Some(*m));
+                let out = unsafe { self.band_std_dev(b, Some(*m)) };
                 status_bar.inc(1);
                 out
             })
@@ -157,7 +157,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         devs
     }
 
-    pub unsafe fn calculate_covariance_matrix(
+    pub fn calculate_covariance_matrix(
         &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f64],
     ) -> DMatrix<f64>
     {
@@ -180,10 +180,12 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
             .map(|b1| {
                 let mut v: Vec<f64> = (0..=b1)
                     .map(|b2| {
-                        let out = self.covariance_pair(
-                            [b1, b2],
-                            [means[b1], means[b2]],
-                        );
+                        let out = unsafe {
+                            self.covariance_pair(
+                                [b1, b2],
+                                [means[b1], means[b2]],
+                            )
+                        };
                         status_bar.inc(1);
                         out
                     })

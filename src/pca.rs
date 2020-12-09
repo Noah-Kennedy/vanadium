@@ -28,16 +28,9 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
                 file into a BSQ file."
     );
 
-    // validate preconditions
-    assert_eq!(headers.interleave, Interleave::Bsq,
-               "Only BSQ files are supported, please use the 'convert' subcommand to convert your \
-                file into a BSQ file."
-    );
-
     let output_file = OpenOptions::new()
         .create(true)
         .write(true)
-        .read(true)
         .open(output)?;
 
     let inner = SpectralImageContainer::headers(&headers, &input_file)?;
@@ -62,9 +55,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         index,
     };
 
-    unsafe {
-        input.pca(&mut out, bands);
-    }
+    input.pca(&mut out, bands);
 
     Ok(())
 }

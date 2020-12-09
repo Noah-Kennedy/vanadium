@@ -14,14 +14,11 @@ use crate::cli::ColorOpt;
 use crate::headers::{Headers, Interleave};
 
 pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
-    println!("Opening input file");
     let input_file = File::open(opt.input)?;
 
-    println!("Reading headers");
     let headers_str = read_to_string(opt.header)?;
     let parsed_headers = Headers::from_str(&headers_str)?;
 
-    println!("Mapping input file");
     let inner: SpectralImageContainer<_, f32> = SpectralImageContainer::headers(&parsed_headers, &input_file)?;
 
     match parsed_headers.interleave {
@@ -76,20 +73,19 @@ fn helper<C, I>(
 
     match f {
         "coolwarm" => {
-            println!("Allocating output buffer");
             let mut out = RgbImage::from_raw(
                 width as u32,
                 height as u32,
                 vec![0; height * width * 3],
             ).unwrap();
 
+            println!("Applying color map");
             input.cool_warm_stat(&mut out, min[0], max[0], bands[0]);
 
             println!("Saving...");
             out.save(path)?;
         }
         "rgb" => {
-            println!("Allocating output buffer");
             let mut out = RgbImage::from_raw(
                 width as u32,
                 height as u32,
@@ -103,7 +99,6 @@ fn helper<C, I>(
             out.save(path)?;
         }
         "gray" | "grey" => {
-            println!("Allocating output buffer");
             let mut out = GrayImage::from_raw(
                 width as u32,
                 height as u32,
@@ -141,7 +136,6 @@ fn helper<C, I>(
             out.save(path)?;
         }
         "mask" => {
-            println!("Allocating output buffer");
             let mut out = GrayImage::from_raw(
                 width as u32,
                 height as u32,
