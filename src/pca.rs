@@ -34,6 +34,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     let output_file = OpenOptions::new()
         .create(true)
         .write(true)
+        .read(true)
         .open(output)?;
 
     let inner = SpectralImageContainer::headers(&headers, &input_file)?;
