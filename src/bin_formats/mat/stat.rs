@@ -1,18 +1,16 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use nalgebra::{DMatrix, Dynamic, SymmetricEigen};
-use num::Float;
+use nalgebra::DMatrix;
 use rayon::prelude::*;
 
 use crate::bin_formats::{FileDims, FileIndex, Mat};
-use crate::bin_formats::bsq::Bsq;
 
 impl<C1, I1> Mat<C1, f32, I1>
     where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub unsafe fn mean(&self, band: usize) -> f64 {
+    pub unsafe fn band_mean(&self, band: usize) -> f64 {
         let FileDims { bands: _, samples, lines } = self.inner.size();
 
         let r_ptr = self.inner.get_unchecked();
@@ -36,7 +34,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         sum / count as f64
     }
 
-    pub unsafe fn std_dev(&self, band: usize, mean: Option<f64>) -> f64 {
+    pub unsafe fn band_std_dev(&self, band: usize, mean: Option<f64>) -> f64 {
         let FileDims { bands: _, samples, lines } = self.inner.size();
 
         let r_ptr = self.inner.get_unchecked();
@@ -44,7 +42,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let mean = if let Some(mean) = mean {
             mean
         } else {
-            self.mean(band)
+            self.band_mean(band)
         };
 
 
@@ -71,7 +69,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         sum.sqrt()
     }
 
-    pub unsafe fn covariance(&self, bands: [usize; 2], means: [f64; 2]) -> f64
+    pub unsafe fn covariance_pair(&self, bands: [usize; 2], means: [f64; 2]) -> f64
     {
         let FileDims { bands: _, samples, lines } = self.inner.size();
 
@@ -110,7 +108,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         sum.sqrt()
     }
 
-    pub unsafe fn average_bulk(&self, sty: &ProgressStyle, mp: &MultiProgress) -> Vec<f64> {
+    pub unsafe fn all_band_averages(&self, sty: &ProgressStyle, mp: &MultiProgress) -> Vec<f64> {
         let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
@@ -121,7 +119,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         let means = (0..bands.len())
             .into_par_iter()
             .map(|b| {
-                let out = self.mean(b);
+                let out = self.band_mean(b);
                 status_bar.inc(1);
                 out
             })
@@ -132,7 +130,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         means
     }
 
-    pub unsafe fn std_dev_bulk(
+    pub unsafe fn all_band_standard_deviations(
         &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f64],
     )
         -> Vec<f64>
@@ -148,7 +146,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             .into_par_iter()
             .zip(means.par_iter())
             .map(|(b, m)| {
-                let out = self.std_dev(b, Some(*m));
+                let out = self.band_std_dev(b, Some(*m));
                 status_bar.inc(1);
                 out
             })
@@ -159,7 +157,7 @@ impl<C1, I1> Mat<C1, f32, I1>
         devs
     }
 
-    pub unsafe fn covariances_bulk(
+    pub unsafe fn calculate_covariance_matrix(
         &self, sty: &ProgressStyle, mp: &MultiProgress, means: &[f64],
     ) -> DMatrix<f64>
     {
@@ -167,6 +165,7 @@ impl<C1, I1> Mat<C1, f32, I1>
 
         let mut tot_val = 0;
 
+        // todo derive the equation for this
         for i in 0..bands.len() {
             tot_val += i + 1;
         }
@@ -181,7 +180,7 @@ impl<C1, I1> Mat<C1, f32, I1>
             .map(|b1| {
                 let mut v: Vec<f64> = (0..=b1)
                     .map(|b2| {
-                        let out = self.covariance(
+                        let out = self.covariance_pair(
                             [b1, b2],
                             [means[b1], means[b2]],
                         );
@@ -208,80 +207,5 @@ impl<C1, I1> Mat<C1, f32, I1>
         out.fill_upper_triangle_with_lower_triangle();
 
         out
-    }
-
-    pub fn pca_write<C2>(
-        &self, other: &mut Mat<C2, f32, Bsq>,
-        sty: &ProgressStyle,
-        mp: &MultiProgress,
-        kept_bands: u64,
-        means: &[f64], std_devs: &[f64],
-        eigen: &SymmetricEigen<f64, Dynamic>,
-    )
-        where C2: DerefMut<Target=[u8]> + Send + Sync
-    {
-        let FileDims { bands, samples, lines } = self.inner.size();
-
-        let r_ptr = unsafe { self.inner.get_unchecked() };
-        let w_ptr = unsafe { other.inner.get_unchecked_mut() };
-
-        let status_bar = mp.add(ProgressBar::new(kept_bands));
-        status_bar.set_style(sty.clone());
-        status_bar.enable_steady_tick(200);
-        status_bar.set_message("Band Writes");
-        let sc = status_bar.clone();
-
-        (0..kept_bands)
-            .into_iter()
-            .for_each(|b1| {
-                let r_ptr = r_ptr;
-                let w_ptr = w_ptr;
-                let band_len = bands.len();
-                let o_index = other.index;
-                let status_bar = status_bar.clone();
-
-                rayon::scope(move |s| {
-                    for l in 0..lines {
-                        let eig = eigen.eigenvectors.clone();
-
-                        s.spawn(move |_| {
-                            let col = eig.column(b1 as usize);
-                            for s in 0..samples {
-                                let read: Vec<_> = (0..band_len)
-                                    .map(|b2| (b2, self.index.get_idx(l, s, b2)))
-                                    .map(|(b2, read_idx)| {
-                                        let val = unsafe {
-                                            r_ptr.0.add(read_idx).read_volatile()
-                                        } as f64;
-
-                                        let z_val = (val - means[b2]) / std_devs[b2];
-                                        let z_off = (0.0 - means[b2]) / std_devs[b2];
-
-                                        if (z_val - z_off).abs() < f64::EPSILON {
-                                            f64::neg_infinity()
-                                        } else {
-                                            z_val
-                                        }
-                                    })
-                                    .collect();
-
-                                let w_val: f64 = read.into_iter().zip(col.into_iter())
-                                    .map(|(d, s)| d * s)
-                                    .sum();
-
-                                let w_idx = o_index.get_idx(l, s, b1 as usize);
-
-                                unsafe {
-                                    w_ptr.0.add(w_idx).write_volatile(w_val as f32);
-                                }
-                            }
-                        });
-                    }
-
-                    status_bar.inc(1);
-                });
-            });
-
-        sc.finish();
     }
 }

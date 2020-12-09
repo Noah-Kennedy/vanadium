@@ -1,19 +1,16 @@
-use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
-use std::thread;
-
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use std::ops::Deref;
 
 pub use color_maps::*;
 pub use conversion::*;
+pub use pca::*;
 
 use crate::bin_formats::{FileDims, FileInner};
-use crate::bin_formats::bsq::Bsq;
 use crate::headers::Interleave;
 
 mod conversion;
 mod color_maps;
 mod stat;
+mod pca;
 
 pub type MatType = Interleave;
 
@@ -69,72 +66,5 @@ impl<C1, C2, T, I1, I2> PartialEq<Mat<C2, T, I2>> for Mat<C1, T, I1>
         } else {
             false
         }
-    }
-}
-
-impl<C1, I1> Mat<C1, f32, I1>
-    where I1: 'static + FileIndex + Sync + Send + Copy + Clone,
-          C1: Deref<Target=[u8]> + Sync + Send,
-{
-    pub unsafe fn pca<C2>(&self, other: &mut Mat<C2, f32, Bsq>, kept_bands: u64)
-        where C2: DerefMut<Target=[u8]> + Send + Sync
-    {
-        let sty = ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} [{eta_precise}] {msg}")
-            .progress_chars("##-");
-
-        let mp = Arc::new(MultiProgress::new());
-
-        let stages_bar = mp.add(ProgressBar::new(5));
-        stages_bar.set_style(sty.clone());
-        stages_bar.enable_steady_tick(200);
-
-        let mm2 = mp.clone();
-
-        let j = thread::Builder::new()
-            .name("progbar-manager".to_owned())
-            .spawn(move || {
-                mm2.join_and_clear().unwrap();
-            }).unwrap();
-
-        stages_bar.set_message("Stage: Averages");
-        let means: Vec<_> = self.average_bulk(&sty, &mp);
-        stages_bar.inc(1);
-
-        stages_bar.println("Averages:");
-        let message = format!("{:#?}", &means);
-        stages_bar.println(message);
-
-        stages_bar.set_message("Stage: Standard Deviations");
-        let std_devs: Vec<_> = self.std_dev_bulk(&sty, &mp, &means);
-        stages_bar.inc(1);
-
-        stages_bar.println("Standard Deviations:");
-        let message = format!("{:#?}", &std_devs);
-        stages_bar.println(message);
-
-        stages_bar.set_message("Stage: Covariances");
-        let covariances = self.covariances_bulk(&sty, &mp, &means);
-        stages_bar.inc(1);
-
-        stages_bar.println("Covariances:");
-        let message = format!("{}", covariances);
-        stages_bar.println(message);
-
-        stages_bar.set_message("Stage: Eigendecomposition");
-        let eigen = covariances.symmetric_eigen();
-        stages_bar.inc(1);
-
-        stages_bar.println("Eigen:");
-        let message = format!("{:#?}", eigen);
-        stages_bar.println(message);
-
-        stages_bar.set_message("Stage: Writes");
-        self.pca_write(other, &sty, &mp, kept_bands, &means, &std_devs, &eigen);
-        stages_bar.inc(1);
-
-        stages_bar.finish();
-
-        j.join().unwrap();
     }
 }
