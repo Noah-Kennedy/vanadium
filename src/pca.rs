@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fs::{File, OpenOptions, read_to_string};
+use std::fs::{OpenOptions, read_to_string};
 use std::str::FromStr;
 
 use crate::bin_formats::{SpectralImage, SpectralImageContainer};
@@ -21,7 +21,9 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     let headers_str = read_to_string(header)?;
     let mut headers = Headers::from_str(&headers_str)?;
 
-    let input_file = File::open(input)?;
+    let input_file = OpenOptions::new()
+        .read(true)
+        .open(input)?;
 
     // validate preconditions
     assert_eq!(headers.interleave, Interleave::Bsq,
