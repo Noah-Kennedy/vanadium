@@ -4,7 +4,7 @@ use std::thread;
 
 use indicatif::{MultiProgress, ProgressBar};
 use nalgebra::{Dynamic, SymmetricEigen};
-use num::Float;
+use num::traits::float::FloatCore;
 
 use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
 use crate::bin_formats::bsq::Bsq;
