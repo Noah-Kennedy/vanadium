@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate serde;
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -7,7 +10,7 @@ use std::str::FromStr;
 
 use regex::Regex;
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Headers {
     /// The number of bands per image file.
     pub bands: usize,
@@ -74,7 +77,7 @@ impl Display for ParseFieldError {
 
 impl Error for ParseFieldError {}
 
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum Interleave {
     Bip,
     Bil,
@@ -105,7 +108,7 @@ impl ToString for Interleave {
     }
 }
 
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum DataType {
     U8 = 1,
     I16 = 2,
@@ -141,7 +144,7 @@ impl FromStr for DataType {
     }
 }
 
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum FileByteOrder {
     Intel = 0,
     Network = 1,
