@@ -1,12 +1,15 @@
-pub use file_buffer::*;
+pub use buffer::*;
+pub use error::*;
+pub use indexing::*;
 pub use mat::*;
+pub use transforms::*;
 
-pub mod bsq;
-pub mod bip;
-pub mod bil;
-pub mod error;
-mod file_buffer;
+mod indexing;
+mod error;
+mod buffer;
 mod mat;
+mod transforms;
+mod util;
 
 pub trait ImageIndex: {
     fn order(&self) -> MatType;
