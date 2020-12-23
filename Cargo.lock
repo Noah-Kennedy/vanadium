@@ -210,7 +210,6 @@ dependencies = [
  "envi-header 0.1.0",
  "envi-image 0.1.0",
  "image 0.23.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "memmap2 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
