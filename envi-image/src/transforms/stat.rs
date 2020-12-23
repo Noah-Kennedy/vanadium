@@ -4,7 +4,7 @@ use indicatif::{MultiProgress, ProgressBar};
 use nalgebra::DMatrix;
 use rayon::prelude::*;
 
-use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
+use crate::{FileDims, ImageIndex, SpectralImage};
 use crate::util::config_bar;
 
 impl<C1, I1> SpectralImage<C1, f32, I1>

@@ -7,12 +7,10 @@ use crate::convert::execute_conversion;
 use crate::pca::execute_pca;
 use crate::render::normalize;
 
-mod bin_formats;
 mod cli;
 mod convert;
 mod pca;
 mod render;
-mod util;
 
 #[cfg(test)]
 mod tests;

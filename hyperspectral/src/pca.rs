@@ -2,10 +2,14 @@ use std::error::Error;
 use std::fs::{OpenOptions, read_to_string};
 use std::str::FromStr;
 
-use crate::bin_formats::{SpectralImage, SpectralImageContainer};
-use crate::bin_formats::bsq::Bsq;
-use crate::cli::PcaOpt;
 use envi_header::{Headers, Interleave};
+use envi_image::{
+    Bsq,
+    SpectralImage,
+    SpectralImageContainer,
+};
+
+use crate::cli::PcaOpt;
 
 pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     // unpack PCA cli options

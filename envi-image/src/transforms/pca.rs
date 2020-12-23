@@ -6,8 +6,7 @@ use indicatif::{MultiProgress, ProgressBar};
 use nalgebra::{Dynamic, SymmetricEigen};
 use num::traits::float::FloatCore;
 
-use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
-use crate::bin_formats::bsq::Bsq;
+use crate::{Bsq, FileDims, ImageIndex, SpectralImage};
 use crate::util::config_bar;
 
 impl<C1, I1> SpectralImage<C1, f32, I1>

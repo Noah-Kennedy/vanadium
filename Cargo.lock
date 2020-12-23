@@ -156,6 +156,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "envi-image"
+version = "0.1.0"
+dependencies = [
+ "envi-header 0.1.0",
+ "image 0.23.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "memmap2 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nalgebra 0.23.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rayon 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -195,13 +208,9 @@ name = "hyperspectra"
 version = "0.3.0"
 dependencies = [
  "envi-header 0.1.0",
+ "envi-image 0.1.0",
  "image 0.23.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap2 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "nalgebra 0.23.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rayon 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

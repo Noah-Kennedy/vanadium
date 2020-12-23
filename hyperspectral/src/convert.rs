@@ -3,13 +3,15 @@ use std::fs::{File, OpenOptions, read_to_string};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use crate::bin_formats::{ImageIndex, MatType, SpectralImage, SpectralImageContainer};
-use crate::bin_formats::bil::Bil;
-use crate::bin_formats::bip::Bip;
-use crate::bin_formats::bsq::Bsq;
-use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
-use crate::cli::ConvertOpt;
 use envi_header::{Headers, Interleave};
+use envi_image::{
+    Bil, Bip, Bsq,
+    ConversionError, ConversionErrorKind, ImageIndex,
+    MatType, SizeMismatchError,
+    SpectralImage, SpectralImageContainer,
+};
+
+use crate::cli::ConvertOpt;
 
 pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let ConvertOpt {

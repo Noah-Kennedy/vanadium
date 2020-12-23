@@ -1,4 +1,4 @@
-use crate::bin_formats::{FileDims, ImageIndex, MatType};
+use crate::{FileDims, ImageIndex, MatType};
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct Bip {

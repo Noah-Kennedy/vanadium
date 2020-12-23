@@ -2,7 +2,7 @@ use std::mem;
 
 use memmap2::MmapMut;
 
-use crate::bin_formats::{FileDims, ImageIndex, SpectralImageContainer, SpectralImage};
+use crate::bin_formats::{FileDims, ImageIndex, SpectralImage, SpectralImageContainer};
 
 mod mat_tests;
 
@@ -54,6 +54,6 @@ unsafe fn make_mat<I>(bytes: &[u8; 108]) -> SpectralImage<MmapMut, f32, I>
 
     SpectralImage {
         inner,
-        index
+        index,
     }
 }

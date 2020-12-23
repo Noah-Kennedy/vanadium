@@ -1,16 +1,8 @@
 use std::ops::Deref;
 
-pub use render::*;
-pub use conversion::*;
-pub use pca::*;
-
-use crate::bin_formats::{FileDims, ImageIndex, SpectralImageContainer};
 use envi_header::Interleave;
 
-mod conversion;
-mod render;
-mod stat;
-mod pca;
+use crate::{FileDims, ImageIndex, SpectralImageContainer};
 
 pub type MatType = Interleave;
 

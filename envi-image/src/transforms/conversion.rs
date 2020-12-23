@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use indicatif::ProgressBar;
 
-use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
+use crate::{FileDims, ImageIndex, SpectralImage};
 use crate::util::config_bar;
 
 impl<C1, I1> SpectralImage<C1, f32, I1>

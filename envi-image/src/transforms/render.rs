@@ -5,7 +5,7 @@ use image::{GrayImage, Luma, Rgb, RgbImage};
 use indicatif::ProgressBar;
 use num::Zero;
 
-use crate::bin_formats::{FileDims, ImageIndex, SpectralImage};
+use crate::{FileDims, ImageIndex, SpectralImage};
 use crate::util::config_bar;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash)]

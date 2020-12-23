@@ -1,21 +1,28 @@
 [package]
-name = "hyperspectra"
-version = "0.3.0"
+name = "envi-image"
+version = "0.1.0"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
 
 [dependencies.envi-header]
 path = "../envi-header"
 
-[dependencies.envi-image]
-path = "../envi-image"
-
 [dependencies.memmap2]
 version = "0.1.0"
 
-[dependencies.structopt]
-version = "0.3.21"
+[dependencies.rayon]
+version = "1.5"
+
+[dependencies.indicatif]
+version = "0.15.0"
+features = ["improved_unicode"]
+
+[dependencies.num]
+version = "0.3.1"
 default-features = false
+
+[dependencies.nalgebra]
+version = "0.23.1"
 
 [dependencies.image]
 version = "0.23.12"

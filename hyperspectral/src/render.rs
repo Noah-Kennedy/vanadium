@@ -5,12 +5,13 @@ use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use crate::bin_formats::{ColorFlag, FileDims, ImageIndex, SpectralImage, SpectralImageContainer};
-use crate::bin_formats::bil::Bil;
-use crate::bin_formats::bip::Bip;
-use crate::bin_formats::bsq::Bsq;
-use crate::cli::ColorOpt;
 use envi_header::{Headers, Interleave};
+use envi_image::{ColorFlag, FileDims, ImageIndex, SpectralImage, SpectralImageContainer};
+use envi_image::Bil;
+use envi_image::Bip;
+use envi_image::Bsq;
+
+use crate::cli::ColorOpt;
 
 pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let input_file = File::open(opt.input.clone())?;
@@ -50,7 +51,7 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
 
 fn helper<C, I>(
     input: &SpectralImage<C, f32, I>,
-    opt: &ColorOpt
+    opt: &ColorOpt,
 )
     -> Result<(), Box<dyn Error>>
     where I: 'static + ImageIndex + Sync + Send + Copy + Clone,
