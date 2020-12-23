@@ -204,7 +204,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "hyperspectra"
+name = "hyperspectral"
 version = "0.3.0"
 dependencies = [
  "envi-header 0.1.0",

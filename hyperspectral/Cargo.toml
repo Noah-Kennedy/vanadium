@@ -1,5 +1,5 @@
 [package]
-name = "hyperspectra"
+name = "hyperspectral"
 version = "0.3.0"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
