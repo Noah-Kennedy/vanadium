@@ -254,6 +254,6 @@ fn parse_scalar_field<T>(
     fields_map.remove(field)
         .map(Ok)
         .unwrap_or(Err(ParseHeaderError::RequiredFieldNotFound(field)))?
-        .parse::<T>()
+        .parse()
         .map_err(|_| ParseHeaderError::BadValue("bands"))
 }
