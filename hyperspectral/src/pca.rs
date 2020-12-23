@@ -5,7 +5,7 @@ use std::str::FromStr;
 use crate::bin_formats::{SpectralImage, SpectralImageContainer};
 use crate::bin_formats::bsq::Bsq;
 use crate::cli::PcaOpt;
-use crate::headers::{Headers, Interleave};
+use envi_header::{Headers, Interleave};
 
 pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     // unpack PCA cli options

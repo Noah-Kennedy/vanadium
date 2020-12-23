@@ -5,7 +5,7 @@ pub use conversion::*;
 pub use pca::*;
 
 use crate::bin_formats::{FileDims, ImageIndex, SpectralImageContainer};
-use crate::headers::Interleave;
+use envi_header::Interleave;
 
 mod conversion;
 mod render;

@@ -6,7 +6,7 @@ use std::ops::{Deref, DerefMut};
 
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
-use crate::headers::{FileByteOrder, Headers};
+use envi_header::{FileByteOrder, Headers};
 
 #[derive(Copy, Clone)]
 pub struct FileBuf<T>(pub(crate) *const T);

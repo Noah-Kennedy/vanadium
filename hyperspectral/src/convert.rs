@@ -9,7 +9,7 @@ use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
 use crate::bin_formats::error::{ConversionError, ConversionErrorKind, SizeMismatchError};
 use crate::cli::ConvertOpt;
-use crate::headers::{Headers, Interleave};
+use envi_header::{Headers, Interleave};
 
 pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let ConvertOpt {

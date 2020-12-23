@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use crate::headers::Interleave;
+use envi_header::Interleave;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "basic")]

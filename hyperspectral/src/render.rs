@@ -10,7 +10,7 @@ use crate::bin_formats::bil::Bil;
 use crate::bin_formats::bip::Bip;
 use crate::bin_formats::bsq::Bsq;
 use crate::cli::ColorOpt;
-use crate::headers::{Headers, Interleave};
+use envi_header::{Headers, Interleave};
 
 pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let input_file = File::open(opt.input.clone())?;

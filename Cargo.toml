@@ -1,36 +1,5 @@
-[package]
-name = "hyperspectra"
-version = "0.3.0"
-authors = ["noah <nomaxx117@gmail.com>"]
-edition = "2018"
-
-[dependencies.memmap2]
-version = "0.1.0"
-
-[dependencies.rayon]
-version = "1.5"
-
-[dependencies.structopt]
-version = "0.3.21"
-default-features = false
-
-[dependencies.num]
-version = "0.3.1"
-default-features = false
-
-[dependencies.regex]
-version = "1.4"
-default-features = false
-features = ["std"]
-
-[dependencies.nalgebra]
-version = "0.23.1"
-
-[dependencies.indicatif]
-version = "0.15.0"
-features = ["improved_unicode"]
-
-[dependencies.image]
-version = "0.23.12"
-default-features = false
-features = ["png"]
+[workspace]
+members = [
+    "envi-header",
+    "hyperspectral"
+]

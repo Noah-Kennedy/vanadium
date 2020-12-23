@@ -7,7 +7,6 @@ use crate::convert::execute_conversion;
 use crate::pca::execute_pca;
 use crate::render::normalize;
 
-mod headers;
 mod bin_formats;
 mod cli;
 mod convert;
