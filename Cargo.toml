@@ -2,5 +2,5 @@
 members = [
     "envi-header",
     "envi-image",
-    "hyperspectral"
+    "hyperspectra"
 ]
