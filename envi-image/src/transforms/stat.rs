@@ -11,7 +11,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
     where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
           C1: Deref<Target=[u8]> + Sync + Send,
 {
-    pub unsafe fn band_mean(&self, band: usize, min: f32, max: f32) -> f64 {
+    pub(crate) unsafe fn band_mean(&self, band: usize, min: f32, max: f32) -> f64 {
         let FileDims { bands: _, samples, lines } = self.inner.size();
 
         let r_ptr = self.inner.get_unchecked();
@@ -35,7 +35,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         sum / count as f64
     }
 
-    pub unsafe fn band_std_dev(&self, band: usize, mean: Option<f64>, min: f32, max: f32) -> f64 {
+    pub(crate) unsafe fn band_std_dev(&self, band: usize, mean: Option<f64>, min: f32, max: f32) -> f64 {
         let FileDims { bands: _, samples, lines } = self.inner.size();
 
         let r_ptr = self.inner.get_unchecked();
@@ -70,7 +70,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         sum.sqrt()
     }
 
-    pub unsafe fn covariance_pair(
+    pub(crate) unsafe fn covariance_pair(
         &self, bands: [usize; 2], means: [f64; 2], min: f32, max: f32,
     )
         -> f64
@@ -112,7 +112,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         sum.sqrt()
     }
 
-    pub fn all_band_averages(&self, mp: &MultiProgress, min: f32, max: f32) -> Vec<f64> {
+    pub(crate) fn all_band_averages(&self, mp: &MultiProgress, min: f32, max: f32) -> Vec<f64> {
         let FileDims { bands, samples: _, lines: _ } = self.inner.size();
 
         let status_bar = mp.add(ProgressBar::new(bands.len() as u64));
@@ -132,7 +132,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         means
     }
 
-    pub fn all_band_standard_deviations(
+    pub(crate) fn all_band_standard_deviations(
         &self, mp: &MultiProgress, means: &[f64], min: f32, max: f32,
     )
         -> Vec<f64>
@@ -157,7 +157,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         devs
     }
 
-    pub fn calculate_covariance_matrix(
+    pub(crate) fn calculate_covariance_matrix(
         &self, mp: &MultiProgress, means: &[f64], min: f32, max: f32,
     ) -> DMatrix<f64>
     {
