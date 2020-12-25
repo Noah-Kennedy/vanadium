@@ -3,11 +3,12 @@ use std::fs::{OpenOptions, read_to_string};
 use std::str::FromStr;
 
 use envi_header::{Headers, Interleave};
-use envi_image::{
-    Bsq,
+use envi_mapped_image::{
     SpectralImage,
     SpectralImageContainer,
 };
+
+use envi_image::Bsq;
 
 use crate::cli::PcaOpt;
 

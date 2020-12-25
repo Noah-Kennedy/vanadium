@@ -1,0 +1,36 @@
+[package]
+name = "envi-mapped-image"
+version = "0.1.0"
+authors = ["noah <nomaxx117@gmail.com>"]
+edition = "2018"
+
+[dependencies.envi-util]
+path = "../envi-util"
+
+[dependencies.envi-header]
+path = "../envi-header"
+
+[dependencies.envi-image]
+path = "../envi-image"
+
+[dependencies.memmap2]
+version = "0.2.0"
+
+[dependencies.rayon]
+version = "1.5"
+
+[dependencies.indicatif]
+version = "0.15.0"
+features = ["improved_unicode"]
+
+[dependencies.num]
+version = "0.3.1"
+default-features = false
+
+[dependencies.nalgebra]
+version = "0.23.1"
+
+[dependencies.image]
+version = "0.23.12"
+default-features = false
+features = ["png"]

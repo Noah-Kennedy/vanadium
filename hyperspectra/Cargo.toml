@@ -7,6 +7,9 @@ edition = "2018"
 [dependencies.envi-header]
 path = "../envi-header"
 
+[dependencies.envi-mapped-image]
+path = "../envi-mapped-image"
+
 [dependencies.envi-image]
 path = "../envi-image"
 

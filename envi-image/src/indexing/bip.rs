@@ -1,4 +1,6 @@
-use crate::{FileDims, ImageIndex, MatType};
+use crate::ImageIndex;
+use crate::indexing::FileDims;
+use envi_header::Interleave;
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct Bip {
@@ -17,8 +19,8 @@ impl From<FileDims> for Bip {
 
 impl ImageIndex for Bip {
     #[inline(always)]
-    fn order(&self) -> MatType {
-        MatType::Bip
+    fn order(&self) -> Interleave {
+        Interleave::Bip
     }
 
     #[inline(always)]

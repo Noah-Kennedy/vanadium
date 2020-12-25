@@ -1,4 +1,6 @@
-use crate::{FileDims, ImageIndex, MatType};
+use crate::ImageIndex;
+use envi_header::Interleave;
+use crate::indexing::FileDims;
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct Bsq {
@@ -17,8 +19,8 @@ impl From<FileDims> for Bsq {
 
 impl ImageIndex for Bsq {
     #[inline(always)]
-    fn order(&self) -> MatType {
-        MatType::Bsq
+    fn order(&self) -> Interleave {
+        Interleave::Bsq
     }
 
     #[inline(always)]

@@ -2,7 +2,8 @@ use std::ops::Deref;
 
 use envi_header::Interleave;
 
-use crate::{FileDims, ImageIndex, SpectralImageContainer};
+use crate::SpectralImageContainer;
+use envi_image::{ImageIndex, FileDims};
 
 pub type MatType = Interleave;
 

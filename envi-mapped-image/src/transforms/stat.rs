@@ -4,8 +4,9 @@ use indicatif::{MultiProgress, ProgressBar};
 use nalgebra::DMatrix;
 use rayon::prelude::*;
 
-use crate::{FileDims, ImageIndex, SpectralImage};
-use crate::util::config_bar;
+use crate::SpectralImage;
+use envi_util::bar::config_bar;
+use envi_image::{ImageIndex, FileDims};
 
 impl<C1, I1> SpectralImage<C1, f32, I1>
     where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,

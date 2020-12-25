@@ -160,12 +160,29 @@ name = "envi-image"
 version = "0.1.0"
 dependencies = [
  "envi-header 0.1.0",
+ "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "envi-mapped-image"
+version = "0.1.0"
+dependencies = [
+ "envi-header 0.1.0",
+ "envi-image 0.1.0",
+ "envi-util 0.1.0",
  "image 0.23.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap2 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "nalgebra 0.23.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "envi-util"
+version = "0.1.0"
+dependencies = [
+ "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -209,6 +226,7 @@ version = "0.3.0"
 dependencies = [
  "envi-header 0.1.0",
  "envi-image 0.1.0",
+ "envi-mapped-image 0.1.0",
  "image 0.23.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -309,10 +327,21 @@ name = "num"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
+ "num-bigint 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-complex 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-iter 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-rational 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "num-bigint"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-integer 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -349,6 +378,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-bigint 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -698,6 +728,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum miniz_oxide 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)" = "791daaae1ed6889560f8c4359194f56648355540573244a5448a83ba1ecc7435"
 "checksum nalgebra 0.23.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c9bd52e9c9922d5702d5c2a105ceacc3c1206e781d3d130f4d2b7ad5f43c144b"
 "checksum num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8b7a8e9be5e039e2ff869df49155f1c06bd01ade2117ec783e56ab0932b67a8f"
+"checksum num-bigint 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "5e9a41747ae4633fce5adffb4d2e81ffc5e89593cb19917f8fb2cc5ff76507bf"
 "checksum num-complex 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "747d632c0c558b87dbabbe6a82f3b4ae03720d0646ac5b7b4dae89394be5f2c5"
 "checksum num-integer 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)" = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
 "checksum num-iter 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)" = "b2021c8337a54d21aca0d59a92577a029af9431cb59b909b03252b9c164fad59"

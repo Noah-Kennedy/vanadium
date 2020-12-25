@@ -7,6 +7,7 @@ use std::ops::{Deref, DerefMut};
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
 use envi_header::{FileByteOrder, Headers};
+use envi_image::FileDims;
 
 #[derive(Copy, Clone)]
 pub struct FileBuf<T>(pub(crate) *const T);
@@ -24,26 +25,7 @@ pub struct SpectralImageContainer<C, T> {
     pub phantom: PhantomData<T>,
 }
 
-#[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct FileDims {
-    pub bands: Vec<u64>,
-    pub samples: usize,
-    pub lines: usize,
-}
 
-impl From<&Headers> for FileDims {
-    fn from(headers: &Headers) -> Self {
-        let lines = headers.lines;
-        let bands = (0..headers.bands as u64).collect();
-        let samples = headers.samples;
-
-        Self {
-            bands,
-            samples,
-            lines,
-        }
-    }
-}
 
 impl<C, T> SpectralImageContainer<C, T> {
     fn check_header_preconditions(headers: &Headers, file: &File) -> Result<(), Box<dyn Error>> {

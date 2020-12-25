@@ -6,12 +6,10 @@ use std::str::FromStr;
 use image::{GrayImage, RgbImage};
 
 use envi_header::{Headers, Interleave};
-use envi_image::{ColorFlag, FileDims, ImageIndex, SpectralImage, SpectralImageContainer};
-use envi_image::Bil;
-use envi_image::Bip;
-use envi_image::Bsq;
+use envi_mapped_image::{ColorFlag, SpectralImage, SpectralImageContainer};
 
 use crate::cli::ColorOpt;
+use envi_image::{ImageIndex, FileDims, Bip, Bil, Bsq};
 
 pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let input_file = File::open(opt.input.clone())?;

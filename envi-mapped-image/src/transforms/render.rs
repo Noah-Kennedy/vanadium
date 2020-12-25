@@ -1,12 +1,12 @@
 use std::fmt::Debug;
-use std::ops::{Deref, Div, Sub};
+use std::ops::Deref;
 
 use image::{GrayImage, Luma, Rgb, RgbImage};
 use indicatif::ProgressBar;
-use num::Zero;
 
-use crate::{FileDims, ImageIndex, SpectralImage};
-use crate::util::config_bar;
+use crate::SpectralImage;
+use envi_util::bar::config_bar;
+use envi_image::{ImageIndex, FileDims, normify};
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash)]
 pub enum ColorFlag {
@@ -196,13 +196,4 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
             bar.inc(samples as u64)
         }
     }
-}
-
-#[inline(always)]
-fn normify<T>(val: T, scale: T, min: T, max: T) -> T
-    where T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T> + Debug + Zero
-{
-    let clamped = num::clamp(val, min, max);
-    let shifted = clamped - min;
-    shifted / scale
 }

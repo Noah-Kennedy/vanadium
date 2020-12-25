@@ -1,8 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt;
-
-use crate::FileDims;
+use envi_image::FileDims;
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct ConversionError {

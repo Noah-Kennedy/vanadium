@@ -4,9 +4,9 @@ use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
 use envi_header::{Headers, Interleave};
-use envi_image::{
-    Bil, Bip, Bsq,
-    ConversionError, ConversionErrorKind, ImageIndex,
+use envi_image::{ImageIndex, Bip, Bil, Bsq};
+use envi_mapped_image::{
+    ConversionError, ConversionErrorKind,
     MatType, SizeMismatchError,
     SpectralImage, SpectralImageContainer,
 };
