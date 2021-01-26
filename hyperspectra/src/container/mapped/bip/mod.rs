@@ -22,15 +22,15 @@ impl<C, T> SizedImage for Bip<C, T> {
 
 #[derive(Clone)]
 pub struct BipBandIter<'a, T> {
-    start: *mut T,
-    end: *mut T,
+    start: *const T,
+    end: *const T,
     num_bands: usize,
     _phantom: PhantomData<&'a T>,
 }
 
 #[derive(Clone)]
 pub struct BipAllBandsIter<'a, T> {
-    start: *mut T,
+    start: *const T,
     count: usize,
     jump: usize,
     num_bands: usize,
@@ -79,15 +79,15 @@ impl<'a, T> Iterator for BipAllBandsIter<'a, T> where T: Copy {
 
 #[derive(Copy, Clone)]
 pub struct BipSampleIter<'a, T> {
-    start: *mut T,
-    end: *mut T,
+    start: *const T,
+    end: *const T,
     _phantom: PhantomData<&'a T>,
 }
 
 #[derive(Clone)]
 pub struct BipAllSamplesIter<'a, T> {
-    start: *mut T,
-    end: *mut T,
+    start: *const T,
+    end: *const T,
     num_bands: usize,
     _phantom: PhantomData<&'a T>,
 }
@@ -190,7 +190,8 @@ impl<T> Bip<MmapMut, T> {
 }
 
 impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
-    where T: 'static + Copy
+    where T: 'static + Copy,
+          C: AsRef<[u8]>
 {
     type Band = BipBandIter<'a, T>;
     type Sample = BipSampleIter<'a, T>;
@@ -198,18 +199,56 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
     type Samples = BipAllSamplesIter<'a, T>;
 
     fn bands(&self) -> Self::Bands {
-        unimplemented!()
+        unsafe {
+            Self::Bands {
+                start: self.container.inner().as_ptr(),
+                count: 0,
+                jump: self.dims.samples * self.dims.lines * self.dims.channels,
+                num_bands: self.dims.channels,
+                _phantom: Default::default(),
+            }
+        }
     }
 
     fn samples(&self) -> Self::Samples {
-        unimplemented!()
+        unsafe {
+            Self::Samples {
+                start: self.container.inner().as_ptr(),
+                end: self.container.inner()
+                    .as_ptr()
+                    .add(self.dims.channels * self.dims.samples * self.dims.lines),
+                num_bands: self.dims.channels,
+                _phantom: Default::default(),
+            }
+        }
     }
 
     fn band(&self, index: usize) -> Self::Band {
-        unimplemented!()
+        unsafe {
+            let start = self.container.inner()
+                .as_ptr()
+                .add(index);
+
+            Self::Band {
+                start,
+                end: start.add(self.dims.channels),
+                num_bands: self.dims.channels,
+                _phantom: Default::default()
+            }
+        }
     }
 
     fn pixel(&self, index: usize) -> Self::Sample {
-        unimplemented!()
+        unsafe {
+            let start = self.container.inner()
+                .as_ptr()
+                .add(index * self.dims.channels);
+
+            Self::Sample {
+                start,
+                end: start.add(self.dims.channels),
+                _phantom: Default::default()
+            }
+        }
     }
 }
