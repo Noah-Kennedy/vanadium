@@ -4,6 +4,4 @@ pub mod header;
 
 pub mod container;
 
-pub mod operations;
-
 pub mod bar;
