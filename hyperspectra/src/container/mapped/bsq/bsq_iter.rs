@@ -1,33 +1,33 @@
 use std::marker::PhantomData;
 
 use crate::container::IterableImage;
-use crate::container::mapped::Bip;
+use crate::container::mapped::Bsq;
 
 #[derive(Clone)]
-pub struct BipBandIter<'a, T> {
+pub struct BsqSampleIter<'a, T> {
     start: *const T,
     end: *const T,
-    num_bands: usize,
+    num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
 
 #[derive(Clone)]
-pub struct BipAllBandsIter<'a, T> {
+pub struct BsqAllSamplesIter<'a, T> {
     start: *const T,
     count: usize,
     jump: usize,
-    num_bands: usize,
+    num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
 
-impl<'a, T> Iterator for BipBandIter<'a, T> {
+impl<'a, T> Iterator for BsqSampleIter<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
                 let v = self.start.as_ref();
-                self.start = self.start.add(self.num_bands);
+                self.start = self.start.add(self.num_samples);
                 v
             }
         } else {
@@ -36,17 +36,17 @@ impl<'a, T> Iterator for BipBandIter<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for BipAllBandsIter<'a, T> where T: Copy {
-    type Item = BipBandIter<'a, T>;
+impl<'a, T> Iterator for BsqAllSamplesIter<'a, T> where T: Copy {
+    type Item = BsqSampleIter<'a, T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.count < self.num_bands {
+        if self.count < self.num_samples {
             self.count += 1;
             unsafe {
-                let r = Some(BipBandIter {
+                let r = Some(BsqSampleIter {
                     start: self.start,
                     end: self.start.add(self.jump),
-                    num_bands: self.num_bands,
+                    num_samples: self.num_samples,
                     _phantom: Default::default(),
                 });
 
@@ -61,21 +61,21 @@ impl<'a, T> Iterator for BipAllBandsIter<'a, T> where T: Copy {
 }
 
 #[derive(Copy, Clone)]
-pub struct BipSampleIter<'a, T> {
+pub struct BsqChannelIter<'a, T> {
     start: *const T,
     end: *const T,
     _phantom: PhantomData<&'a T>,
 }
 
 #[derive(Clone)]
-pub struct BipAllSamplesIter<'a, T> {
+pub struct BsqAllChannelsIter<'a, T> {
     start: *const T,
     end: *const T,
-    num_bands: usize,
+    num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
 
-impl<'a, T> Iterator for BipSampleIter<'a, T> where T: Copy {
+impl<'a, T> Iterator for BsqChannelIter<'a, T> where T: Copy {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -91,17 +91,17 @@ impl<'a, T> Iterator for BipSampleIter<'a, T> where T: Copy {
     }
 }
 
-impl<'a, T> Iterator for BipAllSamplesIter<'a, T> where T: Copy {
-    type Item = BipSampleIter<'a, T>;
+impl<'a, T> Iterator for BsqAllChannelsIter<'a, T> where T: Copy {
+    type Item = BsqChannelIter<'a, T>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
-                self.start = self.start.add(self.num_bands);
+                self.start = self.start.add(self.num_samples);
 
-                Some(BipSampleIter {
+                Some(BsqChannelIter {
                     start: self.start,
-                    end: self.start.add(self.num_bands),
+                    end: self.start.add(self.num_samples),
                     _phantom: Default::default(),
                 })
             }
@@ -111,22 +111,23 @@ impl<'a, T> Iterator for BipAllSamplesIter<'a, T> where T: Copy {
     }
 }
 
-impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
+impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     where T: 'static + Copy,
           C: AsRef<[u8]>
 {
-    type Band = BipBandIter<'a, T>;
-    type Sample = BipSampleIter<'a, T>;
-    type Bands = BipAllBandsIter<'a, T>;
-    type Samples = BipAllSamplesIter<'a, T>;
+    type Band = BsqChannelIter<'a, T>;
+    type Sample = BsqSampleIter<'a, T>;
+    type Bands = BsqAllChannelsIter<'a, T>;
+    type Samples = BsqAllSamplesIter<'a, T>;
 
     fn bands(&self) -> Self::Bands {
         unsafe {
             Self::Bands {
                 start: self.container.inner().as_ptr(),
-                count: 0,
-                jump: self.dims.samples * self.dims.lines * self.dims.channels,
-                num_bands: self.dims.channels,
+                end: self.container.inner()
+                    .as_ptr()
+                    .add(self.dims.channels * self.dims.samples * self.dims.lines),
+                num_samples: self.dims.samples * self.dims.lines,
                 _phantom: Default::default(),
             }
         }
@@ -136,10 +137,9 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
         unsafe {
             Self::Samples {
                 start: self.container.inner().as_ptr(),
-                end: self.container.inner()
-                    .as_ptr()
-                    .add(self.dims.channels * self.dims.samples * self.dims.lines),
-                num_bands: self.dims.channels,
+                count: 0,
+                jump: self.dims.samples * self.dims.lines * self.dims.channels,
+                num_samples: self.dims.samples * self.dims.lines,
                 _phantom: Default::default(),
             }
         }
@@ -149,12 +149,11 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
         unsafe {
             let start = self.container.inner()
                 .as_ptr()
-                .add(index);
+                .add(index * self.dims.lines * self.dims.samples);
 
             Self::Band {
                 start,
-                end: start.add(self.dims.channels),
-                num_bands: self.dims.channels,
+                end: start.add(self.dims.lines * self.dims.samples),
                 _phantom: Default::default(),
             }
         }
@@ -164,11 +163,12 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
         unsafe {
             let start = self.container.inner()
                 .as_ptr()
-                .add(index * self.dims.channels);
+                .add(index);
 
             Self::Sample {
                 start,
-                end: start.add(self.dims.channels),
+                end: start.add(self.dims.lines * self.dims.samples),
+                num_samples: self.dims.lines * self.dims.samples,
                 _phantom: Default::default(),
             }
         }

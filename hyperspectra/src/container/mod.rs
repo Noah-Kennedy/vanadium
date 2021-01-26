@@ -102,7 +102,7 @@ pub trait IterableImage<'a, T: 'static>: SizedImage {
     fn samples(&self) -> Self::Samples;
 
     fn band(&self, index: usize) -> Self::Band;
-    fn pixel(&self, index: usize) -> Self::Sample;
+    fn sample(&self, index: usize) -> Self::Sample;
 }
 
 pub trait IterableImageMut<'a, T: 'static>: SizedImage {
