@@ -6,7 +6,7 @@ use std::ops::{Deref, DerefMut};
 
 use memmap2::{Mmap, MmapMut, MmapOptions};
 
-use envi_header::{FileByteOrder, Headers};
+use hyperspectra::header::{FileByteOrder, Headers};
 use envi_image::FileDims;
 
 #[derive(Copy, Clone)]

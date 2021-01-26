@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use envi_header::Interleave;
+use hyperspectra::header::Interleave;
 
 use crate::SpectralImageContainer;
 use envi_image::{ImageIndex, FileDims};

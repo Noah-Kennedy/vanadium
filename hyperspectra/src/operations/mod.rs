@@ -1,6 +1,12 @@
 use std::error::Error;
+use crate::header::Interleave;
 use std::fs::File;
-use envi_header::Interleave;
+
+pub trait SpectralImage {
+
+}
+
+
 
 pub trait ImageConvert<T, E> where E: Error {
     fn convert(&self, file: File, format: Interleave) -> Result<T, E>;

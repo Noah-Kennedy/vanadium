@@ -3,13 +3,7 @@ use std::fs::{File, OpenOptions, read_to_string};
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
-use envi_header::{Headers, Interleave};
-use envi_image::{ImageIndex, Bip, Bil, Bsq};
-use envi_mapped_image::{
-    ConversionError, ConversionErrorKind,
-    MatType, SizeMismatchError,
-    SpectralImage, SpectralImageContainer,
-};
+use hyperspectra::header::{Headers, Interleave};
 
 use crate::cli::ConvertOpt;
 

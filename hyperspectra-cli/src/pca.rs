@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fs::{OpenOptions, read_to_string};
 use std::str::FromStr;
 
-use envi_header::{Headers, Interleave};
+use hyperspectra::header::{Headers, Interleave};
 use envi_mapped_image::{
     SpectralImage,
     SpectralImageContainer,

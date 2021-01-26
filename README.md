@@ -14,45 +14,45 @@ Navigate to [rustup.rs](https://rustup.rs/) and follow the instructions provided
 In your terminal of choice:
 ```shell script
 git clone https://github.com/Noah-Kennedy/hyperspectral.git
-cd hyperspectra
+cd hyperspectra-cli
 RUSTFLAGS="-C target-cpu=native" cargo install --path .
 ```
 
 ## Usage
 For help, invoke:
 ```shell script
-hyperspectra --help
+hyperspectra-cli --help
 ```
 
 ### Examples
 #### Conversion
 ```shell script
-hyperspectra convert -i input.bsq -n input.hdr -o out.bil -t bil
+hyperspectra-cli convert -i input.bsq -n input.hdr -o out.bil -t bil
 ```
 
 #### Image Rendering
 ##### RGB
 
 ```shell script
-hyperspectra color -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
+hyperspectra-cli color -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
 ```
 
 ##### Grayscale
 
 ```shell script
-hyperspectra color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
+hyperspectra-cli color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
 ```
 
 ##### Coolwarm
 
 ```shell script
-hyperspectra color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
+hyperspectra-cli color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
 ```
 
 ##### Masking
 The max (-x) flag currently is required but does nothing.
 ```shell script
-hyperspectra color -i input.bsq -n input.hdr -o mask.png -m 0 -x 1.0 -c mask
+hyperspectra-cli color -i input.bsq -n input.hdr -o mask.png -m 0 -x 1.0 -c mask
 ```
 
 ## Design

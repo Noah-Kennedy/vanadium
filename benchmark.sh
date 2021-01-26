@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-COLOR='hyperspectra color -i data/raw/unnormalized/unnorm.{type} -n data/raw/unnormalized/unnorm.{type}.hdr'
+COLOR='hyperspectra-cli color -i data/raw/unnormalized/unnorm.{type} -n data/raw/unnormalized/unnorm.{type}.hdr'
 
 RGB='-o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb'
 COOL='-o cool.png -m 0 -x 1 -b 3 -c coolwarm'
 GREY='-o grey.png -m 0 -x 1 -b 3 -c grey'
 
-CONVERT_IN='hyperspectra convert -i data/raw/unnormalized/unnorm.{type} -n data/raw/unnormalized/unnorm.{type}.hdr'
+CONVERT_IN='hyperspectra-cli convert -i data/raw/unnormalized/unnorm.{type} -n data/raw/unnormalized/unnorm.{type}.hdr'
 
 CONVERT_OUT_BIP='-o out.bip -t bip'
 CONVERT_OUT_BIL='-o out.bil -t bil'

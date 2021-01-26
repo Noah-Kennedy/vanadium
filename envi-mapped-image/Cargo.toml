@@ -7,11 +7,9 @@ edition = "2018"
 [dependencies.envi-util]
 path = "../envi-util"
 
-[dependencies.envi-header]
-path = "../envi-header"
-
-[dependencies.envi-image]
-path = "../envi-image"
+[dependencies.hyperspectra]
+path = "../hyperspectra"
+features = ["envi-header"]
 
 [dependencies.memmap2]
 version = "0.2.0"

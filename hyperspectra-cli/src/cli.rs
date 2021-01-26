@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use envi_header::Interleave;
+use hyperspectra::header::Interleave;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "basic")]
@@ -88,19 +88,19 @@ pub struct PcaOpt {
 /// ## RGB
 ///
 /// ```sh
-/// hyperspectra color -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
+/// hyperspectra-cli color -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
 /// ```
 ///
 /// ## Grayscale
 ///
 /// ```sh
-/// hyperspectra color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
+/// hyperspectra-cli color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
 /// ```
 ///
 /// ## Coolwarm
 ///
 /// ```sh
-/// hyperspectra color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
+/// hyperspectra-cli color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
 /// ```
 #[derive(StructOpt, Debug)]
 #[structopt(name = "color", settings = & [structopt::clap::AppSettings::AllowNegativeNumbers])]

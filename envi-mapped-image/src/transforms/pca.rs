@@ -59,7 +59,7 @@ impl<C1, I1> SpectralImage<C1, f32, I1>
         }
 
         stages_bar.set_message("Stage: Covariances");
-        let covariances = self.calculate_covariance_matrix(&mp, &means, min, max);
+        let covariances = self.covariance_matrix(&mp, &means, min, max);
         stages_bar.inc(1);
 
         if verbose {

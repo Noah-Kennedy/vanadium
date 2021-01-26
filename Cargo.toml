@@ -1,8 +1,5 @@
 [workspace]
 members = [
-    "envi-header",
-    "envi-image",
-    "envi-mapped-image",
-    "envi-util",
+    "hyperspectra-cli",
     "hyperspectra"
 ]

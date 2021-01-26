@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use envi_header::{Headers, Interleave};
+use hyperspectra::header::{Headers, Interleave};
 use envi_mapped_image::{ColorFlag, SpectralImage, SpectralImageContainer};
 
 use crate::cli::ColorOpt;

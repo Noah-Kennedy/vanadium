@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate serde;
-
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -10,7 +7,8 @@ use std::str::FromStr;
 
 use regex::Regex;
 
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Debug)]
+#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
 pub struct Headers {
     /// The number of bands per image file.
     pub bands: usize,
@@ -77,7 +75,8 @@ impl Display for ParseFieldError {
 
 impl Error for ParseFieldError {}
 
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
 pub enum Interleave {
     Bip,
     Bil,
@@ -108,7 +107,8 @@ impl ToString for Interleave {
     }
 }
 
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
 pub enum DataType {
     U8 = 1,
     I16 = 2,
@@ -144,7 +144,8 @@ impl FromStr for DataType {
     }
 }
 
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
 pub enum FileByteOrder {
     Intel = 0,
     Network = 1,
