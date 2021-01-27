@@ -163,7 +163,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
 
             Self::Band {
                 start,
-                end: start.add(self.dims.channels),
+                end: start.add(self.dims.channels * self.dims.samples * self.dims.lines),
                 num_bands: self.dims.channels,
                 _phantom: Default::default(),
             }

@@ -177,7 +177,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
 
             Self::Sample {
                 start,
-                end: start.add(self.dims.lines * self.dims.samples),
+                end: start.add(self.dims.channels * self.dims.samples * self.dims.lines),
                 num_samples: self.dims.lines * self.dims.samples,
                 _phantom: Default::default(),
             }

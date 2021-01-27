@@ -163,7 +163,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bip<C, T>
 
             Self::BandMut {
                 start,
-                end: start.add(self.dims.channels),
+                end: start.add(self.dims.channels * self.dims.samples * self.dims.lines),
                 num_bands: self.dims.channels,
                 _phantom: Default::default(),
             }
