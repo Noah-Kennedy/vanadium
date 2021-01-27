@@ -402,10 +402,14 @@ pub fn convert<'a, I, O, T>(input: &LockImage<T, I>, output: &mut LockImage<T, O
     let mut output = output.write().inner;
     assert_eq!(input.dims(), output.dims(), "Dims mismatch error, contact the developer!");
 
+    let bar = indicatif::ProgressBar::new(input.dims().channels as u64);
+
     for (in_band, out_band) in input.bands().zip(output.bands_mut()) {
         for (in_cell, out_cell) in in_band.zip(out_band) {
             *out_cell = *in_cell
         }
+
+        bar.inc(1);
     }
 }
 

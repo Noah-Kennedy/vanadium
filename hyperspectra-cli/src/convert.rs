@@ -34,14 +34,14 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
 
     println!("Reading headers");
     let headers_str = read_to_string(header)?;
-    let parsed_headers = Headers::from_str(&headers_str)?;
+    let mut parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
     match parsed_headers.interleave {
         Interleave::Bip => {
             let index = Bip::<_, f32>::headers(&parsed_headers, &input_file)?;
             let input = LockImage::new(index);
-            continue_from_input(&parsed_headers, &input, &output_file, output_type)
+            continue_from_input(&mut parsed_headers, &input, &output_file, output_type)
         }
         Interleave::Bil => {
             todo!()
@@ -49,13 +49,13 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
         Interleave::Bsq => {
             let index = Bsq::<_, f32>::headers(&parsed_headers, &input_file)?;
             let input = LockImage::new(index);
-            continue_from_input(&parsed_headers, &input, &output_file, output_type)
+            continue_from_input(&mut parsed_headers, &input, &output_file, output_type)
         }
     }
 }
 
 fn continue_from_input<'a, I>(
-    headers: &Headers, input: &LockImage<f32, I>, out: &File, out_type: Interleave,
+    headers: &mut Headers, input: &LockImage<f32, I>, out: &File, out_type: Interleave,
 )
     -> Result<(), Box<dyn Error>>
     where I: 'static + IterableImage<'a, f32> + Sync + Send,
@@ -64,6 +64,7 @@ fn continue_from_input<'a, I>(
 
     match out_type {
         Interleave::Bip => {
+            headers.interleave = Interleave::Bip;
             let index = Bip::<_, f32>::headers_mut(&headers, &out)?;
             let mut out = LockImage::new(index);
             finish_conversion(&input, &mut out)
@@ -72,6 +73,7 @@ fn continue_from_input<'a, I>(
             todo!()
         }
         Interleave::Bsq => {
+            headers.interleave = Interleave::Bsq;
             let index = Bsq::<_, f32>::headers_mut(&headers, &out)?;
             let mut out = LockImage::new(index);
             finish_conversion(&input, &mut out)

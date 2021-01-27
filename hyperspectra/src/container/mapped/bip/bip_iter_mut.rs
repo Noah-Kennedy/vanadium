@@ -97,13 +97,15 @@ impl<'a, T> Iterator for BipAllSamplesIterMut<'a, T> where T: Copy {
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
-                self.start = self.start.add(self.num_bands);
-
-                Some(BipSampleIterMut {
+                let x = Some(BipSampleIterMut {
                     start: self.start,
                     end: self.start.add(self.num_bands),
                     _phantom: Default::default(),
-                })
+                });
+
+                self.start = self.start.add(self.num_bands);
+
+                x
             }
         } else {
             None
@@ -170,6 +172,78 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bip<C, T>
                 start,
                 end: start.add(self.dims.channels),
                 _phantom: Default::default(),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::mem;
+
+    use crate::container::ImageDims;
+    use crate::container::mapped::SpectralImageContainer;
+
+    use super::*;
+
+    const MAT: [u32; 9] = [
+        11, 12, 13,
+        21, 22, 23,
+        31, 32, 33,
+    ];
+
+    const SAMPLES: [[u32; 3]; 3] = [
+        [11, 12, 13],
+        [21, 22, 23],
+        [31, 32, 33],
+    ];
+
+    const BANDS: [[u32; 3]; 3] = [
+        [11, 21, 31],
+        [12, 22, 32],
+        [13, 23, 33],
+    ];
+
+    #[test]
+    fn test_bsq_bands() {
+        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
+        let mut mat: Bip<_, u32> = Bip {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 3,
+            },
+            container: SpectralImageContainer {
+                container: c.to_vec(),
+                phantom: Default::default(),
+            },
+        };
+
+        for (ba, be) in mat.bands_mut().zip(BANDS.iter()) {
+            for (ca, ce) in ba.zip(be.iter()) {
+                assert_eq!(ca, ce);
+            }
+        }
+    }
+
+    #[test]
+    fn test_bsq_samples() {
+        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
+        let mut mat: Bip<_, u32> = Bip {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 3,
+            },
+            container: SpectralImageContainer {
+                container: c.to_vec(),
+                phantom: Default::default(),
+            },
+        };
+
+        for (ba, be) in mat.samples_mut().zip(SAMPLES.iter()) {
+            for (ca, ce) in ba.zip(be.iter()) {
+                assert_eq!(ca, ce);
             }
         }
     }
