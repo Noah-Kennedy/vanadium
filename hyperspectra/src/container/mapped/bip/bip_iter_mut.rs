@@ -27,6 +27,7 @@ unsafe impl <'a, T> Send for BipAllBandsIterMut<'a, T> {}
 impl<'a, T> Iterator for BipBandIterMut<'a, T> {
     type Item = &'a mut T;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -43,6 +44,7 @@ impl<'a, T> Iterator for BipBandIterMut<'a, T> {
 impl<'a, T> Iterator for BipAllBandsIterMut<'a, T> where T: Copy {
     type Item = BipBandIterMut<'a, T>;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.count < self.num_bands {
             self.count += 1;
@@ -86,6 +88,7 @@ unsafe impl <'a, T> Send for BipAllSamplesIterMut<'a, T> {}
 impl<'a, T> Iterator for BipSampleIterMut<'a, T> where T: Copy {
     type Item = &'a mut T;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -102,6 +105,7 @@ impl<'a, T> Iterator for BipSampleIterMut<'a, T> where T: Copy {
 impl<'a, T> Iterator for BipAllSamplesIterMut<'a, T> where T: Copy {
     type Item = BipSampleIterMut<'a, T>;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -130,6 +134,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bip<C, T>
     type BandsMut = BipAllBandsIterMut<'a, T>;
     type SamplesMut = BipAllSamplesIterMut<'a, T>;
 
+    #[inline(always)]
     fn bands_mut(&mut self) -> Self::BandsMut {
         unsafe {
             Self::BandsMut {
@@ -142,6 +147,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bip<C, T>
         }
     }
 
+    #[inline(always)]
     fn samples_mut(&mut self) -> Self::SamplesMut {
         unsafe {
             Self::SamplesMut {
@@ -155,6 +161,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bip<C, T>
         }
     }
 
+    #[inline(always)]
     fn band_mut(&mut self, index: usize) -> Self::BandMut {
         unsafe {
             let start = self.container.inner_mut()
@@ -170,6 +177,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bip<C, T>
         }
     }
 
+    #[inline(always)]
     fn sample_mut(&mut self, index: usize) -> Self::SampleMut {
         unsafe {
             let start = self.container.inner_mut()

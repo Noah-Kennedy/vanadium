@@ -27,6 +27,7 @@ unsafe impl <'a, T> Send for BsqAllSamplesIterMut<'a, T> {}
 impl<'a, T> Iterator for BsqSampleIterMut<'a, T> {
     type Item = &'a mut T;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -43,6 +44,7 @@ impl<'a, T> Iterator for BsqSampleIterMut<'a, T> {
 impl<'a, T> Iterator for BsqAllSamplesIterMut<'a, T> where T: Copy {
     type Item = BsqSampleIterMut<'a, T>;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.count < self.num_samples {
             self.count += 1;
@@ -86,6 +88,7 @@ unsafe impl <'a, T> Send for BsqAllChannelsIterMut<'a, T> {}
 impl<'a, T> Iterator for BsqChannelIterMut<'a, T> where T: Copy {
     type Item = &'a mut T;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -102,6 +105,7 @@ impl<'a, T> Iterator for BsqChannelIterMut<'a, T> where T: Copy {
 impl<'a, T> Iterator for BsqAllChannelsIterMut<'a, T> where T: Copy {
     type Item = BsqChannelIterMut<'a, T>;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -130,6 +134,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     type BandsMut = BsqAllChannelsIterMut<'a, T>;
     type SamplesMut = BsqAllSamplesIterMut<'a, T>;
 
+    #[inline(always)]
     fn bands_mut(&mut self) -> Self::BandsMut {
         unsafe {
             Self::BandsMut {
@@ -143,6 +148,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
         }
     }
 
+    #[inline(always)]
     fn samples_mut(&mut self) -> Self::SamplesMut {
         unsafe {
             Self::SamplesMut {
@@ -155,6 +161,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
         }
     }
 
+    #[inline(always)]
     fn band_mut(&mut self, index: usize) -> Self::BandMut {
         unsafe {
             let start = self.container.inner_mut()
@@ -169,6 +176,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
         }
     }
 
+    #[inline(always)]
     fn sample_mut(&mut self, index: usize) -> Self::SampleMut {
         unsafe {
             let start = self.container.inner_mut()
