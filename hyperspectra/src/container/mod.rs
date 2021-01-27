@@ -1,5 +1,6 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::iter::Sum;
+use std::marker::PhantomData;
 use std::ops::{Div, Sub};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::thread;
@@ -9,8 +10,6 @@ use nalgebra::{ComplexField, DMatrix, Dynamic, RealField, SymmetricEigen};
 use num::{Bounded, Zero};
 use num::traits::NumAssign;
 use rayon::prelude::*;
-use serde::export::fmt::Display;
-use serde::export::PhantomData;
 
 use crate::bar::config_bar;
 use crate::header::Headers;
@@ -32,7 +31,7 @@ impl From<&Headers> for ImageDims {
         ImageDims {
             channels: headers.bands,
             lines: headers.lines,
-            samples: headers.samples
+            samples: headers.samples,
         }
     }
 }
@@ -394,7 +393,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     }
 }
 
-pub fn convert<'a, I, O, T>(input: & LockImage<T, I>, output: &mut LockImage<T, O>)
+pub fn convert<'a, I, O, T>(input: &LockImage<T, I>, output: &mut LockImage<T, O>)
     where I: IterableImage<'a, T> + SizedImage + 'static,
           O: IterableImageMut<'a, T> + SizedImage + 'static,
           T: Copy + 'static
