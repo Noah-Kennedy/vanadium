@@ -10,6 +10,7 @@ pub struct BipBandIter<'a, T> {
     num_bands: usize,
     _phantom: PhantomData<&'a T>,
 }
+unsafe impl <'a, T> Send for BipBandIter<'a, T> {}
 
 #[derive(Clone)]
 pub struct BipAllBandsIter<'a, T> {
@@ -19,6 +20,9 @@ pub struct BipAllBandsIter<'a, T> {
     num_bands: usize,
     _phantom: PhantomData<&'a T>,
 }
+
+unsafe impl <'a, T> Send for BipAllBandsIter<'a, T> {}
+
 
 impl<'a, T> Iterator for BipBandIter<'a, T> {
     type Item = &'a T;
@@ -67,6 +71,8 @@ pub struct BipSampleIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
+unsafe impl <'a, T> Send for BipSampleIter<'a, T> {}
+
 #[derive(Clone)]
 pub struct BipAllSamplesIter<'a, T> {
     start: *const T,
@@ -74,6 +80,8 @@ pub struct BipAllSamplesIter<'a, T> {
     num_bands: usize,
     _phantom: PhantomData<&'a T>,
 }
+
+unsafe impl <'a, T> Send for BipAllSamplesIter<'a, T> {}
 
 impl<'a, T> Iterator for BipSampleIter<'a, T> where T: Copy {
     type Item = &'a T;

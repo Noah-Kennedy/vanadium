@@ -91,10 +91,10 @@ pub trait PCA<T> where T: PartialEq + Copy + Debug + 'static {
 }
 
 pub trait IterableImage<'a, T: 'static>: SizedImage {
-    type Band: Iterator<Item=&'a T> + Clone;
-    type Sample: Iterator<Item=&'a T> + Clone;
-    type Bands: Iterator<Item=Self::Band> + Clone;
-    type Samples: Iterator<Item=Self::Sample> + Clone;
+    type Band: Iterator<Item=&'a T> + Clone + Send;
+    type Sample: Iterator<Item=&'a T> + Clone + Send;
+    type Bands: Iterator<Item=Self::Band> + Clone + Send;
+    type Samples: Iterator<Item=Self::Sample> + Clone + Send;
 
     fn bands(&self) -> Self::Bands;
     fn samples(&self) -> Self::Samples;
@@ -104,10 +104,10 @@ pub trait IterableImage<'a, T: 'static>: SizedImage {
 }
 
 pub trait IterableImageMut<'a, T: 'static>: SizedImage {
-    type BandMut: Iterator<Item=&'a mut T>;
-    type SampleMut: Iterator<Item=&'a mut T>;
-    type BandsMut: Iterator<Item=Self::BandMut>;
-    type SamplesMut: Iterator<Item=Self::SampleMut>;
+    type BandMut: Iterator<Item=&'a mut T> + Send;
+    type SampleMut: Iterator<Item=&'a mut T> + Send;
+    type BandsMut: Iterator<Item=Self::BandMut> + Send;
+    type SamplesMut: Iterator<Item=Self::SampleMut> + Send;
 
     fn bands_mut(&mut self) -> Self::BandsMut;
     fn samples_mut(&mut self) -> Self::SamplesMut;
@@ -394,23 +394,32 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 }
 
 pub fn convert<'a, I, O, T>(input: &LockImage<T, I>, output: &mut LockImage<T, O>)
-    where I: IterableImage<'a, T> + SizedImage + 'static,
-          O: IterableImageMut<'a, T> + SizedImage + 'static,
-          T: Copy + 'static
+    where I: IterableImage<'a, T> + SizedImage + 'static + Send + Sync,
+          O: IterableImageMut<'a, T> + SizedImage + 'static + Send + Sync,
+          T: Copy + 'static + Send + Sync
 {
-    let input = input.read().inner;
-    let mut output = output.write().inner;
-    assert_eq!(input.dims(), output.dims(), "Dims mismatch error, contact the developer!");
+    rayon::scope(move |s| {
+        let input = input.read().inner;
+        let mut output = output.write().inner;
+        assert_eq!(input.dims(), output.dims(), "Dims mismatch error, contact the developer!");
 
-    let bar = indicatif::ProgressBar::new(input.dims().channels as u64);
+        let bar = indicatif::ProgressBar::new(input.dims().channels as u64);
 
-    for (in_band, out_band) in input.bands().zip(output.bands_mut()) {
-        for (in_cell, out_cell) in in_band.zip(out_band) {
-            *out_cell = *in_cell
-        }
+        config_bar(&bar, "Converting bands");
 
-        bar.inc(1);
-    }
+        for (in_band, out_band) in input.bands().zip(output.bands_mut()) {
+            let bar = bar.clone();
+            s.spawn(move |_| {
+                for (in_cell, out_cell) in in_band.zip(out_band) {
+                    *out_cell = *in_cell
+                }
+
+                bar.inc(1);
+            })
+        };
+
+        bar.finish();
+    });
 }
 
 #[inline(always)]

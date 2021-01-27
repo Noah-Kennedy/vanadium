@@ -11,6 +11,8 @@ pub struct BsqSampleIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
+unsafe impl <'a, T> Send for BsqSampleIter<'a, T> {}
+
 #[derive(Clone)]
 pub struct BsqAllSamplesIter<'a, T> {
     start: *const T,
@@ -19,6 +21,8 @@ pub struct BsqAllSamplesIter<'a, T> {
     num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
+
+unsafe impl <'a, T> Send for BsqAllSamplesIter<'a, T> {}
 
 impl<'a, T> Iterator for BsqSampleIter<'a, T> {
     type Item = &'a T;
@@ -67,6 +71,8 @@ pub struct BsqChannelIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
+unsafe impl <'a, T> Send for BsqChannelIter<'a, T> {}
+
 #[derive(Clone)]
 pub struct BsqAllChannelsIter<'a, T> {
     start: *const T,
@@ -74,6 +80,8 @@ pub struct BsqAllChannelsIter<'a, T> {
     num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
+
+unsafe impl <'a, T> Send for BsqAllChannelsIter<'a, T> {}
 
 impl<'a, T> Iterator for BsqChannelIter<'a, T> where T: Copy {
     type Item = &'a T;
