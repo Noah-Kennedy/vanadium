@@ -5,7 +5,7 @@ use std::str::FromStr;
 use hyperspectra::header::{Headers, Interleave};
 
 use crate::cli::PcaOpt;
-use hyperspectra::container::mapped::Bip;
+use hyperspectra::container::mapped::{Bip, Bsq};
 use hyperspectra::container::{LockImage, PCA};
 
 pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
@@ -53,7 +53,17 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
             input_image.pca(&output_image, dims as usize, verbose, min, max);
         }
         Interleave::Bil => {}
-        Interleave::Bsq => {}
+        Interleave::Bsq => {
+            let input = Bsq::<_, f32>::headers_mut(&headers, &input_file)?;
+            headers.bands = dims as usize;
+            output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
+            let output = Bsq::<_, f32>::headers_mut(&headers, &input_file)?;
+
+            let input_image = LockImage::new(input);
+            let output_image = LockImage::new(output);
+
+            input_image.pca(&output_image, dims as usize, verbose, min, max);
+        }
     }
 
     Ok(())
