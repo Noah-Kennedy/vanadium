@@ -25,14 +25,9 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     let mut headers = Headers::from_str(&headers_str)?;
 
     let input_file = OpenOptions::new()
+        .write(true)
         .read(true)
         .open(input)?;
-
-    // validate preconditions
-    assert_eq!(headers.interleave, Interleave::Bsq,
-               "Only BSQ files are supported, please use the 'convert' subcommand to convert your \
-                file into a BSQ file."
-    );
 
     let output_file = OpenOptions::new()
         .create(true)
@@ -45,7 +40,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
             let input = Bip::<_, f32>::headers_mut(&headers, &input_file)?;
             headers.bands = dims as usize;
             output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
-            let output = Bip::<_, f32>::headers_mut(&headers, &input_file)?;
+            let output = Bip::<_, f32>::headers_mut(&headers, &output_file)?;
 
             let input_image = LockImage::new(input);
             let output_image = LockImage::new(output);
@@ -55,9 +50,11 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         Interleave::Bil => {}
         Interleave::Bsq => {
             let input = Bsq::<_, f32>::headers_mut(&headers, &input_file)?;
+
             headers.bands = dims as usize;
             output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
-            let output = Bsq::<_, f32>::headers_mut(&headers, &input_file)?;
+
+            let output = Bsq::<_, f32>::headers_mut(&headers, &output_file)?;
 
             let input_image = LockImage::new(input);
             let output_image = LockImage::new(output);

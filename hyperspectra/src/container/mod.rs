@@ -354,40 +354,47 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         eigen: &SymmetricEigen<T, Dynamic>,
     )
     {
-        let status_bar = mp.add(ProgressBar::new(kept_bands as u64));
+        let status_bar = mp.add(ProgressBar::new(
+            self.inner.dims().samples as u64
+                * self.inner.dims().lines as u64));
         config_bar(&status_bar, "Writing standardized output bands...");
         let sc = status_bar.clone();
 
         let itc = self.inner.samples().zip(output.inner.samples_mut());
 
+        // rayon::scope(|s| {
+            for (read, write) in itc {
+                let eig = eigen.eigenvectors.clone();
 
-        for (read, write) in itc {
-            let eig = eigen.eigenvectors.clone();
+                // s.spawn(move |_| {
+                    for (i, b) in write.enumerate() {
+                        let col = eig.column(i);
 
-            for (i, b) in write.enumerate() {
-                let col = eig.column(i);
+                        let col_write: T = read
+                            .clone()
+                            .zip(means)
+                            .zip(std_devs)
+                            .map(|((r, m), s)| {
+                                let z_val: T = (*r - *m) / *s;
+                                let z_off: T = (-*m) / *s;
 
-                let col_write: T = read
-                    .clone()
-                    .zip(means)
-                    .zip(std_devs)
-                    .map(|((r, m), s)| {
-                        let z_val: T = (*r - *m) / *s;
-                        let z_off: T = (-*m) / *s;
+                                if (z_val - z_off).abs() < T::zero() {
+                                    T::min_value()
+                                } else {
+                                    z_val
+                                }
+                            })
+                            .zip(col.into_iter())
+                            .map(|(d, s)| d * (*s))
+                            .sum();
 
-                        if (z_val - z_off).abs() < T::zero() {
-                            T::min_value()
-                        } else {
-                            z_val
-                        }
-                    })
-                    .zip(col.into_iter())
-                    .map(|(d, s)| d * (*s))
-                    .sum();
+                        *b = col_write;
+                    }
+                // });
 
-                *b = col_write;
+                // sc.inc(1);
             }
-        }
+        // });
 
         sc.finish();
     }
