@@ -1,8 +1,9 @@
 use std::error::Error;
 use std::fs::{File, OpenOptions, read_to_string};
-use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 
+use hyperspectra::container::{convert, IterableImage, IterableImageMut, LockImage};
+use hyperspectra::container::mapped::{Bip, Bsq};
 use hyperspectra::header::{Headers, Interleave};
 
 use crate::cli::ConvertOpt;
@@ -36,101 +37,54 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
     let parsed_headers = Headers::from_str(&headers_str)?;
 
     println!("Mapping input file");
-    let inner = SpectralImageContainer::headers(&parsed_headers, &input_file)?;
     match parsed_headers.interleave {
         Interleave::Bip => {
-            let index = Bip::from(inner.dims.clone());
-            let input = SpectralImage {
-                inner,
-                index,
-            };
+            let index = Bip::<_, f32>::headers(&parsed_headers, &input_file)?;
+            let input = LockImage::new(index);
             continue_from_input(&parsed_headers, &input, &output_file, output_type)
         }
         Interleave::Bil => {
-            let index = Bil::from(inner.dims.clone());
-            let input = SpectralImage {
-                inner,
-                index,
-            };
-            continue_from_input(&parsed_headers, &input, &output_file, output_type)
+            todo!()
         }
         Interleave::Bsq => {
-            let index = Bsq::from(inner.dims.clone());
-            let input = SpectralImage {
-                inner,
-                index,
-            };
+            let index = Bsq::<_, f32>::headers(&parsed_headers, &input_file)?;
+            let input = LockImage::new(index);
             continue_from_input(&parsed_headers, &input, &output_file, output_type)
         }
     }
 }
 
-fn continue_from_input<C, I>(
-    headers: &Headers, input: &SpectralImage<C, f32, I>, out: &File, out_type: Interleave,
+fn continue_from_input<'a, I>(
+    headers: &Headers, input: &LockImage<f32, I>, out: &File, out_type: Interleave,
 )
     -> Result<(), Box<dyn Error>>
-    where I: 'static + ImageIndex + Sync + Send + Copy + Clone,
-          C: Deref<Target=[u8]> + Sync + Send,
+    where I: 'static + IterableImage<'a, f32> + Sync + Send,
 {
     println!("Mapping output file");
-    let inner = SpectralImageContainer::headers_mut(&headers, &out)?;
 
     match out_type {
         Interleave::Bip => {
-            let index = Bip::from(inner.dims.clone());
-            let mut out = SpectralImage {
-                inner,
-                index,
-            };
+            let index = Bip::<_, f32>::headers_mut(&headers, &out)?;
+            let mut out = LockImage::new(index);
             finish_conversion(&input, &mut out)
         }
         Interleave::Bil => {
-            let index = Bil::from(inner.dims.clone());
-            let mut out = SpectralImage {
-                inner,
-                index,
-            };
-            finish_conversion(&input, &mut out)
+            todo!()
         }
         Interleave::Bsq => {
-            let index = Bsq::from(inner.dims.clone());
-            let mut out = SpectralImage {
-                inner,
-                index,
-            };
+            let index = Bsq::<_, f32>::headers_mut(&headers, &out)?;
+            let mut out = LockImage::new(index);
             finish_conversion(&input, &mut out)
         }
-    }?;
+    };
 
     Ok(())
 }
 
-fn finish_conversion<C1, C2, I1, I2>(input: &SpectralImage<C1, f32, I1>, output: &mut SpectralImage<C2, f32, I2>)
-                                     -> Result<(), ConversionError>
-    where I1: 'static + ImageIndex + Sync + Send + Copy + Clone,
-          I2: 'static + ImageIndex + Sync + Send + Copy + Clone,
-          C1: Deref<Target=[u8]> + Sync + Send,
-          C2: DerefMut<Target=[u8]> + Sync + Send
+fn finish_conversion<'a, I1, I2>(
+    input: &LockImage<f32, I1>, output: &mut LockImage<f32, I2>)
+    where I1: 'static + IterableImage<'a, f32> + Sync + Send,
+          I2: 'static + IterableImageMut<'a, f32> + Sync + Send,
 {
-    if input.inner.size() == output.inner.size() {
-        println!("Performing conversion");
-        input.convert(output);
-        println!("finished");
-        Ok(())
-    } else {
-        Err(ConversionError {
-            input_type: match input.index.order() {
-                MatType::Bip => "bip",
-                MatType::Bil => "bil",
-                MatType::Bsq => "bsq",
-            },
-            output_type: "",
-            kind: ConversionErrorKind::SizeMismatch(
-                SizeMismatchError {
-                    input_size: input.inner.size(),
-                    output_size: output.inner.size(),
-                }
-            ),
-        })
-    }
+    convert(&input, output)
 }

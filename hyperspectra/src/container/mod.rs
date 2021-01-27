@@ -7,7 +7,6 @@ use std::thread;
 use indicatif::{MultiProgress, ProgressBar};
 use nalgebra::{ComplexField, DMatrix, Dynamic, RealField, SymmetricEigen};
 use num::{Bounded, Zero};
-use num::integer::Roots;
 use num::traits::NumAssign;
 use rayon::prelude::*;
 use serde::export::fmt::Display;
@@ -120,7 +119,7 @@ pub trait IterableImageMut<'a, T: 'static>: SizedImage {
 
 impl<'a, I, T> PCA<T> for LockImage<T, I>
     where I: IterableImage<'a, T> + Sync + IterableImageMut<'a, T>,
-          T: NumAssign + Copy + PartialOrd + Roots + 'static + Debug + Send + Sync + Bounded
+          T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
     fn pca(&self, out: &Self, kept: usize, verbose: bool, min: Option<T>, max: Option<T>) {
@@ -200,7 +199,7 @@ impl<'a, I, T> PCA<T> for LockImage<T, I>
 
 impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     where I: IterableImage<'b, T> + Sync + IterableImageMut<'b, T>,
-          T: NumAssign + Copy + PartialOrd + Roots + 'static + Debug + Send + Sync + Bounded
+          T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
     fn band_mean(&self, band: usize, min: T, max: T) -> T {
@@ -395,27 +394,18 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     }
 }
 
-pub fn convert<'a, I, O, T: 'static>(input: &I, output: &mut O)
-    where I: IterableImage<'a, T> + IndexImage<T>,
-          O: IterableImageMut<'a, T> + IndexImageMut<T>,
-          T: Copy
+pub fn convert<'a, I, O, T>(input: & LockImage<T, I>, output: &mut LockImage<T, O>)
+    where I: IterableImage<'a, T> + SizedImage + 'static,
+          O: IterableImageMut<'a, T> + SizedImage + 'static,
+          T: Copy + 'static
 {
+    let input = input.read().inner;
+    let mut output = output.write().inner;
     assert_eq!(input.dims(), output.dims(), "Dims mismatch error, contact the developer!");
 
-    let ImageDims { channels, lines, samples: columns } = input.dims();
-
-    for channel in 0..channels {
-        for line in 0..lines {
-            for column in 0..columns {
-                let index = ImageIndex { channel, line, sample: column };
-
-                unsafe {
-                    let r = input.get_unchecked(&index);
-                    let w = output.get_unchecked_mut(&index);
-
-                    *w = *r;
-                }
-            }
+    for (in_band, out_band) in input.bands().zip(output.bands_mut()) {
+        for (in_cell, out_cell) in in_band.zip(out_band) {
+            *out_cell = *in_cell
         }
     }
 }

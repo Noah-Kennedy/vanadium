@@ -3,14 +3,10 @@ use std::fs::{OpenOptions, read_to_string};
 use std::str::FromStr;
 
 use hyperspectra::header::{Headers, Interleave};
-use envi_mapped_image::{
-    SpectralImage,
-    SpectralImageContainer,
-};
-
-use envi_image::Bsq;
 
 use crate::cli::PcaOpt;
+use hyperspectra::container::mapped::Bip;
+use hyperspectra::container::{LockImage, PCA};
 
 pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     // unpack PCA cli options
@@ -44,29 +40,21 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         .read(true)
         .open(output)?;
 
-    let inner = SpectralImageContainer::headers(&headers, &input_file)?;
+    match headers.interleave {
+        Interleave::Bip => {
+            let input = Bip::<_, f32>::headers_mut(&headers, &input_file)?;
+            headers.bands = dims as usize;
+            output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
+            let output = Bip::<_, f32>::headers_mut(&headers, &input_file)?;
 
-    let index = Bsq::from(inner.dims.clone());
-    let input = SpectralImage {
-        inner,
-        index,
-    };
+            let input_image = LockImage::new(input);
+            let output_image = LockImage::new(output);
 
-    headers.bands = dims as usize;
-
-    output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
-
-    headers.interleave = Interleave::Bsq;
-
-    let inner = SpectralImageContainer::headers_mut(&headers, &output_file)?;
-
-    let index = Bsq::from(inner.dims.clone());
-    let mut out = SpectralImage {
-        inner,
-        index,
-    };
-
-    input.pca(&mut out, dims, verbose, min, max);
+            input_image.pca(&output_image, dims as usize, verbose, min, max);
+        }
+        Interleave::Bil => {}
+        Interleave::Bsq => {}
+    }
 
     Ok(())
 }
