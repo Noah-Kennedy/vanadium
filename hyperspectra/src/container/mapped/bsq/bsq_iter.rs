@@ -27,7 +27,8 @@ unsafe impl <'a, T> Send for BsqAllSamplesIter<'a, T> {}
 impl<'a, T> Iterator for BsqSampleIter<'a, T> {
     type Item = &'a T;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -44,7 +45,8 @@ impl<'a, T> Iterator for BsqSampleIter<'a, T> {
 impl<'a, T> Iterator for BsqAllSamplesIter<'a, T> where T: Copy {
     type Item = BsqSampleIter<'a, T>;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.count < self.num_samples {
             self.count += 1;
@@ -88,7 +90,8 @@ unsafe impl <'a, T> Send for BsqAllChannelsIter<'a, T> {}
 impl<'a, T> Iterator for BsqChannelIter<'a, T> where T: Copy {
     type Item = &'a T;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -105,7 +108,8 @@ impl<'a, T> Iterator for BsqChannelIter<'a, T> where T: Copy {
 impl<'a, T> Iterator for BsqAllChannelsIter<'a, T> where T: Copy {
     type Item = BsqChannelIter<'a, T>;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -135,6 +139,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     type Samples = BsqAllSamplesIter<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn bands(&self) -> Self::Bands {
         unsafe {
             Self::Bands {
@@ -149,6 +154,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn samples(&self) -> Self::Samples {
         unsafe {
             Self::Samples {
@@ -162,6 +168,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn band(&self, index: usize) -> Self::Band {
         unsafe {
             let start = self.container.inner()
@@ -177,6 +184,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn sample(&self, index: usize) -> Self::Sample {
         unsafe {
             let start = self.container.inner()

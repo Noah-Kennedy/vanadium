@@ -27,7 +27,8 @@ unsafe impl <'a, T> Send for BipAllBandsIter<'a, T> {}
 impl<'a, T> Iterator for BipBandIter<'a, T> {
     type Item = &'a T;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -44,7 +45,8 @@ impl<'a, T> Iterator for BipBandIter<'a, T> {
 impl<'a, T> Iterator for BipAllBandsIter<'a, T> where T: Copy {
     type Item = BipBandIter<'a, T>;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.count < self.num_bands {
             self.count += 1;
@@ -88,7 +90,8 @@ unsafe impl <'a, T> Send for BipAllSamplesIter<'a, T> {}
 impl<'a, T> Iterator for BipSampleIter<'a, T> where T: Copy {
     type Item = &'a T;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -105,7 +108,8 @@ impl<'a, T> Iterator for BipSampleIter<'a, T> where T: Copy {
 impl<'a, T> Iterator for BipAllSamplesIter<'a, T> where T: Copy {
     type Item = BipSampleIter<'a, T>;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -134,7 +138,8 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
     type Bands = BipAllBandsIter<'a, T>;
     type Samples = BipAllSamplesIter<'a, T>;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn bands(&self) -> Self::Bands {
         unsafe {
             Self::Bands {
@@ -147,7 +152,8 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
         }
     }
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn samples(&self) -> Self::Samples {
         unsafe {
             Self::Samples {
@@ -161,7 +167,8 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
         }
     }
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn band(&self, index: usize) -> Self::Band {
         unsafe {
             let start = self.container.inner()
@@ -177,7 +184,8 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
         }
     }
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn sample(&self, index: usize) -> Self::Sample {
         unsafe {
             let start = self.container.inner()

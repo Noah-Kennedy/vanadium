@@ -28,6 +28,7 @@ impl<'a, T> Iterator for BsqSampleIterMut<'a, T> {
     type Item = &'a mut T;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -45,6 +46,7 @@ impl<'a, T> Iterator for BsqAllSamplesIterMut<'a, T> where T: Copy {
     type Item = BsqSampleIterMut<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.count < self.num_samples {
             self.count += 1;
@@ -89,6 +91,7 @@ impl<'a, T> Iterator for BsqChannelIterMut<'a, T> where T: Copy {
     type Item = &'a mut T;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -106,6 +109,7 @@ impl<'a, T> Iterator for BsqAllChannelsIterMut<'a, T> where T: Copy {
     type Item = BsqChannelIterMut<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
@@ -135,6 +139,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     type SamplesMut = BsqAllSamplesIterMut<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn bands_mut(&mut self) -> Self::BandsMut {
         unsafe {
             Self::BandsMut {
@@ -149,6 +154,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn samples_mut(&mut self) -> Self::SamplesMut {
         unsafe {
             Self::SamplesMut {
@@ -162,6 +168,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn band_mut(&mut self, index: usize) -> Self::BandMut {
         unsafe {
             let start = self.container.inner_mut()
@@ -177,6 +184,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn sample_mut(&mut self, index: usize) -> Self::SampleMut {
         unsafe {
             let start = self.container.inner_mut()
