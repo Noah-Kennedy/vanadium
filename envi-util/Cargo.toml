@@ -1,9 +1,0 @@
-[package]
-name = "envi-util"
-version = "0.1.0"
-authors = ["noah <nomaxx117@gmail.com>"]
-edition = "2018"
-
-[dependencies.indicatif]
-version = "0.15.0"
-features = ["improved_unicode"]
