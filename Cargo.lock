@@ -178,7 +178,7 @@ dependencies = [
 
 [[package]]
 name = "hyperspectra"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap2 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -191,9 +191,9 @@ dependencies = [
 
 [[package]]
 name = "hyperspectra-cli"
-version = "0.4.0"
+version = "1.0.0-alpha"
 dependencies = [
- "hyperspectra 0.1.0",
+ "hyperspectra 1.0.0-alpha",
  "image 0.23.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
