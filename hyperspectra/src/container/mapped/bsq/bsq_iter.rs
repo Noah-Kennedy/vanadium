@@ -264,4 +264,62 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_bsq_single_band() {
+        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
+
+        let mat: Bsq<_, u32> = Bsq {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 3,
+            },
+            container: SpectralImageContainer {
+                container: c.to_vec(),
+                phantom: Default::default(),
+            },
+        };
+
+        for (a, e) in mat.band(0).zip(BANDS[0].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.band(1).zip(BANDS[1].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.band(2).zip(BANDS[2].iter()) {
+            assert_eq!(a, e);
+        }
+    }
+
+    #[test]
+    fn test_bsq_single_sample() {
+        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
+
+        let mat: Bsq<_, u32> = Bsq {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 3,
+            },
+            container: SpectralImageContainer {
+                container: c.to_vec(),
+                phantom: Default::default(),
+            },
+        };
+
+        for (a, e) in mat.sample(0).zip(SAMPLES[0].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.sample(1).zip(SAMPLES[1].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.sample(2).zip(SAMPLES[2].iter()) {
+            assert_eq!(a, e);
+        }
+    }
 }

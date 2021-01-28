@@ -264,4 +264,62 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_bip_single_band_mut() {
+        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
+
+        let mut mat: Bip<_, u32> = Bip {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 3,
+            },
+            container: SpectralImageContainer {
+                container: c.to_vec(),
+                phantom: Default::default(),
+            },
+        };
+
+        for (a, e) in mat.band_mut(0).zip(BANDS[0].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.band_mut(1).zip(BANDS[1].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.band_mut(2).zip(BANDS[2].iter()) {
+            assert_eq!(a, e);
+        }
+    }
+
+    #[test]
+    fn test_bip_single_sample_mut() {
+        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
+
+        let mut mat: Bip<_, u32> = Bip {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 3,
+            },
+            container: SpectralImageContainer {
+                container: c.to_vec(),
+                phantom: Default::default(),
+            },
+        };
+
+        for (a, e) in mat.sample_mut(0).zip(SAMPLES[0].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.sample_mut(1).zip(SAMPLES[1].iter()) {
+            assert_eq!(a, e);
+        }
+
+        for (a, e) in mat.sample_mut(2).zip(SAMPLES[2].iter()) {
+            assert_eq!(a, e);
+        }
+    }
 }
