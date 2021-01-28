@@ -172,7 +172,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             self.inner.dims().samples as u64
                 * self.inner.dims().lines as u64));
         config_bar(&status_bar, "Writing standardized output bands...");
-        let sc = status_bar.clone();
+        let sc = status_bar;
 
         let itc = self.inner.samples().zip(output.inner.samples_mut());
 

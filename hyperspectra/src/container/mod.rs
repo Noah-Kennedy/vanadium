@@ -46,10 +46,14 @@ pub trait SizedImage {
 }
 
 pub trait IndexImage<T> {
+    /// # Safety
+    /// This function is safe if the index is within the bounds of the image
     unsafe fn get_unchecked(&self, index: &ImageIndex) -> &T;
 }
 
 pub trait IndexImageMut<T> {
+    /// # Safety
+    /// This function is safe if the index is within the bounds of the image
     unsafe fn get_unchecked_mut(&mut self, index: &ImageIndex) -> &mut T;
 }
 
