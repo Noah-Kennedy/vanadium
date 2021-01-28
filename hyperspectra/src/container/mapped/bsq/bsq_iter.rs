@@ -134,7 +134,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     type Bands = BsqAllChannelsIter<'a, T>;
     type Samples = BsqAllSamplesIter<'a, T>;
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     fn bands(&self) -> Self::Bands {
         unsafe {
             Self::Bands {
@@ -148,7 +148,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
         }
     }
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     fn samples(&self) -> Self::Samples {
         unsafe {
             Self::Samples {
@@ -161,7 +161,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
         }
     }
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     fn band(&self, index: usize) -> Self::Band {
         unsafe {
             let start = self.container.inner()
@@ -176,7 +176,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
         }
     }
 
-    #[inline(always)]
+    #[cfg_attr(not(debug_assertions), inline(always))]
     fn sample(&self, index: usize) -> Self::Sample {
         unsafe {
             let start = self.container.inner()
