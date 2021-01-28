@@ -193,6 +193,7 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 #[cfg(test)]
 mod tests {
     use std::mem;
