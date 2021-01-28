@@ -2,11 +2,11 @@ use std::error::Error;
 use std::fs::{OpenOptions, read_to_string};
 use std::str::FromStr;
 
+use hyperspectra::container::{LockImage, PCA};
+use hyperspectra::container::mapped::{Bip, Bsq};
 use hyperspectra::header::{Headers, Interleave};
 
 use crate::cli::PcaOpt;
-use hyperspectra::container::mapped::{Bip, Bsq};
-use hyperspectra::container::{LockImage, PCA};
 
 pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
     // unpack PCA cli options
@@ -45,7 +45,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
             let input_image = LockImage::new(input);
             let output_image = LockImage::new(output);
 
-            input_image.pca(&output_image, dims as usize, verbose, min, max);
+            input_image.pca(&output_image, verbose, min, max);
         }
         Interleave::Bil => {}
         Interleave::Bsq => {
@@ -59,7 +59,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
             let input_image = LockImage::new(input);
             let output_image = LockImage::new(output);
 
-            input_image.pca(&output_image, dims as usize, verbose, min, max);
+            input_image.pca(&output_image, verbose, min, max);
         }
     }
 

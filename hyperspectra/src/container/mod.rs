@@ -87,7 +87,7 @@ impl<T, I> LockImage<T, I> where T: 'static, I: 'static {
 }
 
 pub trait PCA<T> where T: PartialEq + Copy + Debug + 'static {
-    fn pca(&self, out: &Self, kept: usize, verbose: bool, min: Option<T>, max: Option<T>);
+    fn pca(&self, out: &Self, verbose: bool, min: Option<T>, max: Option<T>);
 }
 
 pub trait IterableImage<'a, T: 'static>: SizedImage {
@@ -121,7 +121,7 @@ impl<'a, I, T> PCA<T> for LockImage<T, I>
           T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
-    fn pca(&self, out: &Self, kept: usize, verbose: bool, min: Option<T>, max: Option<T>) {
+    fn pca(&self, out: &Self, verbose: bool, min: Option<T>, max: Option<T>) {
         let min = min.unwrap_or_else(T::min_value);
         let max = max.unwrap_or_else(T::max_value);
 
@@ -187,7 +187,7 @@ impl<'a, I, T> PCA<T> for LockImage<T, I>
         let mut output = WriteImageGuard { inner: out.inner.write().unwrap(), _phantom: Default::default() };
 
         stages_bar.set_message("Stage: Writes");
-        input.write_standardized_results(&mut output, &mp, kept, &means, &std_devs, &eigen);
+        input.write_standardized_results(&mut output, &mp, &means, &std_devs, &eigen);
         stages_bar.inc(1);
 
         stages_bar.finish();
@@ -349,7 +349,6 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         &self,
         output: &mut WriteImageGuard<T, I>,
         mp: &MultiProgress,
-        kept_bands: usize,
         means: &[T], std_devs: &[T],
         eigen: &SymmetricEigen<T, Dynamic>,
     )
