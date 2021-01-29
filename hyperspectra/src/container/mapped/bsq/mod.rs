@@ -7,7 +7,7 @@ use memmap2::{Mmap, MmapMut, MmapOptions};
 pub use bsq_iter::*;
 pub use bsq_iter_mut::*;
 
-use crate::container::{ImageDims, SizedImage};
+use crate::container::{ImageDims, SizedImage, IndexImage, IndexImageMut, ImageIndex};
 use crate::container::mapped::SpectralImageContainer;
 use crate::header::{FileByteOrder, Headers, Interleave};
 
@@ -22,6 +22,38 @@ pub struct Bsq<C, T> {
 impl<C, T> SizedImage for Bsq<C, T> {
     fn dims(&self) -> ImageDims {
         self.dims.clone()
+    }
+}
+
+impl<C, T> IndexImage<T> for Bsq<C, T>
+    where T: 'static,
+          C: AsRef<[u8]>
+{
+    unsafe fn get_unchecked(&self, index: &ImageIndex) -> &T {
+        let d = &self.dims;
+        let channel_offset = index.channel * d.lines * d.samples;
+        let sample_offset = index.sample;
+        let lines_offset = index.line * d.samples;
+
+        let off = channel_offset + sample_offset + lines_offset;
+
+        self.container.inner().get_unchecked(off)
+    }
+}
+
+impl<C, T> IndexImageMut<T> for Bsq<C, T>
+    where T: 'static,
+          C: AsMut<[u8]>
+{
+    unsafe fn get_unchecked_mut(&mut self, index: &ImageIndex) -> &mut T {
+        let d = &self.dims;
+        let channel_offset = index.channel * d.lines * d.samples;
+        let sample_offset = index.sample;
+        let lines_offset = index.line * d.samples;
+
+        let off = channel_offset + sample_offset + lines_offset;
+
+        self.container.inner_mut().get_unchecked_mut(off)
     }
 }
 

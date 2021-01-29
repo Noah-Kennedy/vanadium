@@ -5,6 +5,7 @@ use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 pub use convert::*;
 pub use pca::*;
 pub use stat::*;
+pub use render::*;
 
 use crate::header::Headers;
 
@@ -13,6 +14,7 @@ pub mod mapped;
 mod pca;
 mod stat;
 mod convert;
+mod render;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Default, Debug)]
 pub struct ImageDims {
@@ -65,12 +67,12 @@ pub struct LockImage<T, I> {
 }
 
 pub struct ReadImageGuard<'a, T, I> {
-    inner: RwLockReadGuard<'a, I>,
+    pub inner: RwLockReadGuard<'a, I>,
     _phantom: PhantomData<T>,
 }
 
 pub struct WriteImageGuard<'a, T, I> {
-    inner: RwLockWriteGuard<'a, I>,
+    pub inner: RwLockWriteGuard<'a, I>,
     _phantom: PhantomData<T>,
 }
 
