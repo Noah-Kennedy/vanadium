@@ -1,6 +1,8 @@
 use crate::bar::config_bar;
 use crate::container::{IterableImage, IterableImageMut, LockImage, SizedImage};
 
+#[cfg_attr(not(debug_assertions), inline(always))]
+#[cfg_attr(debug_assertions, inline(never))]
 pub fn convert<'a, I, O, T>(input: &LockImage<T, I>, output: &mut LockImage<T, O>)
     where I: IterableImage<'a, T> + SizedImage + 'static + Send + Sync,
           O: IterableImageMut<'a, T> + SizedImage + 'static + Send + Sync,

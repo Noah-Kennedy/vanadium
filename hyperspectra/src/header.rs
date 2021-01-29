@@ -8,7 +8,7 @@ use std::str::FromStr;
 use regex::Regex;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Headers {
     /// The number of bands per image file.
     pub bands: usize,
@@ -68,6 +68,8 @@ pub struct Headers {
 pub struct ParseFieldError;
 
 impl Display for ParseFieldError {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Invalid")
     }
@@ -76,7 +78,7 @@ impl Display for ParseFieldError {
 impl Error for ParseFieldError {}
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Interleave {
     Bip,
     Bil,
@@ -87,6 +89,8 @@ pub enum Interleave {
 impl FromStr for Interleave {
     type Err = ParseFieldError;
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "bip" => Ok(Self::Bip),
@@ -98,6 +102,8 @@ impl FromStr for Interleave {
 }
 
 impl ToString for Interleave {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn to_string(&self) -> String {
         match self {
             Interleave::Bip => "bip".to_owned(),
@@ -108,7 +114,7 @@ impl ToString for Interleave {
 }
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum DataType {
     U8 = 1,
     I16 = 2,
@@ -126,6 +132,8 @@ pub enum DataType {
 impl FromStr for DataType {
     type Err = ();
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "1" => Ok(Self::U8),
@@ -145,7 +153,7 @@ impl FromStr for DataType {
 }
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-#[cfg_attr(feature = "header-serialization", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum FileByteOrder {
     Intel = 0,
     Network = 1,
@@ -154,6 +162,8 @@ pub enum FileByteOrder {
 impl FromStr for FileByteOrder {
     type Err = ();
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "0" => Ok(Self::Intel),
@@ -181,6 +191,8 @@ pub enum ParseHeaderError {
 }
 
 impl Display for ParseHeaderError {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             ParseHeaderError::BadValue(e) => {
@@ -213,6 +225,8 @@ const REGEX_STR: &str = "(?m:^(?P<key>.+) = (?:(?:(?P<value>.+)\n)|(?:\\{(?P<val
 impl FromStr for Headers {
     type Err = ParseHeaderError;
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut fields_map = HashMap::with_capacity(32);
 
@@ -246,6 +260,8 @@ impl FromStr for Headers {
     }
 }
 
+#[cfg_attr(not(debug_assertions), inline(always))]
+#[cfg_attr(debug_assertions, inline(never))]
 fn parse_scalar_field<T>(
     fields_map: &mut HashMap<String, String>,
     field: &'static str,

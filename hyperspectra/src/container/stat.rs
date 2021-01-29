@@ -16,6 +16,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
           T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn band_mean(&self, band: usize, min: T, max: T) -> T {
         let mut sum = T::zero();
         let mut count = T::zero();
@@ -32,6 +34,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         sum / count
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn band_std_dev(&self, band: usize, mean: Option<T>, min: T, max: T) -> T {
         let mean = if let Some(mean) = mean {
             mean
@@ -54,6 +58,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         (sum / count).sqrt()
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn covariance_pair(&self, bands: [usize; 2], means: [T; 2], min: T, max: T) -> T {
         let mut sum = T::zero();
         let mut count = T::zero();
@@ -76,6 +82,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         (sum / count).sqrt()
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn all_band_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
@@ -96,6 +104,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         means
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn all_band_std_devs(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
@@ -117,6 +127,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         devs
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn covariance_matrix(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
@@ -161,7 +173,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     }
 }
 
-#[inline(always)]
+#[cfg_attr(not(debug_assertions), inline(always))]
+#[cfg_attr(debug_assertions, inline(never))]
 pub fn normify<T>(val: T, scale: T, min: T, max: T) -> T
     where T: Copy + PartialOrd + Div<Output=T> + Sub<Output=T> + Debug + Zero
 {

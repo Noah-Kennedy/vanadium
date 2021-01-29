@@ -5,6 +5,7 @@ authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
 
 [features]
+header-serialization = ["serde"]
 
 [dependencies]
 memmap2 = "0.2.0"
@@ -27,6 +28,7 @@ features = ["improved_unicode"]
 [dependencies.serde]
 version = "1.0"
 features = ["derive"]
+optional = true
 
 [dependencies.regex]
 version = "1.4"

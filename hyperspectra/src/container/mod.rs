@@ -25,6 +25,8 @@ pub struct ImageDims {
 }
 
 impl From<&Headers> for ImageDims {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn from(headers: &Headers) -> Self {
         ImageDims {
             channels: headers.bands,
@@ -73,16 +75,23 @@ pub struct WriteImageGuard<'a, T, I> {
 }
 
 impl<T, I> LockImage<T, I> where T: 'static, I: 'static {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn new(inner: I) -> Self {
         Self {
             inner: RwLock::new(inner),
             _phantom: Default::default(),
         }
     }
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn read(&self) -> ReadImageGuard<T, I> {
         ReadImageGuard { inner: self.inner.read().unwrap(), _phantom: Default::default() }
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn write(&self) -> WriteImageGuard<T, I> {
         WriteImageGuard { inner: self.inner.write().unwrap(), _phantom: Default::default() }
     }

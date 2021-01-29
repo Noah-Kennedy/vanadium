@@ -20,6 +20,8 @@ impl<'a, I, T> PCA<T> for LockImage<T, I>
           T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn pca(&self, out: &Self, verbose: bool, min: Option<T>, max: Option<T>) {
         let min = min.unwrap_or_else(T::min_value);
         let max = max.unwrap_or_else(T::max_value);
@@ -100,7 +102,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
           T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
-
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     fn write_standardized_results(
         &self,
         output: &mut WriteImageGuard<T, I>,
