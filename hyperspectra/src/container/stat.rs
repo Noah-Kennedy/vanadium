@@ -3,13 +3,13 @@ use std::iter::Sum;
 use std::ops::{Div, Sub};
 
 use indicatif::{MultiProgress, ProgressBar};
-use nalgebra::{ComplexField, DMatrix, Dynamic, RealField, SymmetricEigen};
+use nalgebra::{ComplexField, DMatrix, RealField};
 use num::{Bounded, Zero};
 use num::traits::NumAssign;
 use rayon::prelude::*;
 
 use crate::bar::config_bar;
-use crate::container::{ImageDims, IterableImage, IterableImageMut, ReadImageGuard, WriteImageGuard};
+use crate::container::{ImageDims, IterableImage, IterableImageMut, ReadImageGuard};
 
 impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     where I: IterableImage<'b, T> + Sync + IterableImageMut<'b, T>,
@@ -158,59 +158,6 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         out.fill_upper_triangle_with_lower_triangle();
 
         out
-    }
-
-    pub fn write_standardized_results(
-        &self,
-        output: &mut WriteImageGuard<T, I>,
-        mp: &MultiProgress,
-        means: &[T], std_devs: &[T],
-        eigen: &SymmetricEigen<T, Dynamic>,
-    )
-    {
-        let status_bar = mp.add(ProgressBar::new(
-            self.inner.dims().samples as u64
-                * self.inner.dims().lines as u64));
-        config_bar(&status_bar, "Writing standardized output bands...");
-        let sc = status_bar;
-
-        let itc = self.inner.samples().zip(output.inner.samples_mut());
-
-        // rayon::scope(|s| {
-        for (read, write) in itc {
-            let eig = eigen.eigenvectors.clone();
-
-            // s.spawn(move |_| {
-            for (i, b) in write.enumerate() {
-                let col = eig.column(i);
-
-                let col_write: T = read
-                    .clone()
-                    .zip(means)
-                    .zip(std_devs)
-                    .map(|((r, m), s)| {
-                        let z_val: T = (*r - *m) / *s;
-                        let z_off: T = (-*m) / *s;
-
-                        if (z_val - z_off).abs() < T::zero() {
-                            T::min_value()
-                        } else {
-                            z_val
-                        }
-                    })
-                    .zip(col.into_iter())
-                    .map(|(d, s)| d * (*s))
-                    .sum();
-
-                *b = col_write;
-            }
-            // });
-
-            // sc.inc(1);
-        }
-        // });
-
-        sc.finish();
     }
 }
 
