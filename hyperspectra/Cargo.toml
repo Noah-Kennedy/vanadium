@@ -10,10 +10,19 @@ edition = "2018"
 memmap2 = "0.2.0"
 rayon = "1.5"
 nalgebra = "0.24.0"
-num = "0.3.1"
+
+[dependencies.num]
+version = "0.3.1"
+default-features = false
+
+[dependencies.image]
+version = "0.23.12"
+default-features = false
+features = ["png"]
 
 [dependencies.indicatif]
 version = "0.15.0"
+features = ["improved_unicode"]
 
 [dependencies.serde]
 version = "1.0"
