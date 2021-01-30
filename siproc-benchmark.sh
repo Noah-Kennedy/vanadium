@@ -73,7 +73,7 @@ time hyperfine -u second -i --warmup=2 \
   -L type bip,bil,bsq \
   "$PCA_MED"
 
-rm /data/*.png /data/*.bil /data/*.bip /data/*.bsq /data/*.csv || true
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
 
 chown --recursive noah ./benchmark-results/siproc/
 chmod --recursive 755 ./benchmark-results/siproc/
