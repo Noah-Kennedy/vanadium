@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use crate::container::IterableImageMut;
 use crate::container::mapped::Bsq;
+use either::Either;
 
 #[derive(Clone)]
 pub struct BsqSampleIterMut<'a, T> {
@@ -137,6 +138,12 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     type SampleMut = BsqSampleIterMut<'a, T>;
     type BandsMut = BsqAllChannelsIterMut<'a, T>;
     type SamplesMut = BsqAllSamplesIterMut<'a, T>;
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
+    fn fastest_mut(&mut self) -> Either<Self::BandsMut, Self::SamplesMut> {
+        Either::Left(self.bands_mut())
+    }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]

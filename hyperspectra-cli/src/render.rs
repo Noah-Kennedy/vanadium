@@ -1,20 +1,14 @@
 use std::error::Error;
-use std::fmt::Debug;
-use std::iter::Sum;
-use std::ops::{Div, Sub};
+use std::fs::{File, read_to_string};
+use std::str::FromStr;
 
-use num::{Bounded, FromPrimitive, ToPrimitive};
-use num::traits::NumAssign;
+use image::{GrayImage, RgbImage};
 
-use hyperspectra::container::{ImageDims, IndexImage, IterableImage, LockImage, ColorFlag, Render};
+use hyperspectra::container::{ColorFlag, ImageDims, IndexImage, IterableImage, LockImage, Render};
+use hyperspectra::container::mapped::{Bip, Bsq};
+use hyperspectra::header::{Headers, Interleave};
 
 use crate::cli::ColorOpt;
-use image::RgbImage;
-use nalgebra::RealField;
-use std::fs::{read_to_string, File};
-use hyperspectra::header::{Headers, Interleave};
-use std::str::FromStr;
-use hyperspectra::container::mapped::{Bip, Bsq};
 
 pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
     let input_file = File::open(opt.input.clone())?;
@@ -41,17 +35,14 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
             helper(&l, &opt)
         }
     }
-
 }
 
-fn helper<'a, T, I>(
-    input: &LockImage<T, I>,
+fn helper<'a, I>(
+    input: &LockImage<f32, I>,
     opt: &ColorOpt,
 )
     -> Result<(), Box<dyn Error>>
-    where I: IterableImage<'a, T> + Sync + IndexImage<T> + 'static,
-          T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded + Sum + Div
-          + Sub + FromPrimitive + ToPrimitive + RealField
+    where I: IterableImage<'a, f32> + Sync + IndexImage<f32> + 'static,
 {
     let guard = input.read();
     let ImageDims { samples, lines, .. } = guard.inner.dims();
@@ -62,40 +53,36 @@ fn helper<'a, T, I>(
     let bands = &opt.bands;
     let path = &opt.output;
     let color = opt.color_map.as_str();
-    let _reds = &opt.red_bands;
-    let _greens = &opt.green_bands;
-    let _blues = &opt.blue_bands;
+    let reds = &opt.red_bands;
+    let greens = &opt.green_bands;
+    let blues = &opt.blue_bands;
 
     match color {
         "rgb" => {
-            todo!()
+            let mut out = RgbImage::from_raw(
+                width as u32,
+                height as u32,
+                vec![0; height * width * 3],
+            ).unwrap();
 
-            // let mut out = RgbImage::from_raw(
-            //     width as u32,
-            //     height as u32,
-            //     vec![0; height * width * 3],
-            // ).unwrap();
-            //
-            // println!("Applying color map");
-            // input.rgb(&mut out, min, max, bands, [reds, greens, blues]);
-            //
-            // println!("Saving...");
-            // out.save(path)?;
+            println!("Applying color map");
+            input.rgb(&mut out, min, max, bands, [reds, greens, blues]);
+
+            println!("Saving...");
+            out.save(path)?;
         }
         "gray" | "grey" => {
-            todo!()
+            let mut out = GrayImage::from_raw(
+                width as u32,
+                height as u32,
+                vec![0; height * width],
+            ).unwrap();
 
-            // let mut out = GrayImage::from_raw(
-            //     width as u32,
-            //     height as u32,
-            //     vec![0; height * width],
-            // ).unwrap();
-            //
-            // println!("Applying color map");
-            // input.gray(&mut out, min[0], max[0], bands[0]);
-            //
-            // println!("Saving...");
-            // out.save(path)?;
+            println!("Applying color map");
+            input.gray(&mut out, min[0], max[0], bands[0]);
+
+            println!("Saving...");
+            out.save(path)?;
         }
         "green" | "red" | "blue" | "purple" | "yellow" | "teal" => {
             println!("Allocating output buffer");
@@ -116,25 +103,23 @@ fn helper<'a, T, I>(
             };
 
             println!("Applying color map");
-            input.solid(&mut out, T::from_f32(min[0]).unwrap(),
-                        T::from_f32(max[0]).unwrap(), bands[0], flag);
+            input.solid(&mut out, min[0], max[0], bands[0], flag);
 
             println!("Saving...");
             out.save(path)?;
         }
         "mask" => {
-            todo!()
-            // let mut out = GrayImage::from_raw(
-            //     width as u32,
-            //     height as u32,
-            //     vec![0; height * width],
-            // ).unwrap();
-            //
-            // println!("Applying color map");
-            // input.mask(&mut out, min[0]);
-            //
-            // println!("Saving...");
-            // out.save(path)?;
+            let mut out = GrayImage::from_raw(
+                width as u32,
+                height as u32,
+                vec![0; height * width],
+            ).unwrap();
+
+            println!("Applying color map");
+            input.mask(&mut out, min[0]);
+
+            println!("Saving...");
+            out.save(path)?;
         }
         _ => unimplemented!()
     };

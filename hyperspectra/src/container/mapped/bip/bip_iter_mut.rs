@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use crate::container::IterableImageMut;
 use crate::container::mapped::Bip;
+use either::Either;
 
 #[derive(Clone)]
 pub struct BipBandIterMut<'a, T> {
@@ -137,6 +138,12 @@ impl<'a, C, T> IterableImageMut<'a, T> for Bip<C, T>
     type SampleMut = BipSampleIterMut<'a, T>;
     type BandsMut = BipAllBandsIterMut<'a, T>;
     type SamplesMut = BipAllSamplesIterMut<'a, T>;
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
+    fn fastest_mut(&mut self) -> Either<Self::BandsMut, Self::SamplesMut> {
+        Either::Right(self.samples_mut())
+    }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]

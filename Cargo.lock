@@ -211,6 +211,7 @@ dependencies = [
 name = "hyperspectra"
 version = "1.0.0-alpha"
 dependencies = [
+ "either 1.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.23.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap2 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",

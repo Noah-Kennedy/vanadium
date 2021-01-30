@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use crate::container::IterableImage;
 use crate::container::mapped::Bip;
+use either::Either;
 
 #[derive(Clone)]
 pub struct BipBandIter<'a, T> {
@@ -137,6 +138,12 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
     type Sample = BipSampleIter<'a, T>;
     type Bands = BipAllBandsIter<'a, T>;
     type Samples = BipAllSamplesIter<'a, T>;
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
+    fn fastest(&self) -> Either<Self::Bands, Self::Samples> {
+        Either::Right(self.samples())
+    }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]

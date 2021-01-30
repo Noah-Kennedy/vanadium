@@ -8,6 +8,7 @@ pub use stat::*;
 pub use render::*;
 
 use crate::header::Headers;
+use either::Either;
 
 pub mod mapped;
 
@@ -105,6 +106,8 @@ pub trait IterableImage<'a, T: 'static>: SizedImage {
     type Bands: Iterator<Item=Self::Band> + Clone + Send;
     type Samples: Iterator<Item=Self::Sample> + Clone + Send;
 
+    fn fastest(&self) -> Either<Self::Bands, Self::Samples>;
+
     fn bands(&self) -> Self::Bands;
     fn samples(&self) -> Self::Samples;
 
@@ -117,6 +120,8 @@ pub trait IterableImageMut<'a, T: 'static>: SizedImage {
     type SampleMut: Iterator<Item=&'a mut T> + Send;
     type BandsMut: Iterator<Item=Self::BandMut> + Send;
     type SamplesMut: Iterator<Item=Self::SampleMut> + Send;
+
+    fn fastest_mut(&mut self) -> Either<Self::BandsMut, Self::SamplesMut>;
 
     fn bands_mut(&mut self) -> Self::BandsMut;
     fn samples_mut(&mut self) -> Self::SamplesMut;

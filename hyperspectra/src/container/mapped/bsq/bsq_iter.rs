@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use crate::container::IterableImage;
 use crate::container::mapped::Bsq;
+use either::Either;
 
 #[derive(Clone)]
 pub struct BsqSampleIter<'a, T> {
@@ -137,6 +138,12 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     type Sample = BsqSampleIter<'a, T>;
     type Bands = BsqAllChannelsIter<'a, T>;
     type Samples = BsqAllSamplesIter<'a, T>;
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
+    fn fastest(&self) -> Either<Self::Bands, Self::Samples> {
+        Either::Left(self.bands())
+    }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
