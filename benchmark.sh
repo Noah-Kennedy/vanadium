@@ -1,50 +1,75 @@
 #!/usr/bin/env bash
 
-COLOR='hyperspectra color -i data/raw/unnormalized/unnorm.{type} -n data/raw/unnormalized/unnorm.{type}.hdr'
+PCA_SMALL='hyperspectra-cli pca --csv -i /data/bench-data/small.{type} -h /data/bench-data/small.{type}.hdr -o /data/pca.{type} -d 3 --min 0.0 --max 1.0'
+PCA_MED='hyperspectra-cli pca --csv -i /data/bench-data/medium.{type} -h /data/bench-data/medium.{type}.hdr -o /data/pca.{type} -d 3 --min 0.0 --max 1.0'
 
-RGB='-o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb'
-COOL='-o cool.png -m 0 -x 1 -b 3 -c coolwarm'
-GREY='-o grey.png -m 0 -x 1 -b 3 -c grey'
+WARMUP='rm /data/*.png /data/*.bil /data/*.bip /data/*.bsq /data/*.csv || true'
+COLD_UP='rm /data/*.png /data/*.bil /data/*.bip /data/*.bsq /data/*.csv || true; sync; echo 3 | tee /proc/sys/vm/drop_caches'
 
-CONVERT_IN='hyperspectra convert -i data/raw/unnormalized/unnorm.{type} -n data/raw/unnormalized/unnorm.{type}.hdr'
+CONVERT_IN_SMALL='hyperspectra-cli convert -i /data/bench-data/small.{type} -n /data/bench-data/small.{type}.hdr'
+CONVERT_IN_MED='hyperspectra-cli convert -i /data/bench-data/medium.{type} -n /data/bench-data/medium.{type}.hdr'
 
-CONVERT_OUT_BIP='-o out.bip -t bip'
-CONVERT_OUT_BIL='-o out.bil -t bil'
-CONVERT_OUT_BSQ='-o out.bsq -t bsq'
+CONVERT_OUT_BIP='-o /data/out.bip -t bip'
+CONVERT_OUT_BIL='-o /data/out.bil -t bil'
+CONVERT_OUT_BSQ='-o /data/out.bsq -t bsq'
 
-time hyperfine --warmup=2 \
-  --prepare 'rm *.png *.bil *.bip *.bsq || true' \
-  --export-markdown BENCHMARKS_CONVERT_WARM.md \
-  -L type bip,bil,bsq \
-  "$CONVERT_IN $CONVERT_OUT_BIP" \
-  "$CONVERT_IN $CONVERT_OUT_BIL" \
-  "$CONVERT_IN $CONVERT_OUT_BSQ"
+# small
 
 time hyperfine --warmup=2 \
-  --prepare 'rm *.png *.bil *.bip *.bsq || true' \
-  --export-markdown BENCHMARKS_COLOR_WARM.md \
-  -L type bip,bil,bsq \
-  "$COLOR $RGB" \
-  "$COLOR $COOL" \
-  "$COLOR $GREY"
+  --prepare "$WARMUP" \
+  --export-markdown benchmark-results/spectral/small/BENCHMARKS_CONVERT_WARM.md \
+  -L type bip,bsq \
+  "$CONVERT_IN_SMALL $CONVERT_OUT_BIP" \
+  "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
 time hyperfine --warmup=2 \
-  --prepare 'rm *.png *.bil *.bip *.bsq || true; sync; echo 3 | tee /proc/sys/vm/drop_caches' \
-  --export-markdown BENCHMARKS_CONVERT_COLD.md \
-  -L type bip,bil,bsq \
-  "$CONVERT_IN $CONVERT_OUT_BIP" \
-  "$CONVERT_IN $CONVERT_OUT_BIL" \
-  "$CONVERT_IN $CONVERT_OUT_BSQ"
+  --prepare "$WARMUP" \
+  --export-markdown benchmark-results/spectral/small/BENCHMARKS_PCA_WARM.md \
+  -L type bip,bsq \
+  "$PCA_SMALL"
 
 time hyperfine --warmup=2 \
-  --prepare 'rm *.png *.bil *.bip *.bsq || true; sync; echo 3 | tee /proc/sys/vm/drop_caches' \
-  --export-markdown BENCHMARKS_COLOR_COLD.md \
-  -L type bip,bil,bsq \
-  "$COLOR $RGB" \
-  "$COLOR $COOL" \
-  "$COLOR $GREY"
+  --prepare "$COLD_UP" \
+  --export-markdown benchmark-results/spectral/small/BENCHMARKS_CONVERT_COLD.md \
+  -L type bip,bsq \
+  "$CONVERT_IN_SMALL $CONVERT_OUT_BIP" \
+  "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
-rm *.png *.bil *.bip *.bsq || true
+time hyperfine --warmup=2 \
+  --prepare "$COLD_UP" \
+  --export-markdown benchmark-results/spectral/small/BENCHMARKS_PCA_COLD.md \
+  -L type bip,bsq \
+  "$PCA_SMALL"
 
-chown noah *.md
-chmod 755 *.md
+# medium
+
+time hyperfine --warmup=2 \
+  --prepare "$WARMUP" \
+  --export-markdown benchmark-results/spectral/medium/BENCHMARKS_CONVERT_WARM.md \
+  -L type bip,bsq \
+  "$CONVERT_IN_MED $CONVERT_OUT_BIP" \
+  "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
+
+time hyperfine --warmup=2 \
+  --prepare "$WARMUP" \
+  --export-markdown benchmark-results/spectral/medium/BENCHMARKS_PCA_WARM.md \
+  -L type bip,bsq \
+  "$PCA_MED"
+
+time hyperfine --warmup=2 \
+  --prepare "$COLD_UP" \
+  --export-markdown benchmark-results/spectral/medium/BENCHMARKS_CONVERT_COLD.md \
+  -L type bip,bsq \
+  "$CONVERT_IN_MED $CONVERT_OUT_BIP" \
+  "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
+
+time hyperfine --warmup=2 \
+  --prepare "$COLD_UP" \
+  --export-markdown benchmark-results/spectral/medium/BENCHMARKS_PCA_COLD.md \
+  -L type bip,bsq \
+  "$PCA_MED"
+
+rm /data/*.png /data/*.bil /data/*.bip /data/*.bsq /data/*.csv || true
+
+chown --recursive noah ./benchmark-results/spectral/
+chmod --recursive 755 ./benchmark-results/spectral/

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use crate::headers::Interleave;
+use hyperspectra::header::Interleave;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "basic")]
@@ -15,6 +15,7 @@ pub struct Opt {
 pub enum SubcommandOpt {
     Convert(ConvertOpt),
     Color(ColorOpt),
+    Pca(PcaOpt),
 }
 
 /// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
@@ -44,6 +45,45 @@ pub struct ConvertOpt {
     pub output_type: Interleave,
 }
 
+/// Perform Principal Component Analysis on an image.
+///
+/// This will write out a BSQ file with the top PCA dims.
+///
+/// The output will be standardized to z-score to maintain a uniform scale between bands.
+/// As a result, the output will contain negative values.
+///
+/// The background of the image will be negative infinity.
+#[derive(StructOpt, Debug)]
+#[structopt(name = "pca")]
+pub struct PcaOpt {
+    /// The path to the input binary file.
+    #[structopt(short, long, parse(from_str))]
+    pub input: PathBuf,
+
+    /// The path to the input header file.
+    #[structopt(short, long, parse(from_os_str))]
+    pub header: PathBuf,
+
+    /// The path to the output binary file.
+    #[structopt(short, long, parse(from_os_str))]
+    pub output: PathBuf,
+
+    #[structopt(short, long)]
+    pub csv: bool,
+
+    #[structopt(short, long)]
+    pub verbose: bool,
+
+    #[structopt(short, long)]
+    pub dims: u64,
+
+    #[structopt(long)]
+    pub max: Option<f32>,
+
+    #[structopt(long)]
+    pub min: Option<f32>,
+}
+
 /// Subcommand for outputting color images.
 ///
 /// # Examples
@@ -51,56 +91,65 @@ pub struct ConvertOpt {
 /// ## RGB
 ///
 /// ```sh
-/// hyperspectra color -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
+/// hyperspectra-cli color -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
 /// ```
 ///
 /// ## Grayscale
 ///
 /// ```sh
-/// hyperspectra color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
+/// hyperspectra-cli color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
 /// ```
 ///
 /// ## Coolwarm
 ///
 /// ```sh
-/// hyperspectra color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
+/// hyperspectra-cli color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
 /// ```
 #[derive(StructOpt, Debug)]
-#[structopt(name = "color")]
+#[structopt(name = "color", settings = & [structopt::clap::AppSettings::AllowNegativeNumbers])]
 pub struct ColorOpt {
     /// The path to the input binary file.
     #[structopt(short, long, parse(from_os_str))]
     pub input: PathBuf,
 
     /// The path to the input header file.
-    #[structopt(short = "n", long, parse(from_os_str))]
-    pub input_header: PathBuf,
+    #[structopt(short = "d", long, parse(from_os_str))]
+    pub header: PathBuf,
 
     /// The path to the output image file.
     /// The file should have a .png, .jpg, or .jpeg extension
-    #[structopt(short = "o", long, parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     pub output: PathBuf,
 
     /// The floor to clamp to for each band.
     ///
     /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
     /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(short = "m", long)]
-    pub min: Vec<f32>,
+    #[structopt(long)]
+    pub minimums: Vec<f32>,
 
     /// The ceiling to clamp to for each band.
     ///
     /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
     /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(short = "x", long)]
-    pub max: Vec<f32>,
+    #[structopt(long)]
+    pub maximums: Vec<f32>,
 
     /// The bands to work with.
     ///
     /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
     /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(short = "b", long)]
+    #[structopt(long)]
     pub bands: Vec<usize>,
+
+    #[structopt(short = "r", long)]
+    pub red_bands: Vec<usize>,
+
+    #[structopt(short = "b", long)]
+    pub blue_bands: Vec<usize>,
+
+    #[structopt(short = "g", long)]
+    pub green_bands: Vec<usize>,
 
     /// The color map of the image.
     ///

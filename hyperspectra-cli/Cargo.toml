@@ -1,0 +1,27 @@
+[package]
+name = "hyperspectra-cli"
+version = "1.0.0-alpha"
+authors = ["noah <nomaxx117@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+csv = "1.1"
+
+[dependencies.nalgebra]
+version = "0.24.1"
+
+[dependencies.num]
+version = "0.3.1"
+default-features = false
+
+[dependencies.hyperspectra]
+path = "../hyperspectra"
+
+[dependencies.structopt]
+version = "0.3.21"
+default-features = false
+
+[dependencies.image]
+version = "0.23.12"
+default-features = false
+features = ["png"]
