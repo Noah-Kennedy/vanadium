@@ -1,8 +1,8 @@
 # Hyperspectra
 
-[![codecov](https://codecov.io/gh/Noah-Kennedy/hyperspectral/branch/dev/graph/badge.svg?token=2KBFXPBR34)](https://codecov.io/gh/Noah-Kennedy/hyperspectral)
+[![codecov](https://codecov.io/gh/Noah-Kennedy/hyperspectral/branch/master/graph/badge.svg?token=2KBFXPBR34)](https://codecov.io/gh/Noah-Kennedy/hyperspectral)
 
-![Continuous integration](https://github.com/Noah-Kennedy/hyperspectral/workflows/Continuous%20integration/badge.svg?branch=dev)
+![Continuous integration](https://github.com/Noah-Kennedy/hyperspectral/workflows/Continuous%20integration/badge.svg?branch=master)
 
 `hyperspectra` is a cli tool for manipulating ENVI BIP, BIL, and BSQ files for processing
 hyperspectral image data.
