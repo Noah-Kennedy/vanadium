@@ -69,6 +69,9 @@ pub struct PcaOpt {
     pub output: PathBuf,
 
     #[structopt(short, long)]
+    pub csv: bool,
+
+    #[structopt(short, long)]
     pub verbose: bool,
 
     #[structopt(short, long)]

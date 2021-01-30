@@ -14,6 +14,7 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         input,
         header,
         output,
+        csv: csv_out,
         dims,
         verbose,
         max,
@@ -29,37 +30,67 @@ pub fn execute_pca(op: PcaOpt) -> Result<(), Box<dyn Error>> {
         .read(true)
         .open(input)?;
 
-    let output_file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .read(true)
-        .open(output)?;
+    if csv_out {
+        let eigen = match headers.interleave {
+            Interleave::Bip => {
+                let input = Bip::<_, f32>::headers_mut(&headers, &input_file)?;
+                let input_image = LockImage::new(input);
 
-    match headers.interleave {
-        Interleave::Bip => {
-            let input = Bip::<_, f32>::headers_mut(&headers, &input_file)?;
-            headers.bands = dims as usize;
-            output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
-            let output = Bip::<_, f32>::headers_mut(&headers, &output_file)?;
+                input_image.pca_eigen(verbose, min, max)
+            }
+            Interleave::Bil => unimplemented!(),
+            Interleave::Bsq => {
+                let input = Bsq::<_, f32>::headers_mut(&headers, &input_file)?;
+                let input_image = LockImage::new(input);
 
-            let input_image = LockImage::new(input);
-            let output_image = LockImage::new(output);
+                input_image.pca_eigen(verbose, min, max)
+            }
+        };
 
-            input_image.pca(&output_image, verbose, min, max);
+        let mut writer = csv::Writer::from_path(output)?;
+
+        for (value, vector) in eigen.eigenvalues.iter().zip(eigen.eigenvectors.row_iter()) {
+            let mut record = vec![*value];
+
+            for v in vector.iter() {
+                record.push(*v);
+            }
+
+            writer.serialize(record)?;
         }
-        Interleave::Bil => {}
-        Interleave::Bsq => {
-            let input = Bsq::<_, f32>::headers_mut(&headers, &input_file)?;
+    } else {
+        let output_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .read(true)
+            .open(output)?;
 
-            headers.bands = dims as usize;
-            output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
+        match headers.interleave {
+            Interleave::Bip => {
+                let input = Bip::<_, f32>::headers_mut(&headers, &input_file)?;
+                headers.bands = dims as usize;
+                output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
+                let output = Bip::<_, f32>::headers_mut(&headers, &output_file)?;
 
-            let output = Bsq::<_, f32>::headers_mut(&headers, &output_file)?;
+                let input_image = LockImage::new(input);
+                let output_image = LockImage::new(output);
 
-            let input_image = LockImage::new(input);
-            let output_image = LockImage::new(output);
+                input_image.pca(&output_image, verbose, min, max);
+            }
+            Interleave::Bil => unimplemented!(),
+            Interleave::Bsq => {
+                let input = Bsq::<_, f32>::headers_mut(&headers, &input_file)?;
 
-            input_image.pca(&output_image, verbose, min, max);
+                headers.bands = dims as usize;
+                output_file.set_len(headers.bands as u64 * headers.lines as u64 * headers.samples as u64 * 4)?;
+
+                let output = Bsq::<_, f32>::headers_mut(&headers, &output_file)?;
+
+                let input_image = LockImage::new(input);
+                let output_image = LockImage::new(output);
+
+                input_image.pca(&output_image, verbose, min, max);
+            }
         }
     }
 
