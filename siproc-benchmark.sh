@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-PCA_SMALL='bins/siproc /data/bench-data/siproc/small-{type} /data/small.{type}.pca.siproc.csv --pca'
-PCA_MED='bins/siproc /data/bench-data/siproc/medium-{type} /data/medium.{type}.csv --pca'
+PCA_SMALL='bins/siproc /data/bench-data/siproc/small-{type} /data/small.{type}.pca.siproc.csv --pca --cuda -1'
+PCA_MED='bins/siproc /data/bench-data/siproc/medium-{type} /data/medium.{type}.csv --pca --cuda -1'
 
 WARMUP='rm /data/*.png /data/*bil /data/*bip /data/*bsq /data/*.csv || true'
 COLD_UP='rm /data/*.png /data/*bil /data/*bip /data/*bsq /data/*.csv || true; sync; echo 3 | tee /proc/sys/vm/drop_caches'
@@ -23,11 +23,19 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BIL" \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+chown --recursive noah ./benchmark-results/siproc/
+chmod --recursive 755 ./benchmark-results/siproc/
+
 time hyperfine -u second -i --warmup=2 \
   --prepare "$WARMUP" \
   --export-markdown benchmark-results/siproc/small/BENCHMARKS_PCA_WARM.md \
   -L type bip,bsq,bil \
   "$PCA_SMALL"
+
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+chown --recursive noah ./benchmark-results/siproc/
+chmod --recursive 755 ./benchmark-results/siproc/
 
 time hyperfine -u second -i --warmup=2 \
   --prepare "$COLD_UP" \
@@ -37,11 +45,19 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BIL" \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+chown --recursive noah ./benchmark-results/siproc/
+chmod --recursive 755 ./benchmark-results/siproc/
+
 time hyperfine -u second --warmup=2 \
   --prepare "$COLD_UP" \
   --export-markdown benchmark-results/siproc/small/BENCHMARKS_PCA_COLD.md \
   -L type bip,bsq,bil \
   "$PCA_SMALL"
+
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+chown --recursive noah ./benchmark-results/siproc/
+chmod --recursive 755 ./benchmark-results/siproc/
 
 # medium
 
@@ -53,11 +69,19 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_MED $CONVERT_OUT_BIL" \
   "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
 
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+chown --recursive noah ./benchmark-results/siproc/
+chmod --recursive 755 ./benchmark-results/siproc/
+
 time hyperfine -u second -i --warmup=2 \
   --prepare "$WARMUP" \
   --export-markdown benchmark-results/siproc/medium/BENCHMARKS_PCA_WARM.md \
   -L type bip,bil,bsq \
   "$PCA_MED"
+
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+chown --recursive noah ./benchmark-results/siproc/
+chmod --recursive 755 ./benchmark-results/siproc/
 
 time hyperfine -u second -i --warmup=2 \
   --prepare "$COLD_UP" \
@@ -67,6 +91,10 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_MED $CONVERT_OUT_BIL" \
   "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
 
+rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+chown --recursive noah ./benchmark-results/siproc/
+chmod --recursive 755 ./benchmark-results/siproc/
+
 time hyperfine -u second -i --warmup=2 \
   --prepare "$COLD_UP" \
   --export-markdown benchmark-results/siproc/medium/BENCHMARKS_PCA_COLD.md \
@@ -74,6 +102,5 @@ time hyperfine -u second -i --warmup=2 \
   "$PCA_MED"
 
 rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
-
 chown --recursive noah ./benchmark-results/siproc/
 chmod --recursive 755 ./benchmark-results/siproc/
