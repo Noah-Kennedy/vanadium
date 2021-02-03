@@ -28,8 +28,8 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
 rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
-chown --recursive noah ./benchmark-results/siproc/
-chmod --recursive 755 ./benchmark-results/siproc/
+chown --recursive noah ./benchmark-results/"$DEVICE"/siproc/
+chmod --recursive 755 ./benchmark-results/"$DEVICE"/siproc/
 
 time hyperfine -u second -i --warmup=2 \
   --prepare "$WARMUP" \
@@ -38,8 +38,8 @@ time hyperfine -u second -i --warmup=2 \
   "$PCA_SMALL"
 
 rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
-chown --recursive noah ./benchmark-results/siproc/
-chmod --recursive 755 ./benchmark-results/siproc/
+chown --recursive noah ./benchmark-results/"$DEVICE"/siproc/
+chmod --recursive 755 ./benchmark-results/"$DEVICE"/siproc/
 
 time hyperfine -u second -i --warmup=2 \
   --prepare "$COLD_UP" \
@@ -50,8 +50,8 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
 rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
-chown --recursive noah ./benchmark-results/siproc/
-chmod --recursive 755 ./benchmark-results/siproc/
+chown --recursive noah ./benchmark-results/"$DEVICE"/siproc/
+chmod --recursive 755 ./benchmark-results/"$DEVICE"/siproc/
 
 # rerun
 time hyperfine -u second -i --warmup=2 \
@@ -61,8 +61,8 @@ time hyperfine -u second -i --warmup=2 \
   "$PCA_SMALL"
 
 rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
-chown --recursive noah ./benchmark-results/siproc/
-chmod --recursive 755 ./benchmark-results/siproc/
+chown --recursive noah ./benchmark-results/"$DEVICE"/siproc/
+chmod --recursive 755 ./benchmark-results/"$DEVICE"/siproc/
 
 # medium
 #
