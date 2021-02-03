@@ -27,7 +27,7 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BIL" \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
-rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
 chown --recursive noah ./benchmark-results/siproc/
 chmod --recursive 755 ./benchmark-results/siproc/
 
@@ -37,7 +37,7 @@ time hyperfine -u second -i --warmup=2 \
   -L type bip,bsq,bil \
   "$PCA_SMALL"
 
-rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
 chown --recursive noah ./benchmark-results/siproc/
 chmod --recursive 755 ./benchmark-results/siproc/
 
@@ -49,7 +49,7 @@ time hyperfine -u second -i --warmup=2 \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BIL" \
   "$CONVERT_IN_SMALL $CONVERT_OUT_BSQ"
 
-rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
 chown --recursive noah ./benchmark-results/siproc/
 chmod --recursive 755 ./benchmark-results/siproc/
 
@@ -60,7 +60,7 @@ time hyperfine -u second -i --warmup=2 \
   -L type bip,bsq,bil \
   "$PCA_SMALL"
 
-rm /data/*png /data/*bil /data/*bip /data/*bsq /data/*.csv || true
+rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
 chown --recursive noah ./benchmark-results/siproc/
 chmod --recursive 755 ./benchmark-results/siproc/
 
