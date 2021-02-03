@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DEVICE='laptop'
-IN_DIR='/bench-data'
+IN_DIR='bench-data'
 OUT_DIR='.'
 
 PCA_SMALL="bins/siproc $IN_DIR/small-{type} $OUT_DIR/small.{type}.pca.siproc.csv --pca --cuda -1"
@@ -13,9 +13,9 @@ COLD_UP="rm $OUT_DIR/*.png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.
 CONVERT_IN_SMALL="bins/siproc $IN_DIR/small-{type}"
 CONVERT_IN_MED="bins/siproc $IN_DIR/medium-{type}"
 
-CONVERT_OUT_BIP="$OUT_DIR/siproc-convert.bip --convert bip"
-CONVERT_OUT_BIL="$OUT_DIR/siproc-convert.bil --convert bil"
-CONVERT_OUT_BSQ="$OUT_DIR/siproc-convert.bsq --convert bsq"
+CONVERT_OUT_BIP="$OUT_DIR/siproc-convert-bip --convert bip"
+CONVERT_OUT_BIL="$OUT_DIR/siproc-convert-bil --convert bil"
+CONVERT_OUT_BSQ="$OUT_DIR/siproc-convert-bsq --convert bsq"
 
 # small
 
