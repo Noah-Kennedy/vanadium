@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 
 DEVICE='laptop'
+IN_DIR='/bench-data'
+OUT_DIR='.'
 
-PCA_SMALL='bins/siproc /data/bench-data/siproc/small-{type} /data/small.{type}.pca.siproc.csv --pca --cuda -1'
-PCA_MED='bins/siproc /data/bench-data/siproc/medium-{type} /data/medium.{type}.csv --pca --cuda -1'
+PCA_SMALL="bins/siproc $IN_DIR/small-{type} $OUT_DIR/small.{type}.pca.siproc.csv --pca --cuda -1"
+PCA_MED="bins/siproc $IN_DIR/medium-{type} $OUT_DIR/medium.{type}.csv --pca --cuda -1"
 
-WARMUP='rm /data/*.png /data/*bil /data/*bip /data/*bsq /data/*.csv || true'
-COLD_UP='rm /data/*.png /data/*bil /data/*bip /data/*bsq /data/*.csv || true; sync; echo 3 | tee /proc/sys/vm/drop_caches'
+WARMUP="rm $OUT_DIR/*.png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true"
+COLD_UP="rm $OUT_DIR/*.png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true; sync; echo 3 | tee /proc/sys/vm/drop_caches"
 
-CONVERT_IN_SMALL='bins/siproc /data/bench-data/siproc/small-{type}'
-CONVERT_IN_MED='bins/siproc /data/bench-data/siproc/medium-{type}'
+CONVERT_IN_SMALL="bins/siproc $IN_DIR/small-{type}"
+CONVERT_IN_MED="bins/siproc $IN_DIR/medium-{type}"
 
-CONVERT_OUT_BIP='data/siproc-convert.bip --convert bip'
-CONVERT_OUT_BIL='data/siproc-convert.bil --convert bil'
-CONVERT_OUT_BSQ='data/siproc-convert.bsq --convert bsq'
+CONVERT_OUT_BIP="$OUT_DIR/siproc-convert.bip --convert bip"
+CONVERT_OUT_BIL="$OUT_DIR/siproc-convert.bil --convert bil"
+CONVERT_OUT_BSQ="$OUT_DIR/siproc-convert.bsq --convert bsq"
 
 # small
 
