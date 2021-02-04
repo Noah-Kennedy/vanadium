@@ -63,43 +63,43 @@ chmod --recursive 755 ./benchmark-results/"$DEVICE"/spectral/
 
 # medium
 
-#time hyperfine --warmup=2 \
-#  --prepare "$WARMUP" \
-#  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_CONVERT_WARM.md \
-#  -L type bip,bsq \
-#  "$CONVERT_IN_MED $CONVERT_OUT_BIP" \
-#  "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
-#
-#rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
-#chown --recursive noah ./benchmark-results/"$DEVICE"/spectral/
-#chmod --recursive 755 ./benchmark-results/"$DEVICE"/spectral/
-#
-#time hyperfine --warmup=2 \
-#  --prepare "$WARMUP" \
-#  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_PCA_WARM.md \
-#  -L type bip,bsq \
-#  "$PCA_MED"
-#
-#rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
-#chown --recursive noah ./benchmark-results/"$DEVICE"/spectral/
-#chmod --recursive 755 ./benchmark-results/"$DEVICE"/spectral/
-#
-#time hyperfine --warmup=2 \
-#  --prepare "$COLD_UP" \
-#  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_CONVERT_COLD.md \
-#  -L type bip,bsq \
-#  "$CONVERT_IN_MED $CONVERT_OUT_BIP" \
-#  "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
-#
-#rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
-#chown --recursive noah ./benchmark-results/"$DEVICE"/spectral/
-#chmod --recursive 755 ./benchmark-results/"$DEVICE"/spectral/
-#
-#time hyperfine --warmup=2 \
-#  --prepare "$COLD_UP" \
-#  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_PCA_COLD.md \
-#  -L type bip,bsq \
-#  "$PCA_MED"
+time hyperfine --warmup=2 \
+  --prepare "$WARMUP" \
+  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_CONVERT_WARM.md \
+  -L type bip,bsq \
+  "$CONVERT_IN_MED $CONVERT_OUT_BIP" \
+  "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
+
+rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
+chown --recursive noah ./benchmark-results/"$DEVICE"/spectral/
+chmod --recursive 755 ./benchmark-results/"$DEVICE"/spectral/
+
+time hyperfine --warmup=2 \
+  --prepare "$WARMUP" \
+  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_PCA_WARM.md \
+  -L type bip,bsq \
+  "$PCA_MED"
+
+rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
+chown --recursive noah ./benchmark-results/"$DEVICE"/spectral/
+chmod --recursive 755 ./benchmark-results/"$DEVICE"/spectral/
+
+time hyperfine --warmup=2 \
+  --prepare "$COLD_UP" \
+  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_CONVERT_COLD.md \
+  -L type bip,bsq \
+  "$CONVERT_IN_MED $CONVERT_OUT_BIP" \
+  "$CONVERT_IN_MED $CONVERT_OUT_BSQ"
+
+rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
+chown --recursive noah ./benchmark-results/"$DEVICE"/spectral/
+chmod --recursive 755 ./benchmark-results/"$DEVICE"/spectral/
+
+time hyperfine --warmup=2 \
+  --prepare "$COLD_UP" \
+  --export-markdown benchmark-results/"$DEVICE"/spectral/medium/BENCHMARKS_PCA_COLD.md \
+  -L type bip,bsq \
+  "$PCA_MED"
 
 rm $OUT_DIR/*png $OUT_DIR/*bil $OUT_DIR/*bip $OUT_DIR/*bsq $OUT_DIR/*.csv || true
 chown --recursive noah ./benchmark-results/"$DEVICE"/spectral/
