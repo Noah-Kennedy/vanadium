@@ -17,6 +17,8 @@ mod stat;
 mod convert;
 mod render;
 
+const CHUNK_SIZE: usize = 4096;
+
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Default, Debug)]
 pub struct ImageDims {
     /// bands in image
@@ -105,6 +107,7 @@ pub trait IterableImage<'a, T: 'static>: SizedImage {
     type Sample: Iterator<Item=&'a T> + Clone + Send;
     type Bands: Iterator<Item=Self::Band> + Clone + Send;
     type Samples: Iterator<Item=Self::Sample> + Clone + Send;
+    type SamplesChunked: Iterator<Item=Self::Samples> + Clone + Send;
 
     fn fastest(&self) -> Either<Self::Bands, Self::Samples>;
 
@@ -113,6 +116,8 @@ pub trait IterableImage<'a, T: 'static>: SizedImage {
 
     fn band(&self, index: usize) -> Self::Band;
     fn sample(&self, index: usize) -> Self::Sample;
+
+    fn samples_chunked(&self) -> Self::SamplesChunked;
 }
 
 pub trait IterableImageMut<'a, T: 'static>: SizedImage {

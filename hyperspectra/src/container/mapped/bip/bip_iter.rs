@@ -1,8 +1,9 @@
 use std::marker::PhantomData;
 
-use crate::container::IterableImage;
-use crate::container::mapped::Bip;
 use either::Either;
+
+use crate::container::{CHUNK_SIZE, IterableImage};
+use crate::container::mapped::Bip;
 
 #[derive(Clone)]
 pub struct BipBandIter<'a, T> {
@@ -11,7 +12,8 @@ pub struct BipBandIter<'a, T> {
     num_bands: usize,
     _phantom: PhantomData<&'a T>,
 }
-unsafe impl <'a, T> Send for BipBandIter<'a, T> {}
+
+unsafe impl<'a, T> Send for BipBandIter<'a, T> {}
 
 #[derive(Clone)]
 pub struct BipAllBandsIter<'a, T> {
@@ -22,7 +24,7 @@ pub struct BipAllBandsIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BipAllBandsIter<'a, T> {}
+unsafe impl<'a, T> Send for BipAllBandsIter<'a, T> {}
 
 
 impl<'a, T> Iterator for BipBandIter<'a, T> {
@@ -76,7 +78,7 @@ pub struct BipSampleIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BipSampleIter<'a, T> {}
+unsafe impl<'a, T> Send for BipSampleIter<'a, T> {}
 
 #[derive(Clone)]
 pub struct BipAllSamplesIter<'a, T> {
@@ -86,7 +88,42 @@ pub struct BipAllSamplesIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BipAllSamplesIter<'a, T> {}
+#[derive(Clone)]
+pub struct BipSamplesChunkedIter<'a, T> {
+    start: *const T,
+    end: *const T,
+    num_bands: usize,
+    jump: usize,
+    _phantom: PhantomData<&'a T>,
+}
+
+unsafe impl<'a, T> Send for BipSamplesChunkedIter<'a, T> {}
+
+impl<'a, T> Iterator for BipSamplesChunkedIter<'a, T> where T: Copy {
+    type Item = BipAllSamplesIter<'a, T>;
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start < self.end {
+            unsafe {
+                let start = self.start;
+                self.start = start.add(self.jump);
+
+                Some(Self::Item {
+                    start,
+                    end: self.start,
+                    num_bands: self.num_bands,
+                    _phantom: Default::default(),
+                })
+            }
+        } else {
+            None
+        }
+    }
+}
+
+unsafe impl<'a, T> Send for BipAllSamplesIter<'a, T> {}
 
 impl<'a, T> Iterator for BipSampleIter<'a, T> where T: Copy {
     type Item = &'a T;
@@ -138,6 +175,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
     type Sample = BipSampleIter<'a, T>;
     type Bands = BipAllBandsIter<'a, T>;
     type Samples = BipAllSamplesIter<'a, T>;
+    type SamplesChunked = BipSamplesChunkedIter<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
@@ -202,6 +240,20 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
             Self::Sample {
                 start,
                 end: start.add(self.dims.channels),
+                _phantom: Default::default(),
+            }
+        }
+    }
+
+    fn samples_chunked(&self) -> Self::SamplesChunked {
+        unsafe {
+            Self::SamplesChunked {
+                start: self.container.inner().as_ptr(),
+                end: self.container.inner()
+                    .as_ptr()
+                    .add(self.dims.channels * self.dims.samples * self.dims.lines),
+                num_bands: self.dims.channels,
+                jump: self.dims.channels *  CHUNK_SIZE,
                 _phantom: Default::default(),
             }
         }
