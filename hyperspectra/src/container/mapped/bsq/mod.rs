@@ -15,8 +15,8 @@ mod bsq_iter;
 mod bsq_iter_mut;
 
 pub struct Bsq<C, T> {
-    dims: ImageDims,
-    container: SpectralImageContainer<C, T>,
+    pub (crate) dims: ImageDims,
+    pub (crate) container: SpectralImageContainer<C, T>,
 }
 
 impl<C, T> SizedImage for Bsq<C, T> {

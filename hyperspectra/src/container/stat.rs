@@ -78,7 +78,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             }
         }
 
-        sum / T::from_usize(count).unwrap()
+        sum / T::from_usize(count - 1).unwrap()
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
@@ -134,7 +134,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             let num_samples = lines * samples;
 
             let mut sums = vec![T::zero(); channels * channels];
-            let mut counts = vec![0usize; channels * channels];
+            let mut counts = vec![0; channels * channels];
 
             let status_bar = mp.add(ProgressBar::new(num_samples as u64));
             config_bar(&status_bar, "Calculating covariances...");
@@ -172,14 +172,14 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
             sums.iter_mut().zip(counts).for_each(|(s, c)| {
                 if c != 0 {
-                    *s /= T::from_usize(c).unwrap();
+                    *s /= T::from_usize(c - 1).unwrap();
                 }
             });
 
             status_bar.finish();
 
-            let out = DMatrix::from_row_slice(channels, channels, &sums);
-            // out.fill_upper_triangle_with_lower_triangle();
+            let mut out = DMatrix::from_row_slice(channels, channels, &sums);
+            out.fill_upper_triangle_with_lower_triangle();
 
             out
         } else {
@@ -217,8 +217,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
             status_bar.finish();
 
-            let out = DMatrix::from_row_slice(channels, channels, &covariances);
-            // out.fill_upper_triangle_with_lower_triangle();
+            let mut out = DMatrix::from_row_slice(channels, channels, &covariances);
+            out.fill_upper_triangle_with_lower_triangle();
 
             out
         }
@@ -235,12 +235,15 @@ pub fn normify<T>(val: T, scale: T, min: T, max: T) -> T
     shifted / scale
 }
 
+#[cfg(not(tarpaulin_include))]
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::container::mapped::{Bip, SpectralImageContainer};
-    use crate::container::LockImage;
     use num::traits::float::Float;
+
+    use crate::container::LockImage;
+    use crate::container::mapped::{Bip, SpectralImageContainer, Bsq};
+
+    use super::*;
 
     const DATA_BIP: [f32; 15] = [
         4.0, 2.0, 0.60,
@@ -248,6 +251,18 @@ mod tests {
         3.9, 2.0, 0.58,
         4.3, 2.1, 0.62,
         4.1, 2.2, 0.63,
+    ];
+
+    const DATA_BSQ: [f32; 15] = [
+        4.0, 4.2, 3.9, 4.3, 4.1,
+        2.0, 2.1, 2.0, 2.1, 2.2,
+        0.60, 0.59, 0.58, 0.62, 0.63,
+    ];
+
+    const COV: [f32; 9] = [
+        0.025, 0.0074999877, 0.00175,
+        0.0074999877, 0.007000001, 0.0013499998,
+        0.00175, 0.0013499998, 0.0004300003,
     ];
 
     fn data_bip() -> Vec<u8> {
@@ -260,18 +275,28 @@ mod tests {
         r
     }
 
+    fn data_bsq() -> Vec<u8> {
+        let mut r = Vec::with_capacity(60);
+
+        for item in &DATA_BSQ {
+            r.extend_from_slice(&item.to_ne_bytes());
+        }
+
+        r
+    }
+
     #[test]
-    fn test_mean() {
+    fn test_mean_bip() {
         let bip: Bip<Vec<u8>, f32> = Bip {
             dims: ImageDims {
                 channels: 3,
                 lines: 1,
-                samples: 5
+                samples: 5,
             },
             container: SpectralImageContainer {
                 container: data_bip(),
-                phantom: Default::default()
-            }
+                phantom: Default::default(),
+            },
         };
 
         let image: LockImage<f32, _> = LockImage::new(bip);
@@ -286,5 +311,85 @@ mod tests {
     }
 
     #[test]
-    fn test_covariance() {}
+    fn test_mean_bsq() {
+        let bip: Bsq<Vec<u8>, f32> = Bsq {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 5,
+            },
+            container: SpectralImageContainer {
+                container: data_bsq(),
+                phantom: Default::default(),
+            },
+        };
+
+        let image: LockImage<f32, _> = LockImage::new(bip);
+
+        let guard = image.read();
+
+        let mp = MultiProgress::new();
+
+        let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
+
+        assert_eq!(vec![4.1000004, 2.08, 0.604], means);
+    }
+
+    #[test]
+    fn test_covariance_bip() {
+        let bip: Bip<Vec<u8>, f32> = Bip {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 5,
+            },
+            container: SpectralImageContainer {
+                container: data_bip(),
+                phantom: Default::default(),
+            },
+        };
+
+        let image: LockImage<f32, _> = LockImage::new(bip);
+
+        let guard = image.read();
+
+        let mp = MultiProgress::new();
+
+        let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
+
+        let cov_mat = guard.covariance_matrix(&mp, &means, f32::neg_infinity(), f32::infinity());
+
+        let expected = DMatrix::from_row_slice(3,3, &COV);
+
+        assert_eq!(expected, cov_mat);
+    }
+
+    #[test]
+    fn test_covariance_bsq() {
+        let bip: Bsq<Vec<u8>, f32> = Bsq {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 5,
+            },
+            container: SpectralImageContainer {
+                container: data_bsq(),
+                phantom: Default::default(),
+            },
+        };
+
+        let image: LockImage<f32, _> = LockImage::new(bip);
+
+        let guard = image.read();
+
+        let mp = MultiProgress::new();
+
+        let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
+
+        let cov_mat = guard.covariance_matrix(&mp, &means, f32::neg_infinity(), f32::infinity());
+
+        let expected = DMatrix::from_row_slice(3,3, &COV);
+
+        assert_eq!(expected, cov_mat);
+    }
 }
