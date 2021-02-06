@@ -23,6 +23,21 @@ pub struct BsqAllSamplesIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
+#[derive(Clone, Default)]
+pub struct BsqSamplesChunkedIter<'a, T> {
+    _phantom: PhantomData<&'a T>,
+}
+
+impl<'a, T> Iterator for BsqSamplesChunkedIter<'a, T> {
+    type Item = BsqAllSamplesIter<'a, T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        unimplemented!()
+    }
+}
+
+unsafe impl <'a, T> Send for BsqSamplesChunkedIter<'a, T> {}
+
 unsafe impl <'a, T> Send for BsqAllSamplesIter<'a, T> {}
 
 impl<'a, T> Iterator for BsqSampleIter<'a, T> {
@@ -138,6 +153,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
     type Sample = BsqSampleIter<'a, T>;
     type Bands = BsqAllChannelsIter<'a, T>;
     type Samples = BsqAllSamplesIter<'a, T>;
+    type SamplesChunked = BsqSamplesChunkedIter<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
@@ -205,6 +221,10 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
                 _phantom: Default::default(),
             }
         }
+    }
+
+    fn samples_chunked(&self) -> Self::SamplesChunked {
+        unimplemented!()
     }
 }
 
