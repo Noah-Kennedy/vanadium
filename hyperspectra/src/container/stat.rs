@@ -54,7 +54,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             }
         }
 
-        (sum / count).sqrt()
+        (sum / (count - T::one())).sqrt()
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
@@ -130,7 +130,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     #[cfg_attr(debug_assertions, inline(never))]
     pub fn covariance_matrix(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
         let ImageDims { channels, lines, samples } = self.inner.dims();
-        if let Either::Right(chunk) = self.inner.fastest() {
+        if let Either::Right(pixels) = self.inner.fastest() {
             let num_samples = lines * samples;
 
             let mut sums = vec![T::zero(); channels * channels];
@@ -139,7 +139,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             let status_bar = mp.add(ProgressBar::new(num_samples as u64));
             config_bar(&status_bar, "Calculating covariances...");
 
-            for s in chunk {
+            for s in pixels {
                 let outer = s.clone();
 
                 for (outer_i, outer_b) in outer.enumerate() {
@@ -164,9 +164,11 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                 }
             }
 
-            sums.iter_mut().zip(counts).for_each(|(s, c)| {
+            sums.iter_mut().enumerate().zip(counts).for_each(|((i, s), c)| {
                 if c > 1 {
                     *s /= T::from_usize(c - 1).unwrap();
+                } else {
+                    println!("c <= 1; i: {:?}", i)
                 }
             });
 
@@ -239,6 +241,8 @@ mod tests {
 
     use super::*;
 
+    const FLOAT_COMP: f32 = 0.00001;
+
     const DATA_BIP: [f32; 15] = [
         4.0, 2.0, 0.60,
         4.2, 2.1, 0.59,
@@ -248,16 +252,19 @@ mod tests {
     ];
 
     const DATA_BSQ: [f32; 15] = [
-        4.0, 4.2, 3.9, 4.3, 4.1,
-        2.0, 2.1, 2.0, 2.1, 2.2,
+        4.00, 4.20, 3.90, 4.30, 4.10,
+        2.00, 2.10, 2.00, 2.10, 2.20,
         0.60, 0.59, 0.58, 0.62, 0.63,
     ];
 
     const COV: [f32; 9] = [
-        0.025, 0.0074999877, 0.00175,
-        0.0074999877, 0.007000001, 0.0013499998,
-        0.00175, 0.0013499998, 0.0004300003,
+        0.02500, 0.00750, 0.00175,
+        0.00750, 0.00700, 0.00135,
+        0.00175, 0.00135, 0.00043,
     ];
+
+    const MEANS: [f32; 3] = [4.1, 2.08, 0.604];
+    const STD_DEVS: [f32; 3] = [0.15811388, 0.083666004, 0.020736441];
 
     fn data_bip() -> Vec<u8> {
         let mut r = Vec::with_capacity(60);
@@ -277,6 +284,22 @@ mod tests {
         }
 
         r
+    }
+
+    fn approx_eq(expected: &[f32], actual: &[f32]) {
+        let mut is_eq = true;
+
+        is_eq &= expected.len() == actual.len();
+
+        if is_eq {
+            for (e, a) in expected.iter().zip(actual) {
+                is_eq &= ((e.min(*a) / a.max(*e)) - 1.0).abs() <= FLOAT_COMP;
+            }
+        }
+
+        if !is_eq {
+            panic!("Error: expected != actual\nExpected:\t{:?}\nActual:\t{:?}", expected, actual);
+        }
     }
 
     #[test]
@@ -301,7 +324,7 @@ mod tests {
 
         let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
 
-        assert_eq!(vec![4.1000004, 2.08, 0.604], means);
+        approx_eq(&MEANS, &means);
     }
 
     #[test]
@@ -326,7 +349,61 @@ mod tests {
 
         let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
 
-        assert_eq!(vec![4.1000004, 2.08, 0.604], means);
+        approx_eq(&MEANS, &means);
+    }
+
+    #[test]
+    fn test_std_dev_bip() {
+        let bip: Bip<Vec<u8>, f32> = Bip {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 5,
+            },
+            container: SpectralImageContainer {
+                container: data_bip(),
+                phantom: Default::default(),
+            },
+        };
+
+        let image: LockImage<f32, _> = LockImage::new(bip);
+
+        let guard = image.read();
+
+        let mp = MultiProgress::new();
+
+        let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
+
+        let std_devs = guard.all_band_std_devs(&mp, &means, f32::neg_infinity(), f32::infinity());
+
+        approx_eq(&STD_DEVS, &std_devs);
+    }
+
+    #[test]
+    fn test_std_dev_bsq() {
+        let image: Bsq<Vec<u8>, f32> = Bsq {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 5,
+            },
+            container: SpectralImageContainer {
+                container: data_bsq(),
+                phantom: Default::default(),
+            },
+        };
+
+        let image: LockImage<f32, _> = LockImage::new(image);
+
+        let guard = image.read();
+
+        let mp = MultiProgress::new();
+
+        let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
+
+        let std_devs = guard.all_band_std_devs(&mp, &means, f32::neg_infinity(), f32::infinity());
+
+        approx_eq(&STD_DEVS, &std_devs);
     }
 
     #[test]
@@ -355,7 +432,7 @@ mod tests {
 
         let expected = DMatrix::from_row_slice(3, 3, &COV);
 
-        assert_eq!(expected, cov_mat);
+        approx_eq(&expected.data.as_vec(), &cov_mat.data.as_vec());
     }
 
     #[test]
@@ -384,6 +461,6 @@ mod tests {
 
         let expected = DMatrix::from_row_slice(3, 3, &COV);
 
-        assert_eq!(expected, cov_mat);
+        approx_eq(&expected.data.as_vec(), &cov_mat.data.as_vec());
     }
 }
