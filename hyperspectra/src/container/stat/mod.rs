@@ -84,11 +84,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         sum / T::from_usize(count - 1).unwrap()
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn big_bip_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).max(1);
+        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
 
         let sums = Mutex::new(vec![T::zero(); channels]);
         let mut counts = Vec::with_capacity(channels);
@@ -121,7 +123,10 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                         *output += *input;
                     }
 
-                    status_bar.inc(chunk_size as u64)
+                    drop(local_sums);
+                    drop(guard);
+
+                    status_bar.inc(chunk_size as u64);
                 });
             }
         });
@@ -140,11 +145,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         sums
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn small_bip_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (channels * mem::size_of::<T>() / CHUNK_SIZE).max(1);
+        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
 
         let mut sums = vec![T::zero(); channels];
         let mut counts = vec![0; channels];
@@ -177,11 +184,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         sums
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn small_bip_std_devs(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (channels * mem::size_of::<T>() / CHUNK_SIZE).max(1);
+        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
 
         let mut sums = vec![T::zero(); channels];
         let mut counts = vec![0; channels];
@@ -216,11 +225,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         sums
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn big_bip_std_devs(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (channels * mem::size_of::<T>() / CHUNK_SIZE).max(1);
+        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
 
         let sums = Mutex::new(vec![T::zero(); channels]);
         let mut counts = Vec::with_capacity(channels);
@@ -255,6 +266,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                         *output += *input;
                     }
 
+                    drop(local_sums);
+
                     status_bar.inc(chunk_size as u64)
                 });
             }
@@ -276,72 +289,11 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    pub fn all_band_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
-        let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
-
-        if let Either::Right(_) = self.inner.fastest() {
-            if channels < 64 {
-                self.small_bip_means(mp, min, max)
-            } else {
-                self.big_bip_means(mp, min, max)
-            }
-        } else {
-            let status_bar = mp.add(ProgressBar::new(channels as u64));
-            config_bar(&status_bar, "Calculating band means...");
-
-            let means = (0..channels)
-                .into_par_iter()
-                .map(|b| {
-                    let out = self.band_mean(b, min, max);
-                    status_bar.inc(1);
-                    out
-                })
-                .collect();
-
-            status_bar.finish();
-
-            means
-        }
-    }
-
-    #[cfg_attr(not(debug_assertions), inline(always))]
-    #[cfg_attr(debug_assertions, inline(never))]
-    pub fn all_band_std_devs(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
-        let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
-
-        if self.inner.fastest().is_right() {
-            if channels < 64 {
-                self.small_bip_std_devs(mp, means, min, max)
-            } else {
-                self.big_bip_std_devs(mp, means, min, max)
-            }
-        } else {
-            let status_bar = mp.add(ProgressBar::new(channels as u64));
-            config_bar(&status_bar, "Calculating band std devs...");
-
-            let devs = (0..channels)
-                .into_par_iter()
-                .zip(means.par_iter())
-                .map(|(b, m)| {
-                    let out = self.band_std_dev(b, Some(*m), min, max);
-                    status_bar.inc(1);
-                    out
-                })
-                .collect();
-
-            status_bar.finish();
-
-            devs
-        }
-    }
-
-    #[cfg_attr(not(debug_assertions), inline(always))]
-    #[cfg_attr(debug_assertions, inline(never))]
     pub fn small_bip_cov_mat(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = channels * (channels * mem::size_of::<T>() / CHUNK_SIZE).max(1);
+        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
 
         let mut sums = vec![T::zero(); channels * channels];
         let mut counts = vec![0; channels * channels];
@@ -398,7 +350,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = channels * (channels * mem::size_of::<T>() / CHUNK_SIZE).max(1);
+        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
 
         let sums = Mutex::new(vec![T::zero(); channels * channels]);
         let mut counts = Vec::with_capacity(channels * channels);
@@ -444,6 +396,9 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                     for (input, output) in local_sum.iter().zip(guard.iter_mut()) {
                         *output += *input;
                     }
+
+                    drop(local_sum);
+                    drop(guard)
                 });
 
                 status_bar.inc(chunk_size as u64)
@@ -469,14 +424,66 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
+    pub fn all_band_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
+        let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
+
+        if let Either::Right(_) = self.inner.fastest() {
+            // todo investigate memory leaks
+            self.small_bip_means(mp, min, max)
+        } else {
+            let status_bar = mp.add(ProgressBar::new(channels as u64));
+            config_bar(&status_bar, "Calculating band means...");
+
+            let means = (0..channels)
+                .into_par_iter()
+                .map(|b| {
+                    let out = self.band_mean(b, min, max);
+                    status_bar.inc(1);
+                    out
+                })
+                .collect();
+
+            status_bar.finish();
+
+            means
+        }
+    }
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
+    pub fn all_band_std_devs(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
+        let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
+
+        if self.inner.fastest().is_right() {
+            // todo investigate memory leaks
+            self.small_bip_std_devs(mp, means, min, max)
+        } else {
+            let status_bar = mp.add(ProgressBar::new(channels as u64));
+            config_bar(&status_bar, "Calculating band std devs...");
+
+            let devs = (0..channels)
+                .into_par_iter()
+                .zip(means.par_iter())
+                .map(|(b, m)| {
+                    let out = self.band_std_dev(b, Some(*m), min, max);
+                    status_bar.inc(1);
+                    out
+                })
+                .collect();
+
+            status_bar.finish();
+
+            devs
+        }
+    }
+
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    #[cfg_attr(debug_assertions, inline(never))]
     pub fn covariance_matrix(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
         if let Either::Right(_) = self.inner.fastest() {
-            if channels < 64 {
-                self.small_bip_cov_mat(mp, means, min, max)
-            } else {
-                self.big_bip_cov_mat(mp, means, min, max)
-            }
+            // todo investigate memory leaks
+            self.small_bip_cov_mat(mp, means, min, max)
         } else {
             let tot_val = (channels + 1) * (channels + 1);
 
