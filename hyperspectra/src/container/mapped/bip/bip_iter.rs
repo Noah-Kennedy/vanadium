@@ -4,6 +4,7 @@ use either::Either;
 
 use crate::container::{CHUNK_SIZE, IterableImage};
 use crate::container::mapped::Bip;
+use std::mem;
 
 #[derive(Clone)]
 pub struct BipBandIter<'a, T> {
@@ -253,7 +254,8 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
                     .as_ptr()
                     .add(self.dims.channels * self.dims.samples * self.dims.lines),
                 num_bands: self.dims.channels,
-                jump: self.dims.channels *  CHUNK_SIZE,
+                jump: self.dims.channels
+                    * (CHUNK_SIZE / (mem::size_of::<T>() * self.dims.channels)).min(1),
                 _phantom: Default::default(),
             }
         }

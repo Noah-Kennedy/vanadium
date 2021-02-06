@@ -17,7 +17,7 @@ mod stat;
 mod convert;
 mod render;
 
-const CHUNK_SIZE: usize = 4096;
+const CHUNK_SIZE: usize = 4096*16;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Default, Debug)]
 pub struct ImageDims {
