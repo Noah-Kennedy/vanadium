@@ -130,7 +130,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     #[cfg_attr(debug_assertions, inline(never))]
     pub fn covariance_matrix(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
         let ImageDims { channels, lines, samples } = self.inner.dims();
-        if let Either::Right(_) = self.inner.fastest() {
+        if let Either::Right(chunk) = self.inner.fastest() {
             let num_samples = lines * samples;
 
             let mut sums = vec![T::zero(); channels * channels];
@@ -139,39 +139,33 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             let status_bar = mp.add(ProgressBar::new(num_samples as u64));
             config_bar(&status_bar, "Calculating covariances...");
 
-            self.inner.samples_chunked().for_each(|chunk| {
-                for s in chunk {
-                    let outer = s.clone();
+            for s in chunk {
+                let outer = s.clone();
 
-                    for (outer_i, outer_b) in outer.enumerate() {
-                        let inner = s.clone();
+                for (outer_i, outer_b) in outer.enumerate() {
+                    let inner = s.clone();
 
-                        for (inner_i, inner_b) in inner
-                            .take(outer_i + 1)
-                            .enumerate()
-                        {
-                            if *outer_b > min && *outer_b <= max
-                                && *inner_b > min && *inner_b <= max
-                            {
-                                let diffs = [
-                                    *outer_b - means[0],
-                                    *inner_b - means[1]
-                                ];
+                    for (inner_i, inner_b) in inner
+                        .take(outer_i + 1)
+                        .enumerate()
+                    {
+                        if *outer_b > min && *outer_b <= max && *inner_b > min && *inner_b <= max {
+                            let diffs = [
+                                *outer_b - means[0],
+                                *inner_b - means[1]
+                            ];
 
-                                let idx = (outer_i * channels) + inner_i;
+                            let idx = (outer_i * channels) + inner_i;
 
-                                sums[idx] += diffs[0] * diffs[1];
-                                counts[idx] += 1;
-                            }
+                            sums[idx] += diffs[0] * diffs[1];
+                            counts[idx] += 1;
                         }
                     }
                 }
-
-                status_bar.inc(CHUNK_SIZE as u64);
-            });
+            }
 
             sums.iter_mut().zip(counts).for_each(|(s, c)| {
-                if c != 0 {
+                if c > 1 {
                     *s /= T::from_usize(c - 1).unwrap();
                 }
             });
@@ -241,7 +235,7 @@ mod tests {
     use num::traits::float::Float;
 
     use crate::container::LockImage;
-    use crate::container::mapped::{Bip, SpectralImageContainer, Bsq};
+    use crate::container::mapped::{Bip, Bsq, SpectralImageContainer};
 
     use super::*;
 
@@ -359,7 +353,7 @@ mod tests {
 
         let cov_mat = guard.covariance_matrix(&mp, &means, f32::neg_infinity(), f32::infinity());
 
-        let expected = DMatrix::from_row_slice(3,3, &COV);
+        let expected = DMatrix::from_row_slice(3, 3, &COV);
 
         assert_eq!(expected, cov_mat);
     }
@@ -388,7 +382,7 @@ mod tests {
 
         let cov_mat = guard.covariance_matrix(&mp, &means, f32::neg_infinity(), f32::infinity());
 
-        let expected = DMatrix::from_row_slice(3,3, &COV);
+        let expected = DMatrix::from_row_slice(3, 3, &COV);
 
         assert_eq!(expected, cov_mat);
     }
