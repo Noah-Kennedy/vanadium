@@ -146,13 +146,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                     let inner = s.clone();
 
                     for (inner_i, inner_b) in inner
-                        .take(outer_i + 1)
                         .enumerate()
+                        .take(outer_i + 1)
                     {
                         if *outer_b > min && *outer_b <= max && *inner_b > min && *inner_b <= max {
                             let diffs = [
-                                *outer_b - means[0],
-                                *inner_b - means[1]
+                                *outer_b - means[outer_i],
+                                *inner_b - means[inner_i]
                             ];
 
                             let idx = (outer_i * channels) + inner_i;
@@ -164,9 +164,9 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                 }
             }
 
-            sums.iter_mut().enumerate().zip(counts).for_each(|((i, s), c)| {
-                if c > 1 {
-                    *s /= T::from_usize(c - 1).unwrap();
+            sums.iter_mut().enumerate().zip(counts.iter()).for_each(|((i, s), c)| {
+                if *c > 1 {
+                    *s /= T::from_usize(*c - 1).unwrap();
                 } else {
                     println!("c <= 1; i: {:?}", i)
                 }
