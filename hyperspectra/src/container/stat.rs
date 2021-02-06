@@ -10,7 +10,7 @@ use num::traits::NumAssign;
 use rayon::prelude::*;
 
 use crate::bar::config_bar;
-use crate::container::{CHUNK_SIZE, ImageDims, IterableImage, IterableImageMut, ReadImageGuard};
+use crate::container::{ImageDims, IterableImage, IterableImageMut, ReadImageGuard};
 
 impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     where I: IterableImage<'b, T> + Sync + IterableImageMut<'b, T>,
