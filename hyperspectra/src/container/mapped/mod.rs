@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 pub use bip::*;
 pub use bsq::*;
 
-struct SpectralImageContainer<C, T> {
+pub (crate) struct SpectralImageContainer<C, T> {
     pub container: C,
     pub phantom: PhantomData<T>,
 }

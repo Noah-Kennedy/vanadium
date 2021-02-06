@@ -15,8 +15,8 @@ mod bip_iter;
 mod bip_iter_mut;
 
 pub struct Bip<C, T> {
-    dims: ImageDims,
-    container: SpectralImageContainer<C, T>,
+    pub (crate) dims: ImageDims,
+    pub (crate) container: SpectralImageContainer<C, T>,
 }
 
 impl<C, T> SizedImage for Bip<C, T> {

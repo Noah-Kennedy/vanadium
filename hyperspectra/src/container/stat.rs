@@ -24,9 +24,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let mut count = T::zero();
 
         for &x in self.inner.band(band) {
-            let include = x > min && x <= max;
-
-            if include {
+            if x > min && x <= max {
                 sum += x;
                 count += T::one();
             }
@@ -63,7 +61,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     #[cfg_attr(debug_assertions, inline(never))]
     pub fn covariance_pair(&self, bands: [usize; 2], means: [T; 2], min: T, max: T) -> T {
         let mut sum = T::zero();
-        let mut count = T::zero();
+        let mut count = 0usize;
 
         let itc = self.inner.band(bands[0])
             .zip(self.inner.band(bands[1]));
@@ -76,11 +74,11 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                 ];
 
                 sum += diffs[0] * diffs[1];
-                count += T::one();
+                count += 1;
             }
         }
 
-        (sum / count).sqrt()
+        sum / T::from_usize(count).unwrap()
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
@@ -111,7 +109,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
         let status_bar = mp.add(ProgressBar::new(channels as u64));
-        config_bar(&status_bar, "Calculating band means...");
+        config_bar(&status_bar, "Calculating band std devs...");
 
         let devs = (0..channels)
             .into_par_iter()
@@ -135,59 +133,53 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         if let Either::Right(_) = self.inner.fastest() {
             let num_samples = lines * samples;
 
+            let mut sums = vec![T::zero(); channels * channels];
+            let mut counts = vec![0usize; channels * channels];
+
             let status_bar = mp.add(ProgressBar::new(num_samples as u64));
-            config_bar(&status_bar, "Samples...");
+            config_bar(&status_bar, "Calculating covariances...");
 
-            let (mut sums, counts) = self.inner.samples_chunked()
-                .map(|chunk| {
-                    let mut sums = vec![T::zero(); channels * channels];
-                    let mut counts = vec![0usize; channels * channels];
+            self.inner.samples_chunked().for_each(|chunk| {
+                for s in chunk {
+                    let outer = s.clone();
 
-                    for s in chunk {
-                        let outer = s.clone();
+                    for (outer_i, outer_b) in outer.enumerate() {
+                        let inner = s.clone();
 
-                        for (outer_i, outer_b) in outer.enumerate() {
-                            let inner = s.clone();
+                        for (inner_i, inner_b) in inner
+                            .take(outer_i + 1)
+                            .enumerate()
+                        {
+                            if *outer_b > min && *outer_b <= max
+                                && *inner_b > min && *inner_b <= max
+                            {
+                                let diffs = [
+                                    *outer_b - means[0],
+                                    *inner_b - means[1]
+                                ];
 
-                            for (inner_i, inner_b) in inner.take(channels - outer_i).enumerate() {
-                                if *outer_b > min && *outer_b <= max
-                                    && *inner_b > min && *inner_b <= max
-                                {
-                                    let diffs = [
-                                        *outer_b - means[0],
-                                        *inner_b - means[1]
-                                    ];
+                                let idx = (outer_i * channels) + inner_i;
 
-                                    let idx = (outer_i * channels) + inner_i;
-
-                                    sums[idx] += diffs[0] * diffs[1];
-                                    counts[idx] += 1;
-                                }
+                                sums[idx] += diffs[0] * diffs[1];
+                                counts[idx] += 1;
                             }
                         }
                     }
+                }
 
-                    status_bar.inc(CHUNK_SIZE as u64);
-
-                    (sums, counts)
-                })
-                .fold((vec![T::zero(); channels * channels], vec![0usize; channels * channels]),
-                      |(mut sa, mut ca), (mut sb, mut cb)| {
-                          sa.append(&mut sb);
-                          ca.append(&mut cb);
-
-                          (sa, ca)
-                      },
-                );
+                status_bar.inc(CHUNK_SIZE as u64);
+            });
 
             sums.iter_mut().zip(counts).for_each(|(s, c)| {
-                *s = (*s / T::from_usize(c).unwrap()).sqrt()
+                if c != 0 {
+                    *s /= T::from_usize(c).unwrap();
+                }
             });
 
             status_bar.finish();
 
-            let mut out = DMatrix::from_row_slice(channels, channels, &sums);
-            out.fill_upper_triangle_with_lower_triangle();
+            let out = DMatrix::from_row_slice(channels, channels, &sums);
+            // out.fill_upper_triangle_with_lower_triangle();
 
             out
         } else {
@@ -225,8 +217,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
             status_bar.finish();
 
-            let mut out = DMatrix::from_row_slice(channels, channels, &covariances);
-            out.fill_upper_triangle_with_lower_triangle();
+            let out = DMatrix::from_row_slice(channels, channels, &covariances);
+            // out.fill_upper_triangle_with_lower_triangle();
 
             out
         }
@@ -241,4 +233,58 @@ pub fn normify<T>(val: T, scale: T, min: T, max: T) -> T
     let clamped = num::clamp(val, min, max);
     let shifted = clamped - min;
     shifted / scale
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::container::mapped::{Bip, SpectralImageContainer};
+    use crate::container::LockImage;
+    use num::traits::float::Float;
+
+    const DATA_BIP: [f32; 15] = [
+        4.0, 2.0, 0.60,
+        4.2, 2.1, 0.59,
+        3.9, 2.0, 0.58,
+        4.3, 2.1, 0.62,
+        4.1, 2.2, 0.63,
+    ];
+
+    fn data_bip() -> Vec<u8> {
+        let mut r = Vec::with_capacity(60);
+
+        for item in &DATA_BIP {
+            r.extend_from_slice(&item.to_ne_bytes());
+        }
+
+        r
+    }
+
+    #[test]
+    fn test_mean() {
+        let bip: Bip<Vec<u8>, f32> = Bip {
+            dims: ImageDims {
+                channels: 3,
+                lines: 1,
+                samples: 5
+            },
+            container: SpectralImageContainer {
+                container: data_bip(),
+                phantom: Default::default()
+            }
+        };
+
+        let image: LockImage<f32, _> = LockImage::new(bip);
+
+        let guard = image.read();
+
+        let mp = MultiProgress::new();
+
+        let means = guard.all_band_means(&mp, f32::neg_infinity(), f32::infinity());
+
+        assert_eq!(vec![4.1000004, 2.08, 0.604], means);
+    }
+
+    #[test]
+    fn test_covariance() {}
 }
