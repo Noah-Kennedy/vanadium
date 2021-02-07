@@ -9,6 +9,7 @@ pub use render::*;
 
 use crate::header::Headers;
 use either::Either;
+use std::mem;
 
 pub mod mapped;
 
@@ -17,7 +18,20 @@ mod stat;
 mod convert;
 mod render;
 
-const CHUNK_SIZE: usize = 4096*4096;
+const MAX_CHUNK_SIZE: usize = 4096*1024;
+
+fn chunk_size<T>(dims: &ImageDims) -> usize {
+    let chunk_storage_elements = MAX_CHUNK_SIZE * mem::size_of::<T>();
+    let chunk_storage_pixels = chunk_storage_elements / dims.channels;
+
+    let storage = (chunk_storage_pixels * dims.channels)
+        .min(1)
+        .max(dims.channels * dims.samples * dims.lines);
+
+    assert_eq!(0, storage % dims.channels);
+
+    storage
+}
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Default, Debug)]
 pub struct ImageDims {

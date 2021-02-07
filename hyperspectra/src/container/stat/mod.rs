@@ -13,7 +13,7 @@ use parking_lot::Mutex;
 use rayon::prelude::*;
 
 use crate::bar::config_bar;
-use crate::container::{CHUNK_SIZE, ImageDims, IterableImage, IterableImageMut, ReadImageGuard};
+use crate::container::{MAX_CHUNK_SIZE, ImageDims, IterableImage, IterableImageMut, ReadImageGuard, chunk_size};
 
 impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     where I: IterableImage<'b, T> + Sync + IterableImageMut<'b, T>,
@@ -90,7 +90,10 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = (
+            channels
+                * (MAX_CHUNK_SIZE / (mem::size_of::<T>() * channels)).max(1))
+            .min(channels * samples * lines) / channels;
 
         let sums = Mutex::new(vec![T::zero(); channels]);
         let mut counts = Vec::with_capacity(channels);
@@ -101,6 +104,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
         let status_bar = mp.add(ProgressBar::new(num_samples as u64));
         config_bar(&status_bar, "Calculating means...");
+
+        status_bar.println(format!("{}:{}", chunk_size, num_samples / chunk_size));
 
         rayon::scope(|scope| {
             for c in self.inner.samples_chunked() {
@@ -151,7 +156,10 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = (
+            channels
+                * (MAX_CHUNK_SIZE / (mem::size_of::<T>() * channels)).max(1))
+            .min(channels * samples * lines) / channels;
 
         let mut sums = vec![T::zero(); channels];
         let mut counts = vec![0; channels];
@@ -190,7 +198,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+
+        let chunk_size = chunk_size::<T>(&self.inner.dims());
 
         let mut sums = vec![T::zero(); channels];
         let mut counts = vec![0; channels];
@@ -231,7 +240,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = chunk_size::<T>(&self.inner.dims());
+
 
         let sums = Mutex::new(vec![T::zero(); channels]);
         let mut counts = Vec::with_capacity(channels);
@@ -293,7 +303,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = chunk_size::<T>(&self.inner.dims());
+
 
         let mut sums = vec![T::zero(); channels * channels];
         let mut counts = vec![0; channels * channels];
@@ -350,7 +361,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = chunk_size::<T>(&self.inner.dims());
+
 
         let sums = Mutex::new(vec![T::zero(); channels * channels]);
         let mut counts = Vec::with_capacity(channels * channels);
@@ -429,7 +441,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
         if let Either::Right(_) = self.inner.fastest() {
             // todo investigate memory leaks
-            self.small_bip_means(mp, min, max)
+            // self.small_bip_means(mp, min, max)
+
+            if channels < 64 {
+                self.small_bip_means(mp, min, max)
+            } else {
+                self.big_bip_means(mp, min, max)
+            }
         } else {
             let status_bar = mp.add(ProgressBar::new(channels as u64));
             config_bar(&status_bar, "Calculating band means...");
@@ -456,7 +474,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
         if self.inner.fastest().is_right() {
             // todo investigate memory leaks
-            self.small_bip_std_devs(mp, means, min, max)
+            // self.small_bip_std_devs(mp, means, min, max)
+
+            if channels < 64 {
+                self.small_bip_std_devs(mp, means, min, max)
+            } else {
+                self.big_bip_std_devs(mp, means, min, max)
+            }
         } else {
             let status_bar = mp.add(ProgressBar::new(channels as u64));
             config_bar(&status_bar, "Calculating band std devs...");
@@ -483,7 +507,13 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
         if let Either::Right(_) = self.inner.fastest() {
             // todo investigate memory leaks
-            self.small_bip_cov_mat(mp, means, min, max)
+            // self.small_bip_cov_mat(mp, means, min, max)
+
+            if channels < 64 {
+                self.small_bip_cov_mat(mp, means, min, max)
+            } else {
+                self.big_bip_cov_mat(mp, means, min, max)
+            }
         } else {
             let tot_val = (channels + 1) * (channels + 1);
 

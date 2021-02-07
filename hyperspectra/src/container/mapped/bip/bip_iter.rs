@@ -2,9 +2,8 @@ use std::marker::PhantomData;
 
 use either::Either;
 
-use crate::container::{CHUNK_SIZE, IterableImage};
+use crate::container::{chunk_size, IterableImage};
 use crate::container::mapped::Bip;
-use std::mem;
 
 #[derive(Clone)]
 pub struct BipBandIter<'a, T> {
@@ -221,9 +220,13 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
                 .as_ptr()
                 .add(index);
 
+            let end = self.container.inner()
+                .as_ptr()
+                .add(self.dims.channels * self.dims.samples * self.dims.lines);
+
             Self::Band {
                 start,
-                end: start.add(self.dims.channels * self.dims.samples * self.dims.lines),
+                end,
                 num_bands: self.dims.channels,
                 _phantom: Default::default(),
             }
@@ -254,8 +257,7 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
                     .as_ptr()
                     .add(self.dims.channels * self.dims.samples * self.dims.lines),
                 num_bands: self.dims.channels,
-                jump: self.dims.channels
-                    * (CHUNK_SIZE / (mem::size_of::<T>() * self.dims.channels)).min(1),
+                jump: chunk_size::<T>(&self.dims),
                 _phantom: Default::default(),
             }
         }
@@ -365,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_bip_single_sample() {
-        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
+        let c: [u8; mem::size_of::<[u32; 9]>()] = unsafe { mem::transmute(MAT) };
 
         let mat: Bip<_, u32> = Bip {
             dims: ImageDims {
