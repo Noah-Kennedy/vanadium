@@ -71,13 +71,6 @@ impl<'a, T> Iterator for BipAllBandsIter<'a, T> where T: Copy {
     }
 }
 
-#[derive(Clone)]
-pub struct BipSampleIter<'a, T> {
-    start: *const T,
-    end: *const T,
-    _phantom: PhantomData<&'a T>,
-}
-
 unsafe impl<'a, T> Send for BipSampleIter<'a, T> {}
 
 #[derive(Clone)]
@@ -125,6 +118,13 @@ impl<'a, T> Iterator for BipSamplesChunkedIter<'a, T> where T: Copy {
 
 unsafe impl<'a, T> Send for BipAllSamplesIter<'a, T> {}
 
+#[derive(Clone)]
+pub struct BipSampleIter<'a, T> {
+    start: *const T,
+    end: *const T,
+    _phantom: PhantomData<&'a T>,
+}
+
 impl<'a, T> Iterator for BipSampleIter<'a, T> where T: Copy {
     type Item = &'a T;
 
@@ -151,15 +151,17 @@ impl<'a, T> Iterator for BipAllSamplesIter<'a, T> where T: Copy {
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
-                let x = Some(BipSampleIter {
-                    start: self.start,
-                    end: self.start.add(self.num_bands),
-                    _phantom: Default::default(),
-                });
+                let start = self.start;
 
                 self.start = self.start.add(self.num_bands);
 
-                x
+                let end = self.start;
+
+                Some(BipSampleIter {
+                    start,
+                    end,
+                    _phantom: Default::default(),
+                })
             }
         } else {
             None

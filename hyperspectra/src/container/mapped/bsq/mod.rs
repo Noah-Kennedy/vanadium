@@ -7,7 +7,7 @@ use memmap2::{Mmap, MmapMut, MmapOptions};
 pub use bsq_iter::*;
 pub use bsq_iter_mut::*;
 
-use crate::container::{ImageDims, SizedImage, IndexImage, IndexImageMut, ImageIndex};
+use crate::container::{ImageDims, ImageIndex, IndexImage, IndexImageMut, SizedImage};
 use crate::container::mapped::SpectralImageContainer;
 use crate::header::{FileByteOrder, Headers, Interleave};
 
@@ -15,8 +15,8 @@ mod bsq_iter;
 mod bsq_iter_mut;
 
 pub struct Bsq<C, T> {
-    pub (crate) dims: ImageDims,
-    pub (crate) container: SpectralImageContainer<C, T>,
+    pub(crate) dims: ImageDims,
+    pub(crate) container: SpectralImageContainer<C, T>,
 }
 
 impl<C, T> SizedImage for Bsq<C, T> {
@@ -26,7 +26,7 @@ impl<C, T> SizedImage for Bsq<C, T> {
 }
 
 impl<C, T> IndexImage<T> for Bsq<C, T>
-    where T: 'static,
+    where T: 'static + Copy,
           C: AsRef<[u8]>
 {
     unsafe fn get_unchecked(&self, index: &ImageIndex) -> &T {
@@ -42,7 +42,7 @@ impl<C, T> IndexImage<T> for Bsq<C, T>
 }
 
 impl<C, T> IndexImageMut<T> for Bsq<C, T>
-    where T: 'static,
+    where T: 'static + Copy,
           C: AsMut<[u8]>
 {
     unsafe fn get_unchecked_mut(&mut self, index: &ImageIndex) -> &mut T {

@@ -26,7 +26,7 @@ impl<C, T> SizedImage for Bip<C, T> {
 }
 
 impl<C, T> IndexImage<T> for Bip<C, T>
-    where T: 'static,
+    where T: 'static + Copy,
           C: AsRef<[u8]>
 {
     unsafe fn get_unchecked(&self, index: &ImageIndex) -> &T {
@@ -42,7 +42,7 @@ impl<C, T> IndexImage<T> for Bip<C, T>
 }
 
 impl<C, T> IndexImageMut<T> for Bip<C, T>
-    where T: 'static,
+    where T: 'static + Copy,
           C: AsMut<[u8]>
 {
     unsafe fn get_unchecked_mut(&mut self, index: &ImageIndex) -> &mut T {
