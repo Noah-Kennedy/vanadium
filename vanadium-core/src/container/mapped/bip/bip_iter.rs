@@ -271,6 +271,9 @@ impl<'a, C, T> IterableImage<'a, T> for Bip<C, T>
 mod tests {
     use std::mem;
 
+    use rand::distributions::Standard;
+    use rand::Rng;
+
     use crate::container::ImageDims;
     use crate::container::mapped::SpectralImageContainer;
 
@@ -294,10 +297,15 @@ mod tests {
         [13, 23, 33],
     ];
 
-    #[test]
-    fn test_bsq_bands() {
-        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
-        let mat: Bip<_, u32> = Bip {
+    struct BipTest {
+        bands: Vec<Vec<u32>>,
+        samples: Vec<Vec<u32>>,
+        bip: Bip<Vec<u8>, u32>,
+    }
+
+    fn make_bip() -> Bip<Vec<u8>, u32> {
+        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT) };
+        Bip {
             dims: ImageDims {
                 channels: 3,
                 lines: 1,
@@ -307,7 +315,86 @@ mod tests {
                 container: c.to_vec(),
                 phantom: Default::default(),
             },
+        }
+    }
+
+    fn make_big_bip(dims: &ImageDims) -> BipTest {
+        let num_pixels = dims.lines * dims.samples;
+        let num_bands = dims.channels;
+
+        let mut bands = vec![Vec::with_capacity(num_pixels); num_bands];
+
+        let mut samples = Vec::with_capacity(num_pixels);
+
+        let mut buffer = Vec::with_capacity(num_bands * num_pixels);
+
+        for _ in 0..num_pixels {
+            let pixel: Vec<u32> = rand::thread_rng()
+                .sample_iter(Standard)
+                .take(num_bands)
+                .collect();
+
+            for (i, &b) in pixel.iter().enumerate() {
+                bands[i].push(b);
+            }
+
+            buffer.extend_from_slice(&pixel);
+
+            samples.push(pixel);
+        }
+
+        let mut container = Vec::with_capacity(4 * buffer.len());
+
+        for b in buffer {
+            container.extend_from_slice(&b.to_ne_bytes())
+        }
+
+        BipTest {
+            bands,
+            samples,
+            bip: Bip {
+                dims: dims.to_owned(),
+                container: SpectralImageContainer {
+                    container,
+                    phantom: Default::default(),
+                },
+            },
+        }
+    }
+
+    fn check_bands(test: &BipTest) {
+        for (ba, be) in test.bip.bands().zip(test.bands.iter()) {
+            for (ca, ce) in ba.zip(be.iter()) {
+                assert_eq!(ca, ce);
+            }
+        }
+    }
+
+    fn check_samples(test: &BipTest) {
+        for (ba, be) in test.bip.samples().zip(test.samples.iter()) {
+            for (ca, ce) in ba.zip(be.iter()) {
+                assert_eq!(ca, ce);
+            }
+        }
+    }
+
+    #[test]
+    fn test_large_bip() {
+        let dims = ImageDims {
+            channels: 500,
+            lines: 250,
+            samples: 250
         };
+
+        let test = make_big_bip(&dims);
+
+        check_samples(&test);
+        check_bands(&test);
+    }
+
+    #[test]
+    fn test_bip_bands() {
+        let mat: Bip<_, u32> = make_bip();
 
         for (ba, be) in mat.bands().zip(BANDS.iter()) {
             for (ca, ce) in ba.zip(be.iter()) {
@@ -317,19 +404,8 @@ mod tests {
     }
 
     #[test]
-    fn test_bsq_samples() {
-        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
-        let mat: Bip<_, u32> = Bip {
-            dims: ImageDims {
-                channels: 3,
-                lines: 1,
-                samples: 3,
-            },
-            container: SpectralImageContainer {
-                container: c.to_vec(),
-                phantom: Default::default(),
-            },
-        };
+    fn test_bip_samples() {
+        let mat: Bip<_, u32> = make_bip();
 
         for (ba, be) in mat.samples().zip(SAMPLES.iter()) {
             for (ca, ce) in ba.zip(be.iter()) {
@@ -340,19 +416,7 @@ mod tests {
 
     #[test]
     fn test_bip_single_band() {
-        let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
-
-        let mat: Bip<_, u32> = Bip {
-            dims: ImageDims {
-                channels: 3,
-                lines: 1,
-                samples: 3,
-            },
-            container: SpectralImageContainer {
-                container: c.to_vec(),
-                phantom: Default::default(),
-            },
-        };
+        let mat: Bip<_, u32> = make_bip();
 
         for (a, e) in mat.band(0).zip(BANDS[0].iter()) {
             assert_eq!(a, e);
@@ -369,19 +433,7 @@ mod tests {
 
     #[test]
     fn test_bip_single_sample() {
-        let c: [u8; mem::size_of::<[u32; 9]>()] = unsafe { mem::transmute(MAT) };
-
-        let mat: Bip<_, u32> = Bip {
-            dims: ImageDims {
-                channels: 3,
-                lines: 1,
-                samples: 3,
-            },
-            container: SpectralImageContainer {
-                container: c.to_vec(),
-                phantom: Default::default(),
-            },
-        };
+        let mat: Bip<_, u32> = make_bip();
 
         for (a, e) in mat.sample(0).zip(SAMPLES[0].iter()) {
             assert_eq!(a, e);
