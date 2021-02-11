@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 use std::iter::Sum;
-use std::ops::{Div, Sub};
+use std::ops::{DerefMut, Div, Sub};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use either::Either;
@@ -252,6 +252,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                         *output += *input;
                     }
 
+                    drop(guard);
                     drop(local_sums);
 
                     status_bar.inc(chunk_size as u64)
@@ -332,12 +333,15 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let chunk_size = chunk_size::<T>(&self.inner.dims()) / channels;
 
 
-        let sums = Mutex::new(vec![T::zero(); channels * channels]);
-        let mut counts = Vec::with_capacity(channels * channels);
+        let sums = vec![T::zero(); channels * channels];
+        // let mut counts = Vec::with_capacity(channels * channels);
+        let counts = vec![0; channels * channels];
 
-        for _ in 0..(channels * channels) {
-            counts.push(AtomicUsize::new(0));
-        }
+        let mutex = Mutex::new((sums, counts));
+
+        // for _ in 0..(channels * channels) {
+        //     counts.push(AtomicUsize::new(0));
+        // }
 
         let status_bar = mp.add(ProgressBar::new(num_samples as u64));
         config_bar(&status_bar, "Calculating covariances...");
@@ -346,6 +350,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             for c in self.inner.samples_chunked() {
                 scope.spawn(|_| {
                     let mut local_sum = vec![T::zero(); channels * channels];
+                    let mut local_counts = vec![0; channels * channels];
                     for s in c {
                         let outer = s.clone();
 
@@ -365,32 +370,41 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                                     let idx = (outer_i * channels) + inner_i;
 
                                     local_sum[idx] += diffs[0] * diffs[1];
-                                    counts[idx].fetch_add(1, Ordering::Relaxed);
+                                    local_counts[idx] += 1;
+                                    // counts[idx].fetch_add(1, Ordering::Relaxed);
                                 }
                             }
                         }
                     }
 
-                    let mut guard = sums.lock();
+                    let mut guard = mutex.lock();
 
-                    for (input, output) in local_sum.iter().zip(guard.iter_mut()) {
-                        *output += *input;
+                    let (gs, gc) = guard.deref_mut();
+
+                    for ((ls, lc), (rs, rc)) in local_sum.iter()
+                        .zip(local_counts)
+                        .zip(gs.iter_mut().zip(gc.iter_mut()))
+                    {
+                        *rs += *ls;
+                        *rc += lc;
+                        // *output += *input;
                     }
 
-                    drop(local_sum);
-                    drop(guard)
-                });
+                    drop(guard);
 
-                status_bar.inc(chunk_size as u64)
+                    status_bar.inc(chunk_size as u64);
+
+                    drop(local_sum);
+                });
             }
         });
 
-        let mut sums = sums.into_inner();
+        let (mut sums, counts) = mutex.into_inner();
 
         sums.iter_mut().zip(counts.iter()).for_each(|(s, c)| {
-            let c = c.load(Ordering::Relaxed);
-            if c > 1 {
-                *s /= T::from_usize(c - 1).unwrap();
+            // let c = c.load(Ordering::Relaxed);
+            if *c > 1 {
+                *s /= T::from_usize(*c - 1).unwrap();
             }
         });
 

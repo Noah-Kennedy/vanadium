@@ -7,6 +7,13 @@ use crate::convert::execute_conversion;
 use crate::pca::execute_pca;
 use crate::render::normalize;
 
+#[cfg(not(target_env = "msvc"))]
+use jemallocator::Jemalloc;
+
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 #[cfg(not(tarpaulin_include))]
 mod cli;
 #[cfg(not(tarpaulin_include))]

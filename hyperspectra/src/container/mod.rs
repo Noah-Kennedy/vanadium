@@ -18,8 +18,8 @@ mod stat;
 mod convert;
 mod render;
 
-// const MAX_CHUNK_SIZE: usize = 4096*1024;
-const MAX_CHUNK_SIZE: usize = 1024*1024;
+const MAX_CHUNK_SIZE: usize = 4096*1024;
+// const MAX_CHUNK_SIZE: usize = 1024*1024;
 
 fn chunk_size<T>(dims: &ImageDims) -> usize {
     let chunk_storage_elements = MAX_CHUNK_SIZE / mem::size_of::<T>();
