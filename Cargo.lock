@@ -218,35 +218,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hyperspectra"
-version = "1.0.0-alpha"
-dependencies = [
- "either 1.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "image 0.23.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "memmap2 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "nalgebra 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rayon 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.123 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "hyperspectra-cli"
-version = "1.0.0-alpha"
-dependencies = [
- "csv 1.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyperspectra 1.0.0-alpha",
- "image 0.23.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "jemallocator 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "nalgebra 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "structopt 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "image"
 version = "0.23.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -748,6 +719,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "unicode-xid"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "vanadium-cli"
+version = "1.0.0-alpha"
+dependencies = [
+ "csv 1.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "image 0.23.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jemallocator 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nalgebra 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.3.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vanadium-core 1.0.0-alpha",
+]
+
+[[package]]
+name = "vanadium-core"
+version = "1.0.0-alpha"
+dependencies = [
+ "either 1.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "image 0.23.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indicatif 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "memmap2 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nalgebra 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parking_lot 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rayon 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 1.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.123 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "version_check"

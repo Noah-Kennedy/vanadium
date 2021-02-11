@@ -1,5 +1,5 @@
 [package]
-name = "hyperspectra"
+name = "vanadium-core"
 version = "1.0.0-alpha"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"

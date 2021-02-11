@@ -4,9 +4,9 @@ use std::str::FromStr;
 
 use image::{GrayImage, RgbImage};
 
-use hyperspectra::container::{ColorFlag, ImageDims, IndexImage, IterableImage, LockImage, Render};
-use hyperspectra::container::mapped::{Bip, Bsq};
-use hyperspectra::header::{Headers, Interleave};
+use vanadium_core::container::{ColorFlag, ImageDims, IndexImage, IterableImage, LockImage, Render};
+use vanadium_core::container::mapped::{Bip, Bsq};
+use vanadium_core::header::{Headers, Interleave};
 
 use crate::cli::ColorOpt;
 

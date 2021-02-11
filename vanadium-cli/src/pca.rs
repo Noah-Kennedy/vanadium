@@ -2,9 +2,9 @@ use std::error::Error;
 use std::fs::{OpenOptions, read_to_string};
 use std::str::FromStr;
 
-use hyperspectra::container::{LockImage, PCA};
-use hyperspectra::container::mapped::{Bip, Bsq};
-use hyperspectra::header::{Headers, Interleave};
+use vanadium_core::container::{LockImage, PCA};
+use vanadium_core::container::mapped::{Bip, Bsq};
+use vanadium_core::header::{Headers, Interleave};
 
 use crate::cli::PcaOpt;
 

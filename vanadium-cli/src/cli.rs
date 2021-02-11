@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use hyperspectra::header::Interleave;
+use vanadium_core::header::Interleave;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "basic")]
