@@ -10,6 +10,7 @@ pub(crate) struct SpectralImageContainer<C, T> {
 }
 
 impl<C, T> SpectralImageContainer<C, T> where C: AsRef<[u8]>, T: Copy {
+    #[allow(clippy::size_of_in_element_count)]
     unsafe fn inner(&self) -> &[T] {
         let inner = self.container.as_ref();
         let len = inner.len();
@@ -20,6 +21,7 @@ impl<C, T> SpectralImageContainer<C, T> where C: AsRef<[u8]>, T: Copy {
 }
 
 impl<C, T> SpectralImageContainer<C, T> where C: AsMut<[u8]>, T: Copy {
+    #[allow(clippy::size_of_in_element_count)]
     unsafe fn inner_mut(&mut self) -> &mut [T] {
         let inner = self.container.as_mut();
         let len = inner.len();
