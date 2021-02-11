@@ -1,8 +1,9 @@
 use std::marker::PhantomData;
 
+use either::Either;
+
 use crate::container::IterableImage;
 use crate::container::mapped::Bsq;
-use either::Either;
 
 #[derive(Clone)]
 pub struct BsqSampleIter<'a, T> {
@@ -12,7 +13,7 @@ pub struct BsqSampleIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqSampleIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqSampleIter<'a, T> {}
 
 #[derive(Clone)]
 pub struct BsqAllSamplesIter<'a, T> {
@@ -36,9 +37,9 @@ impl<'a, T> Iterator for BsqSamplesChunkedIter<'a, T> {
     }
 }
 
-unsafe impl <'a, T> Send for BsqSamplesChunkedIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqSamplesChunkedIter<'a, T> {}
 
-unsafe impl <'a, T> Send for BsqAllSamplesIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqAllSamplesIter<'a, T> {}
 
 impl<'a, T> Iterator for BsqSampleIter<'a, T> {
     type Item = &'a T;
@@ -91,7 +92,7 @@ pub struct BsqChannelIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqChannelIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqChannelIter<'a, T> {}
 
 #[derive(Clone)]
 pub struct BsqAllChannelsIter<'a, T> {
@@ -101,7 +102,7 @@ pub struct BsqAllChannelsIter<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqAllChannelsIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqAllChannelsIter<'a, T> {}
 
 impl<'a, T> Iterator for BsqChannelIter<'a, T> where T: Copy {
     type Item = &'a T;

@@ -1,5 +1,5 @@
+use std::{mem, slice};
 use std::marker::PhantomData;
-use std::{slice, mem};
 
 pub use bip::*;
 pub use bsq::*;

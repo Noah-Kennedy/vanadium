@@ -1,8 +1,9 @@
 use std::marker::PhantomData;
 
+use either::Either;
+
 use crate::container::IterableImageMut;
 use crate::container::mapped::Bsq;
-use either::Either;
 
 #[derive(Clone)]
 pub struct BsqSampleIterMut<'a, T> {
@@ -12,7 +13,7 @@ pub struct BsqSampleIterMut<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqSampleIterMut<'a, T> {}
+unsafe impl<'a, T> Send for BsqSampleIterMut<'a, T> {}
 
 #[derive(Clone)]
 pub struct BsqAllSamplesIterMut<'a, T> {
@@ -23,7 +24,7 @@ pub struct BsqAllSamplesIterMut<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqAllSamplesIterMut<'a, T> {}
+unsafe impl<'a, T> Send for BsqAllSamplesIterMut<'a, T> {}
 
 impl<'a, T> Iterator for BsqSampleIterMut<'a, T> {
     type Item = &'a mut T;
@@ -76,7 +77,7 @@ pub struct BsqChannelIterMut<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqChannelIterMut<'a, T> {}
+unsafe impl<'a, T> Send for BsqChannelIterMut<'a, T> {}
 
 #[derive(Clone)]
 pub struct BsqAllChannelsIterMut<'a, T> {
@@ -86,7 +87,7 @@ pub struct BsqAllChannelsIterMut<'a, T> {
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqAllChannelsIterMut<'a, T> {}
+unsafe impl<'a, T> Send for BsqAllChannelsIterMut<'a, T> {}
 
 impl<'a, T> Iterator for BsqChannelIterMut<'a, T> where T: Copy {
     type Item = &'a mut T;

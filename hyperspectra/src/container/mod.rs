@@ -1,15 +1,16 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::mem;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+
+use either::Either;
 
 pub use convert::*;
 pub use pca::*;
-pub use stat::*;
 pub use render::*;
+pub use stat::*;
 
 use crate::header::Headers;
-use either::Either;
-use std::mem;
 
 pub mod mapped;
 
@@ -18,7 +19,7 @@ mod stat;
 mod convert;
 mod render;
 
-const MAX_CHUNK_SIZE: usize = 4096*1024;
+const MAX_CHUNK_SIZE: usize = 4096 * 1024;
 // const MAX_CHUNK_SIZE: usize = 1024*1024;
 
 fn chunk_size<T>(dims: &ImageDims) -> usize {

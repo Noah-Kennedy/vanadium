@@ -1,14 +1,13 @@
 use std::error::Error;
 
+#[cfg(not(target_env = "msvc"))]
+use jemallocator::Jemalloc;
 use structopt::StructOpt;
 
 use crate::cli::{Opt, SubcommandOpt};
 use crate::convert::execute_conversion;
 use crate::pca::execute_pca;
 use crate::render::normalize;
-
-#[cfg(not(target_env = "msvc"))]
-use jemallocator::Jemalloc;
 
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]

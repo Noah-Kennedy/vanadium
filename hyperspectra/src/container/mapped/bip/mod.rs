@@ -2,12 +2,12 @@ use std::error::Error;
 use std::fs::File;
 use std::mem;
 
-use memmap2::{Mmap, MmapOptions, MmapMut};
+use memmap2::{Mmap, MmapMut, MmapOptions};
 
 pub use bip_iter::*;
 pub use bip_iter_mut::*;
 
-use crate::container::{ImageDims, SizedImage, IndexImage, ImageIndex, IndexImageMut};
+use crate::container::{ImageDims, ImageIndex, IndexImage, IndexImageMut, SizedImage};
 use crate::container::mapped::SpectralImageContainer;
 use crate::header::{FileByteOrder, Headers, Interleave};
 
@@ -15,8 +15,8 @@ mod bip_iter;
 mod bip_iter_mut;
 
 pub struct Bip<C, T> {
-    pub (crate) dims: ImageDims,
-    pub (crate) container: SpectralImageContainer<C, T>,
+    pub(crate) dims: ImageDims,
+    pub(crate) container: SpectralImageContainer<C, T>,
 }
 
 impl<C, T> SizedImage for Bip<C, T> {
