@@ -382,8 +382,8 @@ mod tests {
     fn test_large_bip() {
         let dims = ImageDims {
             channels: 500,
-            lines: 250,
-            samples: 250
+            lines: 100,
+            samples: 100
         };
 
         let test = make_big_bip(&dims);
