@@ -1,6 +1,6 @@
 # Vanadium
 
-[![codecov](https://codecov.io/gh/Noah-Kennedy/vanadium/branch/master/graph/badge.svg?token=2KBFXPBR34)](https://codecov.io/gh/Noah-Kennedy/hyperspectral)
+[![codecov](https://codecov.io/gh/Noah-Kennedy/vanadium/branch/master/graph/badge.svg?token=2KBFXPBR34)](https://codecov.io/gh/Noah-Kennedy/vanadium)
 
 ![Continuous integration](https://github.com/Noah-Kennedy/vanadium/workflows/Continuous%20integration/badge.svg?branch=master)
 
