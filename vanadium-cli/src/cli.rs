@@ -47,7 +47,7 @@ pub struct ConvertOpt {
 ///
 /// The background of the image will be negative infinity.
 #[derive(Clap, Debug)]
-#[clap(name = "pca")]
+#[clap(name = "pca", setting = clap::AppSettings::AllowNegativeNumbers)]
 pub struct PcaOpt {
     /// The path to the input binary file.
     #[clap(short, long, parse(from_str))]
@@ -134,7 +134,7 @@ pub enum RenderSubcommand {
 
 /// Take three channels of a file and render them together as R, G, and B bands in an image.
 #[derive(Clap, Debug)]
-#[clap(name = "rgb")]
+#[clap(name = "rgb", setting = clap::AppSettings::AllowNegativeNumbers)]
 pub struct RenderRGBOptions {
     /// The bands to be used for rendering a file.
     /// These should be in R,G,B order
@@ -157,7 +157,7 @@ pub struct RenderMaskOpt {}
 
 /// Render a single band of a file.
 #[derive(Clap, Debug)]
-#[clap(name = "single-band")]
+#[clap(name = "single-band", setting = clap::AppSettings::AllowNegativeNumbers)]
 pub struct RenderSingleBandOpt {
     #[clap(long)]
     pub band: usize,
