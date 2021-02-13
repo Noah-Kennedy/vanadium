@@ -235,6 +235,7 @@ dependencies = [
  "bytemuck 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "color_quant 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jpeg-decoder 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-iter 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-rational 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -284,6 +285,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "jemalloc-sys 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.85 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "jpeg-decoder"
+version = "0.1.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "rayon 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -768,7 +777,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "vanadium-cli"
-version = "1.0.0-alpha"
+version = "0.2.0"
 dependencies = [
  "csv 1.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.23.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -866,6 +875,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum itoa 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)" = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
 "checksum jemalloc-sys 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "0d3b9f3f5c9b31aa0f5ed3260385ac205db665baa41d49bb8338008ae94ede45"
 "checksum jemallocator 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "43ae63fcfc45e99ab3d1b29a46782ad679e98436c3169d15a167a1108a724b69"
+"checksum jpeg-decoder 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)" = "229d53d58899083193af11e15917b5640cd40b29ff475a1fe4ef725deb02d0f2"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 "checksum libc 0.2.85 (registry+https://github.com/rust-lang/crates.io-index)" = "7ccac4b00700875e6a07c6cde370d44d32fa01c5a65cdd2fca6858c479d28bb3"
 "checksum libm 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "c7d73b3f436185384286bd8098d17ec07c9a7d2388a6599f824d8502b529702a"

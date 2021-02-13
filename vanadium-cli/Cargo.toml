@@ -1,6 +1,6 @@
 [package]
 name = "vanadium-cli"
-version = "1.0.0-alpha"
+version = "0.2.0"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
 
@@ -27,4 +27,4 @@ default-features = false
 [dependencies.image]
 version = "0.23.12"
 default-features = false
-features = ["png"]
+features = ["png", "jpeg_rayon", "jpeg"]
