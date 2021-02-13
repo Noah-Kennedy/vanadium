@@ -1,5 +1,5 @@
 [package]
-name = "hyperspectra-cli"
+name = "vanadium-cli"
 version = "1.0.0-alpha"
 authors = ["noah <nomaxx117@gmail.com>"]
 edition = "2018"
@@ -10,18 +10,20 @@ csv = "1.1"
 [dependencies.nalgebra]
 version = "0.24.1"
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = "0.3.2"
+
 [dependencies.num]
 version = "0.3.1"
 default-features = false
 
-[dependencies.hyperspectra]
-path = "../hyperspectra"
-
-[dependencies.structopt]
-version = "0.3.21"
-default-features = false
+[dependencies.vanadium-core]
+path = "../vanadium-core"
 
 [dependencies.image]
 version = "0.23.12"
 default-features = false
-features = ["png"]
+features = ["png", "jpeg_rayon", "jpeg", "bmp", "pnm", "tiff", "ico"]
+
+[dependencies.clap]
+version = "3.0.0-beta.2"

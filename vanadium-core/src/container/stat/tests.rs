@@ -67,7 +67,7 @@ fn approx_eq(expected: &[f32], actual: &[f32]) {
 }
 
 #[test]
-fn test_mean_bip() {
+fn test_mean_bip_small() {
     let bip: Bip<Vec<u8>, f32> = Bip {
         dims: ImageDims {
             channels: 3,
@@ -142,7 +142,7 @@ fn test_mean_bsq() {
 }
 
 #[test]
-fn test_std_dev_bip() {
+fn test_std_dev_bip_small() {
     let bip: Bip<Vec<u8>, f32> = Bip {
         dims: ImageDims {
             channels: 3,
@@ -219,7 +219,7 @@ fn test_std_dev_bsq() {
 }
 
 #[test]
-fn test_covariance_bip() {
+fn test_covariance_bip_small() {
     let bip: Bip<Vec<u8>, f32> = Bip {
         dims: ImageDims {
             channels: 3,

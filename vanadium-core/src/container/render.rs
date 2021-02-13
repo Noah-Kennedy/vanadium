@@ -21,7 +21,6 @@ pub trait Render<T> where T: PartialEq + Copy + Debug + 'static {
         minimums: &[T],
         maximums: &[T],
         channels: &[usize],
-        summation: [&[usize]; 3],
     );
 }
 
@@ -149,9 +148,10 @@ impl<'a, I, T> Render<T> for LockImage<T, I>
         }
     }
 
-    fn rgb(&self, out: &mut RgbImage, minimums: &[T], maximums: &[T], channels: &[usize], summation: [&[usize]; 3]) {
-        assert_eq!(channels.len(), minimums.len(), "mins");
-        assert_eq!(channels.len(), maximums.len(), "Maxes");
+    fn rgb(&self, out: &mut RgbImage, minimums: &[T], maximums: &[T], channels: &[usize]) {
+        assert_eq!(3, channels.len());
+        assert_eq!(3, maximums.len());
+        assert_eq!(3, minimums.len());
 
         let guard = self.read();
 
@@ -183,26 +183,10 @@ impl<'a, I, T> Render<T> for LockImage<T, I>
                     })
                     .collect();
 
-                let mut sums: [T; 3] = [
-                    summation[0].iter()
-                        .map(|idx| norms[*idx])
-                        .sum(),
-                    summation[1].iter()
-                        .map(|idx| norms[*idx])
-                        .sum(),
-                    summation[2].iter()
-                        .map(|idx| norms[*idx])
-                        .sum(),
-                ];
-
-                sums[0] /= T::from_usize(summation[0].len()).unwrap();
-                sums[1] /= T::from_usize(summation[1].len()).unwrap();
-                sums[2] /= T::from_usize(summation[2].len()).unwrap();
-
                 let rgb = [
-                    (sums[0] * T::from_u8(255).unwrap()).to_u8().unwrap(),
-                    (sums[1] * T::from_u8(255).unwrap()).to_u8().unwrap(),
-                    (sums[2] * T::from_u8(255).unwrap()).to_u8().unwrap(),
+                    (norms[0] * T::from_u8(255).unwrap()).to_u8().unwrap(),
+                    (norms[1] * T::from_u8(255).unwrap()).to_u8().unwrap(),
+                    (norms[2] * T::from_u8(255).unwrap()).to_u8().unwrap(),
                 ];
 
                 out.put_pixel(s as u32, l as u32, Rgb(rgb))

@@ -1,7 +1,6 @@
 use std::fmt::{Debug, Display};
 use std::iter::Sum;
-use std::mem;
-use std::ops::{Div, Sub};
+use std::ops::{DerefMut, Div, Sub};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use either::Either;
@@ -13,7 +12,7 @@ use parking_lot::Mutex;
 use rayon::prelude::*;
 
 use crate::bar::config_bar;
-use crate::container::{CHUNK_SIZE, ImageDims, IterableImage, IterableImageMut, ReadImageGuard};
+use crate::container::{chunk_size, ImageDims, IterableImage, IterableImageMut, ReadImageGuard};
 
 impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     where I: IterableImage<'b, T> + Sync + IterableImageMut<'b, T>,
@@ -87,10 +86,11 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     pub fn big_bip_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
+        assert!(min < max);
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = chunk_size::<T>(&self.inner.dims()) / channels;
 
         let sums = Mutex::new(vec![T::zero(); channels]);
         let mut counts = Vec::with_capacity(channels);
@@ -101,6 +101,8 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
         let status_bar = mp.add(ProgressBar::new(num_samples as u64));
         config_bar(&status_bar, "Calculating means...");
+
+        status_bar.println(format!("{}:{}", chunk_size, num_samples / chunk_size));
 
         rayon::scope(|scope| {
             for c in self.inner.samples_chunked() {
@@ -147,37 +149,27 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    pub fn small_bip_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
-        let ImageDims { channels, lines, samples } = self.inner.dims();
-
-        let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+    pub fn small_bip_means(&self, _mp: &MultiProgress, min: T, max: T) -> Vec<T> {
+        assert!(min < max);
+        let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
         let mut sums = vec![T::zero(); channels];
         let mut counts = vec![0; channels];
 
-        let status_bar = mp.add(ProgressBar::new(num_samples as u64));
-        config_bar(&status_bar, "Calculating means...");
+        let pixels = self.inner.samples();
 
-        for c in self.inner.samples_chunked() {
-            for s in c {
-                let inner = s.clone();
-                for (i, b) in inner.enumerate() {
-                    if *b > min && *b <= max {
-                        sums[i] += *b;
-                        counts[i] += 1;
-                    }
+        for s in pixels {
+            for (i, b) in s.enumerate() {
+                if *b > min && *b <= max {
+                    sums[i] += *b;
+                    counts[i] += 1;
                 }
             }
-
-            status_bar.inc(chunk_size as u64)
         }
-
-        status_bar.finish();
 
         sums.iter_mut().zip(counts.iter()).for_each(|(s, c)| {
             if *c > 1 {
-                *s /= T::from_usize(*c).unwrap();
+                *s /= T::from_u64(*c).unwrap();
             }
         });
 
@@ -186,35 +178,27 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    pub fn small_bip_std_devs(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
-        let ImageDims { channels, lines, samples } = self.inner.dims();
-
-        let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+    pub fn small_bip_std_devs(&self, _mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
+        assert!(min < max);
+        let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
         let mut sums = vec![T::zero(); channels];
         let mut counts = vec![0; channels];
 
-        let status_bar = mp.add(ProgressBar::new(num_samples as u64));
-        config_bar(&status_bar, "Calculating means...");
+        let pixels = self.inner.samples();
 
-        for c in self.inner.samples_chunked() {
-            for s in c {
-                let inner = s.clone();
-                for (i, b) in inner.enumerate() {
-                    if *b > min && *b <= max {
-                        let diff = *b - means[i];
+        for s in pixels {
+            let inner = s.clone();
+            for (i, b) in inner.enumerate() {
+                if *b > min && *b <= max {
+                    let diff = *b - means[i];
 
-                        sums[i] += diff * diff;
-                        counts[i] += 1;
-                    }
+                    sums[i] += diff * diff;
+                    counts[i] += 1;
                 }
             }
-
-            status_bar.inc(chunk_size as u64)
         }
 
-        status_bar.finish();
 
         sums.iter_mut().zip(counts.iter()).for_each(|(s, c)| {
             if *c > 2 {
@@ -228,10 +212,12 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     pub fn big_bip_std_devs(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> Vec<T> {
+        assert!(min < max);
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = chunk_size::<T>(&self.inner.dims()) / channels;
+
 
         let sums = Mutex::new(vec![T::zero(); channels]);
         let mut counts = Vec::with_capacity(channels);
@@ -241,7 +227,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         }
 
         let status_bar = mp.add(ProgressBar::new(num_samples as u64));
-        config_bar(&status_bar, "Calculating means...");
+        config_bar(&status_bar, "Calculating std devs...");
 
         rayon::scope(|scope| {
             for c in self.inner.samples_chunked() {
@@ -266,6 +252,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                         *output += *input;
                     }
 
+                    drop(guard);
                     drop(local_sums);
 
                     status_bar.inc(chunk_size as u64)
@@ -289,54 +276,46 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    pub fn small_bip_cov_mat(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
-        let ImageDims { channels, lines, samples } = self.inner.dims();
-
-        let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+    pub fn small_bip_cov_mat(&self, _mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
+        assert!(min < max);
+        let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
         let mut sums = vec![T::zero(); channels * channels];
         let mut counts = vec![0; channels * channels];
 
-        let status_bar = mp.add(ProgressBar::new(num_samples as u64));
-        config_bar(&status_bar, "Calculating covariances...");
+        let pixels = self.inner.samples();
 
-        for c in self.inner.samples_chunked() {
-            for s in c {
-                let outer = s.clone();
+        for s in pixels {
+            let outer = s.clone();
 
-                for (outer_i, outer_b) in outer.enumerate() {
-                    let inner = s.clone();
+            for (outer_i, outer_b) in outer.enumerate() {
+                let inner = s.clone();
 
-                    for (inner_i, inner_b) in inner
-                        .enumerate()
-                        .take(outer_i + 1)
-                    {
-                        if *outer_b > min && *outer_b <= max && *inner_b > min && *inner_b <= max {
-                            let diffs = [
-                                *outer_b - means[outer_i],
-                                *inner_b - means[inner_i]
-                            ];
+                for (inner_i, inner_b) in inner
+                    .enumerate()
+                    .take(outer_i + 1)
+                {
+                    if *outer_b > min && *outer_b <= max && *inner_b > min && *inner_b <= max {
+                        let diffs = [
+                            *outer_b - means[outer_i],
+                            *inner_b - means[inner_i]
+                        ];
 
-                            let idx = (outer_i * channels) + inner_i;
+                        let idx = (outer_i * channels) + inner_i;
 
-                            sums[idx] += diffs[0] * diffs[1];
-                            counts[idx] += 1;
-                        }
+                        sums[idx] += diffs[0] * diffs[1];
+                        counts[idx] += 1;
                     }
                 }
             }
-
-            status_bar.inc(chunk_size as u64)
         }
+
 
         sums.iter_mut().zip(counts.iter()).for_each(|(s, c)| {
             if *c > 1 {
                 *s /= T::from_usize(*c - 1).unwrap();
             }
         });
-
-        status_bar.finish();
 
         let mut out = DMatrix::from_row_slice(channels, channels, &sums);
         out.fill_upper_triangle_with_lower_triangle();
@@ -347,17 +326,22 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     pub fn big_bip_cov_mat(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
+        assert!(min < max);
         let ImageDims { channels, lines, samples } = self.inner.dims();
 
         let num_samples = lines * samples;
-        let chunk_size = (CHUNK_SIZE / (mem::size_of::<T>() * channels)).min(1);
+        let chunk_size = chunk_size::<T>(&self.inner.dims()) / channels;
 
-        let sums = Mutex::new(vec![T::zero(); channels * channels]);
-        let mut counts = Vec::with_capacity(channels * channels);
 
-        for _ in 0..(channels * channels) {
-            counts.push(AtomicUsize::new(0));
-        }
+        let sums = vec![T::zero(); channels * channels];
+        // let mut counts = Vec::with_capacity(channels * channels);
+        let counts = vec![0; channels * channels];
+
+        let mutex = Mutex::new((sums, counts));
+
+        // for _ in 0..(channels * channels) {
+        //     counts.push(AtomicUsize::new(0));
+        // }
 
         let status_bar = mp.add(ProgressBar::new(num_samples as u64));
         config_bar(&status_bar, "Calculating covariances...");
@@ -366,6 +350,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
             for c in self.inner.samples_chunked() {
                 scope.spawn(|_| {
                     let mut local_sum = vec![T::zero(); channels * channels];
+                    let mut local_counts = vec![0; channels * channels];
                     for s in c {
                         let outer = s.clone();
 
@@ -385,32 +370,41 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                                     let idx = (outer_i * channels) + inner_i;
 
                                     local_sum[idx] += diffs[0] * diffs[1];
-                                    counts[idx].fetch_add(1, Ordering::Relaxed);
+                                    local_counts[idx] += 1;
+                                    // counts[idx].fetch_add(1, Ordering::Relaxed);
                                 }
                             }
                         }
                     }
 
-                    let mut guard = sums.lock();
+                    let mut guard = mutex.lock();
 
-                    for (input, output) in local_sum.iter().zip(guard.iter_mut()) {
-                        *output += *input;
+                    let (gs, gc) = guard.deref_mut();
+
+                    for ((ls, lc), (rs, rc)) in local_sum.iter()
+                        .zip(local_counts)
+                        .zip(gs.iter_mut().zip(gc.iter_mut()))
+                    {
+                        *rs += *ls;
+                        *rc += lc;
+                        // *output += *input;
                     }
 
-                    drop(local_sum);
-                    drop(guard)
-                });
+                    drop(guard);
 
-                status_bar.inc(chunk_size as u64)
+                    status_bar.inc(chunk_size as u64);
+
+                    drop(local_sum);
+                });
             }
         });
 
-        let mut sums = sums.into_inner();
+        let (mut sums, counts) = mutex.into_inner();
 
         sums.iter_mut().zip(counts.iter()).for_each(|(s, c)| {
-            let c = c.load(Ordering::Relaxed);
-            if c > 1 {
-                *s /= T::from_usize(c - 1).unwrap();
+            // let c = c.load(Ordering::Relaxed);
+            if *c > 1 {
+                *s /= T::from_usize(*c - 1).unwrap();
             }
         });
 
@@ -425,11 +419,18 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     pub fn all_band_means(&self, mp: &MultiProgress, min: T, max: T) -> Vec<T> {
+        assert!(min < max);
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
         if let Either::Right(_) = self.inner.fastest() {
-            // todo investigate memory leaks
-            self.small_bip_means(mp, min, max)
+            // todo investigate memory issues
+            // self.small_bip_means(mp, min, max)
+
+            if channels < 64 {
+                self.small_bip_means(mp, min, max)
+            } else {
+                self.big_bip_means(mp, min, max)
+            }
         } else {
             let status_bar = mp.add(ProgressBar::new(channels as u64));
             config_bar(&status_bar, "Calculating band means...");
@@ -455,8 +456,14 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
 
         if self.inner.fastest().is_right() {
-            // todo investigate memory leaks
-            self.small_bip_std_devs(mp, means, min, max)
+            // todo investigate memory issues
+            // self.small_bip_std_devs(mp, means, min, max)
+
+            if channels < 64 {
+                self.small_bip_std_devs(mp, means, min, max)
+            } else {
+                self.big_bip_std_devs(mp, means, min, max)
+            }
         } else {
             let status_bar = mp.add(ProgressBar::new(channels as u64));
             config_bar(&status_bar, "Calculating band std devs...");
@@ -482,8 +489,14 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
     pub fn covariance_matrix(&self, mp: &MultiProgress, means: &[T], min: T, max: T) -> DMatrix<T> {
         let ImageDims { channels, lines: _, samples: _ } = self.inner.dims();
         if let Either::Right(_) = self.inner.fastest() {
-            // todo investigate memory leaks
-            self.small_bip_cov_mat(mp, means, min, max)
+            // todo investigate memory issues
+            // self.small_bip_cov_mat(mp, means, min, max)
+
+            if channels < 64 {
+                self.small_bip_cov_mat(mp, means, min, max)
+            } else {
+                self.big_bip_cov_mat(mp, means, min, max)
+            }
         } else {
             let tot_val = (channels + 1) * (channels + 1);
 

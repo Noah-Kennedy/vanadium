@@ -1,54 +1,40 @@
 use std::marker::PhantomData;
 
-use crate::container::IterableImage;
-use crate::container::mapped::Bsq;
 use either::Either;
 
+use crate::container::IterableImageMut;
+use crate::container::mapped::Bsq;
+
 #[derive(Clone)]
-pub struct BsqSampleIter<'a, T> {
-    start: *const T,
-    end: *const T,
+pub struct BsqSampleIterMut<'a, T> {
+    start: *mut T,
+    end: *mut T,
     num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqSampleIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqSampleIterMut<'a, T> {}
 
 #[derive(Clone)]
-pub struct BsqAllSamplesIter<'a, T> {
-    start: *const T,
+pub struct BsqAllSamplesIterMut<'a, T> {
+    start: *mut T,
     count: usize,
     jump: usize,
     num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
 
-#[derive(Clone, Default)]
-pub struct BsqSamplesChunkedIter<'a, T> {
-    _phantom: PhantomData<&'a T>,
-}
+unsafe impl<'a, T> Send for BsqAllSamplesIterMut<'a, T> {}
 
-impl<'a, T> Iterator for BsqSamplesChunkedIter<'a, T> {
-    type Item = BsqAllSamplesIter<'a, T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        unimplemented!()
-    }
-}
-
-unsafe impl <'a, T> Send for BsqSamplesChunkedIter<'a, T> {}
-
-unsafe impl <'a, T> Send for BsqAllSamplesIter<'a, T> {}
-
-impl<'a, T> Iterator for BsqSampleIter<'a, T> {
-    type Item = &'a T;
+impl<'a, T> Iterator for BsqSampleIterMut<'a, T> {
+    type Item = &'a mut T;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
-                let v = self.start.as_ref();
+                let v = self.start.as_mut();
                 self.start = self.start.add(self.num_samples);
                 v
             }
@@ -58,8 +44,8 @@ impl<'a, T> Iterator for BsqSampleIter<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for BsqAllSamplesIter<'a, T> where T: Copy {
-    type Item = BsqSampleIter<'a, T>;
+impl<'a, T> Iterator for BsqAllSamplesIterMut<'a, T> where T: Copy {
+    type Item = BsqSampleIterMut<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
@@ -67,7 +53,7 @@ impl<'a, T> Iterator for BsqAllSamplesIter<'a, T> where T: Copy {
         if self.count < self.num_samples {
             self.count += 1;
             unsafe {
-                let r = Some(BsqSampleIter {
+                let r = Some(BsqSampleIterMut {
                     start: self.start,
                     end: self.start.add(self.jump),
                     num_samples: self.num_samples,
@@ -85,33 +71,33 @@ impl<'a, T> Iterator for BsqAllSamplesIter<'a, T> where T: Copy {
 }
 
 #[derive(Copy, Clone)]
-pub struct BsqChannelIter<'a, T> {
-    start: *const T,
-    end: *const T,
+pub struct BsqChannelIterMut<'a, T> {
+    start: *mut T,
+    end: *mut T,
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqChannelIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqChannelIterMut<'a, T> {}
 
 #[derive(Clone)]
-pub struct BsqAllChannelsIter<'a, T> {
-    start: *const T,
-    end: *const T,
+pub struct BsqAllChannelsIterMut<'a, T> {
+    start: *mut T,
+    end: *mut T,
     num_samples: usize,
     _phantom: PhantomData<&'a T>,
 }
 
-unsafe impl <'a, T> Send for BsqAllChannelsIter<'a, T> {}
+unsafe impl<'a, T> Send for BsqAllChannelsIterMut<'a, T> {}
 
-impl<'a, T> Iterator for BsqChannelIter<'a, T> where T: Copy {
-    type Item = &'a T;
+impl<'a, T> Iterator for BsqChannelIterMut<'a, T> where T: Copy {
+    type Item = &'a mut T;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
-                let v = self.start.as_ref();
+                let v = self.start.as_mut();
                 self.start = self.start.add(1);
                 v
             }
@@ -121,15 +107,15 @@ impl<'a, T> Iterator for BsqChannelIter<'a, T> where T: Copy {
     }
 }
 
-impl<'a, T> Iterator for BsqAllChannelsIter<'a, T> where T: Copy {
-    type Item = BsqChannelIter<'a, T>;
+impl<'a, T> Iterator for BsqAllChannelsIterMut<'a, T> where T: Copy {
+    type Item = BsqChannelIterMut<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
             unsafe {
-                let x = Some(BsqChannelIter {
+                let x = Some(BsqChannelIterMut {
                     start: self.start,
                     end: self.start.add(self.num_samples),
                     _phantom: Default::default(),
@@ -145,30 +131,29 @@ impl<'a, T> Iterator for BsqAllChannelsIter<'a, T> where T: Copy {
     }
 }
 
-impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
+impl<'a, C, T> IterableImageMut<'a, T> for Bsq<C, T>
     where T: 'static + Copy,
-          C: AsRef<[u8]>
+          C: AsMut<[u8]>
 {
-    type Band = BsqChannelIter<'a, T>;
-    type Sample = BsqSampleIter<'a, T>;
-    type Bands = BsqAllChannelsIter<'a, T>;
-    type Samples = BsqAllSamplesIter<'a, T>;
-    type SamplesChunked = BsqSamplesChunkedIter<'a, T>;
+    type BandMut = BsqChannelIterMut<'a, T>;
+    type SampleMut = BsqSampleIterMut<'a, T>;
+    type BandsMut = BsqAllChannelsIterMut<'a, T>;
+    type SamplesMut = BsqAllSamplesIterMut<'a, T>;
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    fn fastest(&self) -> Either<Self::Bands, Self::Samples> {
-        Either::Left(self.bands())
+    fn fastest_mut(&mut self) -> Either<Self::BandsMut, Self::SamplesMut> {
+        Either::Left(self.bands_mut())
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    fn bands(&self) -> Self::Bands {
+    fn bands_mut(&mut self) -> Self::BandsMut {
         unsafe {
-            Self::Bands {
-                start: self.container.inner().as_ptr(),
-                end: self.container.inner()
-                    .as_ptr()
+            Self::BandsMut {
+                start: self.container.inner_mut().as_mut_ptr(),
+                end: self.container.inner_mut()
+                    .as_mut_ptr()
                     .add(self.dims.channels * self.dims.samples * self.dims.lines),
                 num_samples: self.dims.samples * self.dims.lines,
                 _phantom: Default::default(),
@@ -178,10 +163,10 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    fn samples(&self) -> Self::Samples {
+    fn samples_mut(&mut self) -> Self::SamplesMut {
         unsafe {
-            Self::Samples {
-                start: self.container.inner().as_ptr(),
+            Self::SamplesMut {
+                start: self.container.inner_mut().as_mut_ptr(),
                 count: 0,
                 jump: self.dims.samples * self.dims.lines * self.dims.channels,
                 num_samples: self.dims.samples * self.dims.lines,
@@ -192,13 +177,13 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    fn band(&self, index: usize) -> Self::Band {
+    fn band_mut(&mut self, index: usize) -> Self::BandMut {
         unsafe {
-            let start = self.container.inner()
-                .as_ptr()
+            let start = self.container.inner_mut()
+                .as_mut_ptr()
                 .add(index * self.dims.lines * self.dims.samples);
 
-            Self::Band {
+            Self::BandMut {
                 start,
                 end: start.add(self.dims.lines * self.dims.samples),
                 _phantom: Default::default(),
@@ -208,23 +193,19 @@ impl<'a, C, T> IterableImage<'a, T> for Bsq<C, T>
 
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
-    fn sample(&self, index: usize) -> Self::Sample {
+    fn sample_mut(&mut self, index: usize) -> Self::SampleMut {
         unsafe {
-            let start = self.container.inner()
-                .as_ptr()
+            let start = self.container.inner_mut()
+                .as_mut_ptr()
                 .add(index);
 
-            Self::Sample {
+            Self::SampleMut {
                 start,
-                end: start.add(self.dims.channels * self.dims.samples * self.dims.lines),
+                end: start.add(self.dims.lines * self.dims.samples),
                 num_samples: self.dims.lines * self.dims.samples,
                 _phantom: Default::default(),
             }
         }
-    }
-
-    fn samples_chunked(&self) -> Self::SamplesChunked {
-        unimplemented!()
     }
 }
 
@@ -259,7 +240,7 @@ mod tests {
     #[test]
     fn test_bsq_bands() {
         let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
-        let mat: Bsq<_, u32> = Bsq {
+        let mut mat: Bsq<_, u32> = Bsq {
             dims: ImageDims {
                 channels: 3,
                 lines: 1,
@@ -271,7 +252,7 @@ mod tests {
             },
         };
 
-        for (ba, be) in mat.bands().zip(BANDS.iter()) {
+        for (ba, be) in mat.bands_mut().zip(BANDS.iter()) {
             for (ca, ce) in ba.zip(be.iter()) {
                 assert_eq!(ca, ce);
             }
@@ -281,7 +262,7 @@ mod tests {
     #[test]
     fn test_bsq_samples() {
         let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
-        let mat: Bsq<_, u32> = Bsq {
+        let mut mat: Bsq<_, u32> = Bsq {
             dims: ImageDims {
                 channels: 3,
                 lines: 1,
@@ -293,7 +274,7 @@ mod tests {
             },
         };
 
-        for (ba, be) in mat.samples().zip(SAMPLES.iter()) {
+        for (ba, be) in mat.samples_mut().zip(SAMPLES.iter()) {
             for (ca, ce) in ba.zip(be.iter()) {
                 assert_eq!(ca, ce);
             }
@@ -301,10 +282,10 @@ mod tests {
     }
 
     #[test]
-    fn test_bsq_single_band() {
+    fn test_bsq_single_band_mut() {
         let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
 
-        let mat: Bsq<_, u32> = Bsq {
+        let mut mat: Bsq<_, u32> = Bsq {
             dims: ImageDims {
                 channels: 3,
                 lines: 1,
@@ -316,24 +297,24 @@ mod tests {
             },
         };
 
-        for (a, e) in mat.band(0).zip(BANDS[0].iter()) {
+        for (a, e) in mat.band_mut(0).zip(BANDS[0].iter()) {
             assert_eq!(a, e);
         }
 
-        for (a, e) in mat.band(1).zip(BANDS[1].iter()) {
+        for (a, e) in mat.band_mut(1).zip(BANDS[1].iter()) {
             assert_eq!(a, e);
         }
 
-        for (a, e) in mat.band(2).zip(BANDS[2].iter()) {
+        for (a, e) in mat.band_mut(2).zip(BANDS[2].iter()) {
             assert_eq!(a, e);
         }
     }
 
     #[test]
-    fn test_bsq_single_sample() {
+    fn test_bsq_single_sample_mut() {
         let c: [u8; 9 * 4] = unsafe { mem::transmute(MAT.clone()) };
 
-        let mat: Bsq<_, u32> = Bsq {
+        let mut mat: Bsq<_, u32> = Bsq {
             dims: ImageDims {
                 channels: 3,
                 lines: 1,
@@ -345,15 +326,15 @@ mod tests {
             },
         };
 
-        for (a, e) in mat.sample(0).zip(SAMPLES[0].iter()) {
+        for (a, e) in mat.sample_mut(0).zip(SAMPLES[0].iter()) {
             assert_eq!(a, e);
         }
 
-        for (a, e) in mat.sample(1).zip(SAMPLES[1].iter()) {
+        for (a, e) in mat.sample_mut(1).zip(SAMPLES[1].iter()) {
             assert_eq!(a, e);
         }
 
-        for (a, e) in mat.sample(2).zip(SAMPLES[2].iter()) {
+        for (a, e) in mat.sample_mut(2).zip(SAMPLES[2].iter()) {
             assert_eq!(a, e);
         }
     }

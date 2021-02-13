@@ -89,7 +89,7 @@ impl<'a, I, T> PCA<T> for LockImage<T, I>
         let mut output = WriteImageGuard { inner: out.inner.write().unwrap(), _phantom: Default::default() };
 
         stages_bar.set_message("Stage: Writes");
-        input.write_standardized_results(&mut output, &mp, &means, &std_devs, &eigen);
+        input.write_standardized_results(&mut output, &mp, &means, &std_devs, min, max, &eigen);
         stages_bar.inc(1);
 
         stages_bar.finish();
@@ -166,6 +166,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
           T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
+    #[allow(clippy::too_many_arguments)]
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     fn write_standardized_results(
@@ -173,6 +174,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
         output: &mut WriteImageGuard<T, I>,
         mp: &MultiProgress,
         means: &[T], std_devs: &[T],
+        min: T, max: T,
         eigen: &SymmetricEigen<T, Dynamic>,
     )
     {
@@ -197,13 +199,19 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
                     .zip(means)
                     .zip(std_devs)
                     .map(|((r, m), s)| {
-                        let z_val: T = (*r - *m) / *s;
-                        let z_off: T = (-*m) / *s;
-
-                        if (z_val - z_off).abs() < T::zero() {
+                        if *r <= min {
                             T::min_value()
-                        } else {
-                            z_val
+                        } else if *r > max {
+                            T::max_value()
+                        } else  {
+                            let z_val: T = (*r - *m) / *s;
+                            let z_off: T = (-*m) / *s;
+
+                            if (z_val - z_off).abs() < T::zero() {
+                                T::min_value()
+                            } else {
+                                z_val
+                            }
                         }
                     })
                     .zip(col.into_iter())

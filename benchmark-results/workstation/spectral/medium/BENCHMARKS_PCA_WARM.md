@@ -1,4 +1,4 @@
 | Command | Mean [s] | Min [s] | Max [s] | Relative |
 |:---|---:|---:|---:|---:|
-| `hyperspectra-cli pca --csv -i /data/bench-data/medium.bip -h /data/bench-data/medium.bip.hdr -o /data/pca.bip -d 3 --min 0.0 --max 1.0` | 31.538 ± 3.073 | 27.865 | 37.427 | 2.64 ± 0.28 |
-| `hyperspectra-cli pca --csv -i /data/bench-data/medium.bsq -h /data/bench-data/medium.bsq.hdr -o /data/pca.bsq -d 3 --min 0.0 --max 1.0` | 11.959 ± 0.477 | 11.469 | 12.807 | 1.00 |
+| `hyperspectra-cli pca --csv -i /data/bench-data/medium-bip -h /data/bench-data/medium-bip.hdr -o ./pca.bip.csv -d 3 --min 0.0 --max 1.0` | 56.527 ± 0.676 | 55.622 | 57.524 | 4.80 ± 0.09 |
+| `hyperspectra-cli pca --csv -i /data/bench-data/medium-bsq -h /data/bench-data/medium-bsq.hdr -o ./pca.bsq.csv -d 3 --min 0.0 --max 1.0` | 11.781 ± 0.179 | 11.531 | 12.147 | 1.00 |

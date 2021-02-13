@@ -2,38 +2,38 @@ use std::error::Error;
 use std::fs::File;
 use std::mem;
 
-use memmap2::{Mmap, MmapOptions, MmapMut};
+use memmap2::{Mmap, MmapMut, MmapOptions};
 
-pub use bip_iter::*;
-pub use bip_iter_mut::*;
+pub use bsq_iter::*;
+pub use bsq_iter_mut::*;
 
-use crate::container::{ImageDims, SizedImage, IndexImage, ImageIndex, IndexImageMut};
+use crate::container::{ImageDims, ImageIndex, IndexImage, IndexImageMut, SizedImage};
 use crate::container::mapped::SpectralImageContainer;
 use crate::header::{FileByteOrder, Headers, Interleave};
 
-mod bip_iter;
-mod bip_iter_mut;
+mod bsq_iter;
+mod bsq_iter_mut;
 
-pub struct Bip<C, T> {
-    pub (crate) dims: ImageDims,
-    pub (crate) container: SpectralImageContainer<C, T>,
+pub struct Bsq<C, T> {
+    pub(crate) dims: ImageDims,
+    pub(crate) container: SpectralImageContainer<C, T>,
 }
 
-impl<C, T> SizedImage for Bip<C, T> {
+impl<C, T> SizedImage for Bsq<C, T> {
     fn dims(&self) -> ImageDims {
         self.dims.clone()
     }
 }
 
-impl<C, T> IndexImage<T> for Bip<C, T>
-    where T: 'static,
+impl<C, T> IndexImage<T> for Bsq<C, T>
+    where T: 'static + Copy,
           C: AsRef<[u8]>
 {
     unsafe fn get_unchecked(&self, index: &ImageIndex) -> &T {
         let d = &self.dims;
-        let channel_offset = index.channel;
-        let sample_offset = index.sample * d.channels;
-        let lines_offset = index.line * d.samples * d.channels;
+        let channel_offset = index.channel * d.lines * d.samples;
+        let sample_offset = index.sample;
+        let lines_offset = index.line * d.samples;
 
         let off = channel_offset + sample_offset + lines_offset;
 
@@ -41,15 +41,15 @@ impl<C, T> IndexImage<T> for Bip<C, T>
     }
 }
 
-impl<C, T> IndexImageMut<T> for Bip<C, T>
-    where T: 'static,
+impl<C, T> IndexImageMut<T> for Bsq<C, T>
+    where T: 'static + Copy,
           C: AsMut<[u8]>
 {
     unsafe fn get_unchecked_mut(&mut self, index: &ImageIndex) -> &mut T {
         let d = &self.dims;
-        let channel_offset = index.channel;
-        let sample_offset = index.sample * d.channels;
-        let lines_offset = index.line * d.samples * d.channels;
+        let channel_offset = index.channel * d.lines * d.samples;
+        let sample_offset = index.sample;
+        let lines_offset = index.line * d.samples;
 
         let off = channel_offset + sample_offset + lines_offset;
 
@@ -57,14 +57,14 @@ impl<C, T> IndexImageMut<T> for Bip<C, T>
     }
 }
 
-impl<C, T> Bip<C, T> {
+impl<C, T> Bsq<C, T> {
     fn check_header_preconditions(headers: &Headers, file: &File) -> Result<(), Box<dyn Error>> {
         assert_eq!(
             FileByteOrder::Intel, headers.byte_order,
             "Only Intel byte order is supported"
         );
 
-        assert_eq!(Interleave::Bip, headers.interleave);
+        assert_eq!(Interleave::Bsq, headers.interleave);
 
         assert_eq!(
             headers.bands * headers.lines * headers.samples * mem::size_of::<T>(),
@@ -76,7 +76,7 @@ impl<C, T> Bip<C, T> {
     }
 }
 
-impl<T> Bip<Mmap, T> {
+impl<T> Bsq<Mmap, T> {
     pub fn headers(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
         Self::check_header_preconditions(headers, file)?;
 
@@ -97,7 +97,7 @@ impl<T> Bip<Mmap, T> {
     }
 }
 
-impl<T> Bip<MmapMut, T> {
+impl<T> Bsq<MmapMut, T> {
     pub fn headers_mut(headers: &Headers, file: &File) -> Result<Self, Box<dyn Error>> {
         Self::check_header_preconditions(headers, file)?;
 
