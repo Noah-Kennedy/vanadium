@@ -166,6 +166,7 @@ impl<'a, 'b, I, T> ReadImageGuard<'a, T, I>
           T: NumAssign + Copy + PartialOrd + 'static + Debug + Send + Sync + Bounded
           + Display + ComplexField + ComplexField<RealField=T> + RealField + Sum
 {
+    #[allow(clippy::too_many_arguments)]
     #[cfg_attr(not(debug_assertions), inline(always))]
     #[cfg_attr(debug_assertions, inline(never))]
     fn write_standardized_results(
