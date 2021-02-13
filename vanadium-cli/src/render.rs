@@ -8,13 +8,16 @@ use vanadium_core::container::{ColorFlag, ImageDims, IndexImage, IterableImage, 
 use vanadium_core::container::mapped::{Bip, Bsq};
 use vanadium_core::header::{Headers, Interleave};
 
-use crate::cli::ColorOpt;
+use crate::cli::{Color, RenderOpt, RenderRGBOptions, RenderSingleBandOpt, RenderSubcommand};
 
-pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
-    let input_file = File::open(opt.input.clone())?;
+pub fn normalize(opt: RenderOpt) -> Result<(), Box<dyn Error>> {
+    let RenderOpt { input, header, .. } = &opt;
 
-    let headers_str = read_to_string(opt.header.clone())?;
+    let input_file = File::open(input.clone())?;
+
+    let headers_str = read_to_string(header.clone())?;
     let parsed_headers = Headers::from_str(&headers_str)?;
+
 
     match parsed_headers.interleave {
         Interleave::Bip => {
@@ -39,90 +42,76 @@ pub fn normalize(opt: ColorOpt) -> Result<(), Box<dyn Error>> {
 
 fn helper<'a, I>(
     input: &LockImage<f32, I>,
-    opt: &ColorOpt,
+    opt: &RenderOpt,
 )
     -> Result<(), Box<dyn Error>>
     where I: IterableImage<'a, f32> + Sync + IndexImage<f32> + 'static,
 {
     let guard = input.read();
     let ImageDims { samples, lines, .. } = guard.inner.dims();
-    let height = lines;
-    let width = samples;
-    let min = &opt.minimums;
-    let max = &opt.maximums;
-    let bands = &opt.bands;
+
+    let subcommand = &opt.subcommand;
+
     let path = &opt.output;
-    let color = opt.color_map.as_str();
-    let reds = &opt.red_bands;
-    let greens = &opt.green_bands;
-    let blues = &opt.blue_bands;
 
-    match color {
-        "rgb" => {
+    match subcommand {
+        RenderSubcommand::Rgb(rgb) => {
+            let RenderRGBOptions { bands, minimums, maximums } = &rgb;
             let mut out = RgbImage::from_raw(
-                width as u32,
-                height as u32,
-                vec![0; height * width * 3],
+                samples as u32,
+                lines as u32,
+                vec![0; lines * samples * 3],
             ).unwrap();
 
             println!("Applying color map");
-            input.rgb(&mut out, min, max, bands, [reds, greens, blues]);
+            input.rgb(&mut out, minimums, maximums, bands);
 
             println!("Saving...");
             out.save(path)?;
         }
-        "gray" | "grey" => {
-            let mut out = GrayImage::from_raw(
-                width as u32,
-                height as u32,
-                vec![0; height * width],
-            ).unwrap();
+        RenderSubcommand::Solid(solid) => {
+            let RenderSingleBandOpt { band, min, max, color } = &solid;
+            if *color == Color::Gray {
+                let mut out = GrayImage::from_raw(
+                    samples as u32,
+                    lines as u32,
+                    vec![0; lines * samples],
+                ).unwrap();
 
-            println!("Applying color map");
-            input.gray(&mut out, min[0], max[0], bands[0]);
+                println!("Applying color map");
+                input.gray(&mut out, *min, *max, *band);
 
-            println!("Saving...");
-            out.save(path)?;
+                println!("Saving...");
+                out.save(path)?;
+            } else {
+                println!("Allocating output buffer");
+                let mut out = RgbImage::from_raw(
+                    samples as u32,
+                    lines as u32,
+                    vec![0; lines * samples * 3],
+                ).unwrap();
+
+                let flag = match solid.color {
+                    Color::Red => ColorFlag::Red,
+                    Color::Blue => ColorFlag::Blue,
+                    Color::Green => ColorFlag::Green,
+                    Color::Teal => ColorFlag::Teal,
+                    Color::Purple => ColorFlag::Purple,
+                    Color::Yellow => ColorFlag::Yellow,
+                    Color::Gray => unreachable!()
+                };
+
+                println!("Applying color map");
+                input.solid(&mut out, *min, *max, *band, flag);
+
+                println!("Saving...");
+                out.save(path)?;
+            }
         }
-        "green" | "red" | "blue" | "purple" | "yellow" | "teal" => {
-            println!("Allocating output buffer");
-            let mut out = RgbImage::from_raw(
-                width as u32,
-                height as u32,
-                vec![0; height * width * 3],
-            ).unwrap();
-
-            let flag = match color {
-                "green" => ColorFlag::Green,
-                "red" => ColorFlag::Red,
-                "blue" => ColorFlag::Blue,
-                "purple" => ColorFlag::Purple,
-                "yellow" => ColorFlag::Yellow,
-                "teal" => ColorFlag::Teal,
-                _ => unreachable!()
-            };
-
-            println!("Applying color map");
-            input.solid(&mut out, min[0], max[0], bands[0], flag);
-
-            println!("Saving...");
-            out.save(path)?;
+        RenderSubcommand::Mask(_) => {
+            unimplemented!()
         }
-        "mask" => {
-            let mut out = GrayImage::from_raw(
-                width as u32,
-                height as u32,
-                vec![0; height * width],
-            ).unwrap();
-
-            println!("Applying color map");
-            input.mask(&mut out, min[0]);
-
-            println!("Saving...");
-            out.save(path)?;
-        }
-        _ => unimplemented!()
-    };
+    }
 
     Ok(())
 }

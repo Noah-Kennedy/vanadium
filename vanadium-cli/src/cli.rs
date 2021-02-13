@@ -1,47 +1,40 @@
 use std::path::PathBuf;
 
-use structopt::StructOpt;
-
 use vanadium_core::header::Interleave;
 
-#[derive(StructOpt, Debug)]
-#[structopt(name = "basic")]
+#[derive(Clap, Debug)]
+#[clap(version = "1.0.0-alpha", author = "Noah M. Kennedy <noah.kennedy.professional@gmail.com>")]
 pub struct Opt {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub subcommand: SubcommandOpt
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(Clap, Debug)]
 pub enum SubcommandOpt {
     Convert(ConvertOpt),
-    Color(ColorOpt),
+    Color(RenderOpt),
     Pca(PcaOpt),
 }
 
 /// Subcommand for converting between any one of the following supported file types: BIP, BSQ, BIL.
-#[derive(StructOpt, Debug)]
-#[structopt(name = "convert")]
+#[derive(Clap, Debug)]
+#[clap(name = "convert")]
 pub struct ConvertOpt {
     /// The path to the input binary file.
-    #[structopt(short, long, parse(from_str))]
+    #[clap(short, long, parse(from_str))]
     pub input: PathBuf,
 
     /// The path to the input header file.
-    #[structopt(short = "n", long, parse(from_os_str))]
+    #[clap(short = 'd', long, parse(from_os_str))]
     pub input_header: PathBuf,
 
     /// The path to the output binary file.
-    #[structopt(short = "o", long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     pub output: PathBuf,
-
-    /// The path to the output header file to be generated.
-    /// Currently this flag does nothing.
-    #[structopt(short = "u", long, parse(from_os_str))]
-    pub output_header: Option<PathBuf>,
 
     /// The output file type to use.
     /// Must be bip, bsq or bil.
-    #[structopt(short = "t", long, parse(try_from_str))]
+    #[clap(short = 't', long, parse(try_from_str))]
     pub output_type: Interleave,
 }
 
@@ -53,110 +46,145 @@ pub struct ConvertOpt {
 /// As a result, the output will contain negative values.
 ///
 /// The background of the image will be negative infinity.
-#[derive(StructOpt, Debug)]
-#[structopt(name = "pca")]
+#[derive(Clap, Debug)]
+#[clap(name = "pca")]
 pub struct PcaOpt {
     /// The path to the input binary file.
-    #[structopt(short, long, parse(from_str))]
+    #[clap(short, long, parse(from_str))]
     pub input: PathBuf,
 
     /// The path to the input header file.
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short = 'd', long, parse(from_os_str))]
     pub header: PathBuf,
 
-    /// The path to the output binary file.
-    #[structopt(short, long, parse(from_os_str))]
-    pub output: PathBuf,
-
-    #[structopt(short, long)]
-    pub csv: bool,
-
-    #[structopt(short, long)]
+    #[clap(short, long)]
     pub verbose: bool,
 
-    #[structopt(short, long)]
-    pub dims: u64,
+    /// Optional argument, anything greater less than or equal to this value will be excluded from
+    /// PCA calculations.
+    #[clap(short = 'n', long)]
+    pub min: Option<f32>,
 
-    #[structopt(long)]
+    /// Optional argument, anything greater than this value will be excluded from PCA calculations.
+    #[clap(short = 'm', long)]
     pub max: Option<f32>,
 
-    #[structopt(long)]
-    pub min: Option<f32>,
+    #[clap(subcommand)]
+    pub subcommand: PCASubcommand,
 }
 
-/// Subcommand for outputting color images.
-///
-/// # Examples
-///
-/// ## RGB
-///
-/// ```sh
-/// hyperspectra-cli color -i input.bsq -n input.hdr -o rgb.png -m 0 0 0 -x 0.5 0.5 1 -b 1 3 4 -c rgb
-/// ```
-///
-/// ## Grayscale
-///
-/// ```sh
-/// hyperspectra-cli color -i input.bsq -n input.hdr -o gray.png -m 0 -x 0.5 -b 3 -c gray
-/// ```
-///
-/// ## Coolwarm
-///
-/// ```sh
-/// hyperspectra-cli color -i input.bsq -n input.hdr -o coolwarm.png -m 0 -x 0.5 -b 3 -c coolwarm
-/// ```
-#[derive(StructOpt, Debug)]
-#[structopt(name = "color", settings = & [structopt::clap::AppSettings::AllowNegativeNumbers])]
-pub struct ColorOpt {
+#[derive(Clap, Debug)]
+pub enum PCASubcommand {
+    Transform(PCAWriteOut),
+    Solve(PCASolve),
+}
+
+/// Write out then PCA transformed results to a binary file.
+/// This will generate a new file of the same type used for the input file.
+#[derive(Clap, Debug)]
+#[clap(name = "transform")]
+pub struct PCAWriteOut {
+    /// The path to the output binary file.
+    #[clap(short, long, parse(from_os_str))]
+    pub output: PathBuf,
+
+    /// The number of bands to keep.
+    #[clap(short, long)]
+    pub dims: u64,
+}
+
+/// Write out the eigenvalues and eigenvectors found by PCA to a CSV file.
+#[derive(Clap, Debug)]
+#[clap(name = "solve")]
+pub struct PCASolve {
+    /// The path to the output CSV file.
+    #[clap(short, long, parse(from_os_str))]
+    pub output: PathBuf,
+}
+
+/// Render a viewable image from raw data.
+#[derive(Clap, Debug)]
+#[clap(name = "render")]
+pub struct RenderOpt {
     /// The path to the input binary file.
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     pub input: PathBuf,
 
     /// The path to the input header file.
-    #[structopt(short = "d", long, parse(from_os_str))]
+    #[clap(short = 'd', long, parse(from_os_str))]
     pub header: PathBuf,
 
     /// The path to the output image file.
-    /// The file should have a .png, .jpg, or .jpeg extension
-    #[structopt(short, long, parse(from_os_str))]
+    /// Supported file extensions include jpg, png, tiff, tga, bmp, and pnm.
+    #[clap(short, long, parse(from_os_str))]
     pub output: PathBuf,
 
-    /// The floor to clamp to for each band.
-    ///
-    /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
-    /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(long)]
-    pub minimums: Vec<f32>,
+    /// Subcommand for describing the rendering scheme to use.
+    #[clap(subcommand)]
+    pub subcommand: RenderSubcommand,
+}
 
-    /// The ceiling to clamp to for each band.
-    ///
-    /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
-    /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(long)]
-    pub maximums: Vec<f32>,
+/// The rendering scheme to use.
+#[derive(Clap, Debug)]
+pub enum RenderSubcommand {
+    Rgb(RenderRGBOptions),
+    Solid(RenderSingleBandOpt),
+    Mask(RenderMaskOpt),
+}
 
-    /// The bands to work with.
-    ///
-    /// If the colormap is 'gray', 'grey', or 'coolwarm', 1 value should be provided.
-    /// If the colormap is 'rgb', 3 values should be provided.
-    #[structopt(long)]
+/// Take three channels of a file and render them together as R, G, and B bands in an image.
+#[derive(Clap, Debug)]
+#[clap(name = "rgb")]
+pub struct RenderRGBOptions {
+    /// The bands to be used for rendering a file.
+    /// These should be in R,G,B order
+    #[clap(short, long)]
     pub bands: Vec<usize>,
 
-    #[structopt(short = "r", long)]
-    pub red_bands: Vec<usize>,
+    /// The minimums to be used for rendering a file.
+    /// These should be in R,G,B order
+    #[clap(short = 'n', long)]
+    pub minimums: Vec<f32>,
 
-    #[structopt(short = "b", long)]
-    pub blue_bands: Vec<usize>,
+    /// The maximums to be used for rendering a file.
+    /// These should be in R,G,B order
+    #[clap(short = 'm', long)]
+    pub maximums: Vec<f32>,
+}
 
-    #[structopt(short = "g", long)]
-    pub green_bands: Vec<usize>,
+#[derive(Clap, Debug)]
+pub struct RenderMaskOpt {}
 
-    /// The color map of the image.
-    ///
-    /// If 'gray', 'grey', 'mask', or 'coolwarm', 1 band should be provided.
-    /// If 'rgb', 3 bands should be provided.
-    ///
-    /// If 'mask', the max flag will be ignored.
-    #[structopt(short = "c", long)]
-    pub color_map: String,
+/// Render a single band of a file.
+#[derive(Clap, Debug)]
+#[clap(name = "single-band")]
+pub struct RenderSingleBandOpt {
+    #[clap(long)]
+    pub band: usize,
+
+    /// The minimum value to be used for rendering a file.
+    /// This will be applied as a floor for our calculations
+    #[clap(short = 'n', long)]
+    pub min: f32,
+
+    /// The maximum value to be used for rendering a file.
+    /// This will be applied as a ceiling for our calculations
+    #[clap(short = 'm', long)]
+    pub max: f32,
+
+    /// The color map to output the image to.
+    #[clap(subcommand)]
+    pub color: Color,
+}
+
+/// The colors that you can choose between for rendering a single band.
+#[derive(Clap, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum Color {
+    Red,
+    Blue,
+    Green,
+    Teal,
+    Purple,
+    Yellow,
+    Gray,
 }

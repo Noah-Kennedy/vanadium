@@ -13,7 +13,6 @@ pub fn execute_conversion(cvt: ConvertOpt) -> Result<(), Box<dyn Error>> {
         input,
         input_header: header,
         output,
-        output_header: _output_header,
         output_type
     } = cvt;
 
