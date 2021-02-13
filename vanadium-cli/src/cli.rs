@@ -159,7 +159,7 @@ pub struct RenderMaskOpt {}
 #[derive(Clap, Debug)]
 #[clap(name = "single-band", setting = clap::AppSettings::AllowNegativeNumbers)]
 pub struct RenderSingleBandOpt {
-    #[clap(long)]
+    #[clap(short, long)]
     pub band: usize,
 
     /// The minimum value to be used for rendering a file.
