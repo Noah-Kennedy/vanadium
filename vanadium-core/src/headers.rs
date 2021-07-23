@@ -17,7 +17,7 @@ pub struct ImageDims {
     pub pixels: usize,
 }
 
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 #[cfg_attr(feature = "header-parsing", derive(Serialize, Deserialize))]
 pub enum ImageFormat {
     Bip,

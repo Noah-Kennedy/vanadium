@@ -717,12 +717,12 @@ name = "vanadium-core"
 version = "0.1.0"
 dependencies = [
  "byteorder",
+ "cfg-if",
  "futures",
  "glommio",
  "nalgebra",
  "num-traits",
  "serde",
- "tokio",
  "tokio-uring",
 ]
 
