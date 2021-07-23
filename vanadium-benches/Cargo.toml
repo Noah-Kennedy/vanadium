@@ -1,0 +1,10 @@
+[package]
+name = "vanadium-benches"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+
+[dependencies.vanadium-core]
+path = "../vanadium-core"
+features = ["glommio-support", "tokio-uring-support", "tokio-support"]

@@ -1,41 +1,38 @@
 [package]
 name = "vanadium-core"
-version = "1.0.0-alpha"
-authors = ["noah <nomaxx117@gmail.com>"]
+version = "0.1.0"
 edition = "2018"
 
 [features]
-header-serialization = ["serde"]
+async = ["futures"]
+header-parsing = ["serde"]
+tokio-support = ["tokio", "async"]
+tokio-uring-support = ["tokio-uring", "async"]
+glommio-support = ["glommio"]
 
 [dependencies]
-either = "1.6"
-memmap2 = "0.2.0"
-rayon = "1.5"
-nalgebra = "0.24.0"
-parking_lot = "0.11.1"
+num-traits = "^0.2.14"
+nalgebra = "^0.28.0"
+byteorder = "^1.4"
 
-[dependencies.num]
-version = "0.3.1"
-default-features = false
-
-[dependencies.image]
-version = "0.23.12"
-default-features = false
-features = ["png"]
-
-[dependencies.indicatif]
-version = "0.15.0"
-features = ["improved_unicode"]
+[dependencies.futures]
+version = "^0.3.15"
+optional = true
 
 [dependencies.serde]
-version = "1.0"
+version = "^1.0.0"
 features = ["derive"]
 optional = true
 
-[dependencies.regex]
-version = "1.4"
-default-features = false
-features = ["std"]
+[dependencies.tokio]
+version = "^1.9.0"
+features = ["sync"]
+optional = true
 
-[dev-dependencies.rand]
-version = "0.8.3"
+[dependencies.tokio-uring]
+version = "0.1.0"
+optional = true
+
+[dependencies.glommio]
+version = "^0.5.0"
+optional = true

@@ -1,10 +1,25 @@
-#[cfg_attr(feature = "serde", macro_use)]
-#[cfg(feature = "serde")]
+#[cfg(feature = "header-parsing")]
+#[macro_use]
 extern crate serde;
 
-pub mod header;
+pub use crate::backends::{GenericResult, Image};
 
-pub mod container;
+pub mod headers;
 
-#[cfg(not(tarpaulin_include))]
-pub mod bar;
+mod specialization;
+
+mod backends;
+
+mod util;
+
+#[cfg(feature = "async")]
+pub mod asynchronous_ops {
+    #[cfg(feature = "glommio-support")]
+    pub use crate::backends::glommio;
+    #[cfg(feature = "tokio-uring-support")]
+    pub use crate::backends::tokio_uring;
+}
+
+pub mod sync_syscall {
+    pub use crate::backends::sync_syscall::*;
+}
