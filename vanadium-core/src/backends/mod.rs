@@ -8,24 +8,35 @@ use sync_syscall::bsq::SyncBsq;
 use crate::backends::glommio::bip::GlommioBip;
 use crate::headers::{Header, ImageFormat};
 
+#[cfg(feature = "progress")]
+const UPDATE_FREQ: u64 = 8;
+
+// #[cfg(feature = "progress")]
+// const UPDATE_MASK: usize = 0xFF_FF;
+
 macro_rules! make_bar {
-    ($i:ident, $x:expr) => {
+    ($i:ident, $x:expr, $m:expr) => {
         cfg_if::cfg_if! {
             if #[cfg(feature = "progress")] {
-                let mut $i = pbr::ProgressBar::new($x);
-                $i.set_max_refresh_rate(Some(UPDATE_FREQ));
+                let $i = indicatif::ProgressBar::new($x);
+                $i.set_style(indicatif::ProgressStyle::default_bar()
+                    .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {eta} {msg}")
+                    .progress_chars("##-")
+                );
+                $i.set_message($m);
+                $i.set_draw_rate($crate::backends::UPDATE_FREQ);
             }
         }
     }
 }
 
 macro_rules! inc_bar {
-    ($b:expr, $x:expr) => {
+    ($b:expr) => {
         cfg_if::cfg_if! {
             if #[cfg(feature = "progress")] {
-                if ($x & UPDATE_MASK) > 0 {
-                    $b.inc();
-                }
+                // if ($x & $crate::backends::UPDATE_MASK) > 0 {
+                    $b.inc(1);
+                // }
             }
         }
     }

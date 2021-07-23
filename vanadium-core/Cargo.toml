@@ -10,7 +10,7 @@ edition = "2018"
 header-parsing = ["serde"]
 tokio-uring-support = ["tokio-uring", "futures"]
 glommio-support = ["glommio", "futures"]
-progress = ["pbr"]
+progress = ["indicatif"]
 
 ###################################################################################################
 # Dependencies
@@ -29,8 +29,8 @@ version = "^1.0.0"
 features = ["derive"]
 optional = true
 
-[dependencies.pbr]
-version = "^1.0.0"
+[dependencies.indicatif]
+version = "^0.16.2"
 optional = true
 
 ###################################################################################################

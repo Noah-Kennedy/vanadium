@@ -9,12 +9,6 @@ use crate::backends::{GenericResult, Image};
 use crate::headers::Header;
 use crate::specialization::bip::Bip;
 
-#[cfg(feature = "progress")]
-const UPDATE_FREQ: std::time::Duration = std::time::Duration::from_millis(500);
-
-#[cfg(feature = "progress")]
-const UPDATE_MASK: usize = 0xFF_FF;
-
 pub struct GlommioBip<T> {
     headers: Header,
     bip: Bip<T>,
@@ -27,9 +21,9 @@ impl Image<f32> for GlommioBip<f32> {
             .pin_to_cpu(1)
             .make()?;
 
-        make_bar!(pb, self.bip.num_pixels() as u64);
-
         ex.run(async {
+            make_bar!(pb, self.bip.num_pixels() as u64, "mean");
+
             let file = DmaFile::open(&self.headers.path).await?;
             let mut accumulator = vec![0.0; self.bip.pixel_length()];
             let mut raw_buffer = vec![0; self.bip.pixel_length() * mem::size_of::<f32>()];
@@ -39,7 +33,7 @@ impl Image<f32> for GlommioBip<f32> {
                 .with_read_ahead(self.read_ahead())
                 .build();
 
-            for i in 0..self.bip.num_pixels() {
+            for _ in 0..self.bip.num_pixels() {
                 reader.read_exact(&mut raw_buffer).await?;
 
                 let buffer = unsafe {
@@ -51,7 +45,7 @@ impl Image<f32> for GlommioBip<f32> {
 
                 self.bip.map_mean(&buffer, &mut accumulator);
 
-                inc_bar!(pb, i);
+                inc_bar!(pb);
             }
 
             self.bip.reduce_mean(&mut accumulator);
@@ -66,9 +60,10 @@ impl Image<f32> for GlommioBip<f32> {
             .pin_to_cpu(1)
             .make()?;
 
-        make_bar!(pb, self.bip.num_pixels() as u64);
 
         ex.run(async {
+            make_bar!(pb, self.bip.num_pixels() as u64, "std");
+
             let file = DmaFile::open(&self.headers.path).await?;
             let mut accumulator = vec![0.0; self.bip.pixel_length()];
             let mut raw_buffer = vec![0; self.bip.pixel_length() * mem::size_of::<f32>()];
@@ -78,7 +73,7 @@ impl Image<f32> for GlommioBip<f32> {
                 .with_read_ahead(self.read_ahead())
                 .build();
 
-            for i in 0..self.bip.num_pixels() {
+            for _ in 0..self.bip.num_pixels() {
                 reader.read_exact(&mut raw_buffer).await?;
 
                 let buffer = unsafe {
@@ -90,7 +85,7 @@ impl Image<f32> for GlommioBip<f32> {
 
                 self.bip.map_std_dev(&buffer, means, &mut accumulator);
 
-                inc_bar!(pb, i);
+                inc_bar!(pb);
             }
 
             self.bip.reduce_std_dev(&mut accumulator);
@@ -105,9 +100,9 @@ impl Image<f32> for GlommioBip<f32> {
             .pin_to_cpu(1)
             .make()?;
 
-        make_bar!(pb, self.bip.num_pixels() as u64);
-
         ex.run(async {
+            make_bar!(pb, self.bip.num_pixels() as u64, "cov");
+
             let file = DmaFile::open(&self.headers.path).await?;
             let mut accumulator = DMatrix::zeros(self.bip.dims.channels, self.bip.dims.channels);
             let mut raw_buffer = vec![0; self.bip.pixel_length() * mem::size_of::<f32>()];
@@ -117,7 +112,7 @@ impl Image<f32> for GlommioBip<f32> {
                 .with_read_ahead(self.read_ahead())
                 .build();
 
-            for i in 0..self.bip.num_pixels() {
+            for _ in 0..self.bip.num_pixels() {
                 reader.read_exact(&mut raw_buffer).await?;
 
                 let buffer = unsafe {
@@ -129,7 +124,7 @@ impl Image<f32> for GlommioBip<f32> {
 
                 self.bip.map_covariance(buffer, means, std_devs, &mut accumulator);
 
-                inc_bar!(pb, i);
+                inc_bar!(pb);
             }
 
             self.bip.reduce_covariance(&mut accumulator);
