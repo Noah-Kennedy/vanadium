@@ -8,6 +8,29 @@ use sync_syscall::bsq::SyncBsq;
 use crate::backends::glommio::bip::GlommioBip;
 use crate::headers::{Header, ImageFormat};
 
+macro_rules! make_bar {
+    ($i:ident, $x:expr) => {
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "progress")] {
+                let mut $i = pbr::ProgressBar::new($x);
+                $i.set_max_refresh_rate(Some(UPDATE_FREQ));
+            }
+        }
+    }
+}
+
+macro_rules! inc_bar {
+    ($b:expr, $x:expr) => {
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "progress")] {
+                if ($x & UPDATE_MASK) > 0 {
+                    $b.inc();
+                }
+            }
+        }
+    }
+}
+
 // #[cfg(feature = "tokio-uring-support")]
 // pub mod tokio_uring;
 
