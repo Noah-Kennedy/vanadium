@@ -50,7 +50,6 @@ impl<T> Bip<T>
         *pixel -= means;
 
         pixel.mapv_inplace(|x| x.powi(2));
-
         pixel.accumulate_axis_inplace(Axis(0), |x, sum| *sum += *x);
 
         *acc += &pixel.row(BATCH_SIZE - 1);
