@@ -3,9 +3,9 @@ use std::fs::File;
 
 use ndarray::{Array1, Array2};
 
-use crate::{GenericResult, Image};
 use crate::headers::Header;
 use crate::specialization::bsq::Bsq;
+use crate::backends::{GenericResult, Image};
 
 pub struct SyncBsq<T> {
     _file: File,
@@ -13,7 +13,7 @@ pub struct SyncBsq<T> {
 }
 
 impl<T> SyncBsq<T> {
-    pub fn new(header: Header) -> io::Result<Self> {
+    pub fn _new(header: Header) -> io::Result<Self> {
         let bsq = Bsq {
             dims: header.dims,
             phantom: Default::default(),

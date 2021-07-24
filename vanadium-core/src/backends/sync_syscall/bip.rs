@@ -5,8 +5,7 @@ use std::io::{Seek, SeekFrom};
 use byteorder::{LittleEndian, ReadBytesExt};
 use ndarray::Array2;
 
-use crate::{GenericResult};
-use crate::backends::{BATCH_SIZE, BatchedPixelReduce};
+use crate::backends::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
 use crate::headers::Header;
 use crate::specialization::bip::Bip;
 

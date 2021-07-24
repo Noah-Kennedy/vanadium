@@ -1,7 +1,7 @@
 use vanadium_benches::{bench_image, small_header};
-use vanadium_core::image_backends::get_image_f32;
+use vanadium_core::ops::{get_image_f32, BackendSelector};
 
 fn main() {
-    let mut image = get_image_f32(Some("glommio"), small_header()).unwrap();
+    let mut image = get_image_f32(BackendSelector::Glommio, small_header()).unwrap();
     bench_image(image.as_mut())
 }

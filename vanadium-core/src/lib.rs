@@ -4,8 +4,6 @@ extern crate blas_src;
 #[macro_use]
 extern crate serde;
 
-pub use crate::backends::{GenericResult, Image};
-
 pub mod headers;
 
 mod specialization;
@@ -14,6 +12,12 @@ mod backends;
 
 mod util;
 
-pub mod image_backends {
-    pub use crate::backends::get_image_f32;
+pub mod ops {
+    pub use crate::backends::{
+        get_image_f32,
+        BackendSelector,
+        GenericResult,
+        BatchedPixelReduce,
+        Image
+    };
 }

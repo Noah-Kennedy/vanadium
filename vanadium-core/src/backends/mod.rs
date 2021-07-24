@@ -7,7 +7,6 @@ use ndarray::{Array1, Array2};
 use num_traits::{Float, FromPrimitive};
 
 use sync_syscall::bip::SyncBip;
-use sync_syscall::bsq::SyncBsq;
 
 use crate::backends::glommio::bip::GlommioBip;
 use crate::headers::{Header, ImageFormat};
@@ -54,18 +53,25 @@ pub mod sync_syscall;
 
 pub type GenericResult<T> = Result<T, Box<dyn Error>>;
 
-pub fn get_image_f32(backend: Option<&str>, header: Header)
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
+pub enum BackendSelector {
+    Syscall,
+    Glommio,
+}
+
+impl Default for BackendSelector {
+    fn default() -> Self {
+        Self::Syscall
+    }
+}
+
+pub fn get_image_f32(backend: BackendSelector, header: Header)
                      -> Result<Box<dyn Image<f32>>, Box<dyn Error>>
 {
-    Ok(if let Some(s) = backend {
-        match (s, header.format) {
-            ("glommio", ImageFormat::Bip) => Box::new(GlommioBip::new(header)),
-            ("sync", ImageFormat::Bip) => Box::new(SyncBip::new(header)?),
-            ("sync", ImageFormat::Bsq) => Box::new(SyncBsq::new(header)?),
-            _ => unimplemented!()
-        }
-    } else {
-        todo!()
+    Ok(match (backend, header.format) {
+        (BackendSelector::Glommio, ImageFormat::Bip) => Box::new(GlommioBip::new(header)),
+        (BackendSelector::Syscall, ImageFormat::Bip) => Box::new(SyncBip::new(header)?),
+        _ => unimplemented!("Image backend configuration not supported yet!")
     })
 }
 

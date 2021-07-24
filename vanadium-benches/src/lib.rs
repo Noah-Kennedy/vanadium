@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use vanadium_core::headers::{Header, ImageDims, ImageFormat};
-use vanadium_core::Image;
+use vanadium_core::ops::Image;
 
 pub fn small_header() -> Header {
     Header {
