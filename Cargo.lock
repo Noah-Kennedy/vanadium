@@ -886,7 +886,7 @@ name = "vanadium-benches"
 version = "0.1.0"
 dependencies = [
  "blas-src",
- "ndarray",
+ "openblas-src",
  "vanadium-core",
 ]
 

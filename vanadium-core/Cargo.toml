@@ -22,7 +22,7 @@ cfg-if = "^1.0.0"
 
 [dependencies.ndarray]
 version = "^0.15.3"
-features = ["blas"]
+features = ["blas", "matrixmultiply-threading"]
 
 [dependencies.blas-src]
 version = "^0.8.0"

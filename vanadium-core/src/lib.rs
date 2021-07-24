@@ -1,5 +1,3 @@
-extern crate blas_src;
-
 #[cfg(feature = "header-parsing")]
 #[macro_use]
 extern crate serde;
