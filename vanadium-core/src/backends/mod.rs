@@ -1,19 +1,22 @@
 use std::error::Error;
+use std::fmt::Debug;
+use std::iter::Sum;
+use std::ops::{AddAssign, DivAssign, SubAssign};
+
+use ndarray::{Array1, Array2};
+use num_traits::{Float, FromPrimitive};
 
 use sync_syscall::bip::SyncBip;
 use sync_syscall::bsq::SyncBsq;
 
 use crate::backends::glommio::bip::GlommioBip;
 use crate::headers::{Header, ImageFormat};
-use ndarray::{Array2, Array1};
+use crate::specialization::bip::Bip;
 
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
 
-pub (crate) const BATCH_SIZE: usize = 256;
-
-// #[cfg(feature = "progress")]
-// const UPDATE_MASK: usize = 0xFF_FF;
+pub(crate) const BATCH_SIZE: usize = 256;
 
 macro_rules! make_bar {
     ($i:ident, $x:expr, $m:expr) => {
@@ -70,4 +73,52 @@ pub trait Image<T> {
     fn means(&mut self) -> GenericResult<Array1<T>>;
     fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>>;
     fn covariance_matrix(&mut self, means: &Array1<T>, std_devs: &Array1<T>) -> GenericResult<Array2<T>>;
+}
+
+pub trait BatchedPixelReduce<T> {
+    fn reduce_pixels_batched<F, A>(&mut self, accumulator: A, f: F) -> GenericResult<A>
+        where F: FnMut(&mut Array2<T>, &mut A);
+    fn bip(&self) -> &Bip<T>;
+}
+
+impl<C, T> Image<T> for C
+    where C: BatchedPixelReduce<T>,
+          T: Float + Clone + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign + Debug
+          + 'static
+{
+    fn means(&mut self) -> GenericResult<Array1<T>> {
+        let accumulator = Array1::zeros(self.bip().pixel_length());
+
+        let mut res = self.reduce_pixels_batched(accumulator, |pixels, acc| {
+            Bip::map_mean(pixels, acc)
+        })?;
+
+        self.bip().reduce_mean(&mut res);
+
+        Ok(res)
+    }
+
+    fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>> {
+        let accumulator = Array1::zeros(self.bip().pixel_length());
+
+        let mut res = self.reduce_pixels_batched(accumulator, |pixels, acc| {
+            Bip::map_std_dev(pixels, means, acc)
+        })?;
+
+        self.bip().reduce_std_dev(&mut res);
+
+        Ok(res)
+    }
+
+    fn covariance_matrix(&mut self, means: &Array1<T>, std_devs: &Array1<T>) -> GenericResult<Array2<T>> {
+        let accumulator = Array2::zeros((self.bip().dims.channels, self.bip().dims.channels));
+
+        let mut res = self.reduce_pixels_batched(accumulator, |pixels, acc| {
+            Bip::map_covariance(pixels, means, std_devs, acc)
+        })?;
+
+        self.bip().reduce_covariance(&mut res);
+
+        Ok(res)
+    }
 }

@@ -36,7 +36,7 @@ impl<T> Bip<T>
     where T: Float + Clone + FromPrimitive + Sum
     + AddAssign + SubAssign + DivAssign + 'static + Debug
 {
-    pub fn map_mean(&self, pixel: &mut Array2<T>, acc: &mut Array1<T>) {
+    pub fn map_mean(pixel: &mut Array2<T>, acc: &mut Array1<T>) {
         *acc += &pixel.mean_axis(Axis(0)).unwrap()
     }
 
@@ -45,7 +45,7 @@ impl<T> Bip<T>
         acc.mapv_inplace(|x| x / length);
     }
 
-    pub fn map_std_dev(&self, pixel: &mut Array2<T>, means: &Array1<T>, acc: &mut Array1<T>) {
+    pub fn map_std_dev(pixel: &mut Array2<T>, means: &Array1<T>, acc: &mut Array1<T>) {
         *pixel -= means;
 
         let batch = T::from_usize(BATCH_SIZE).unwrap();
@@ -63,7 +63,6 @@ impl<T> Bip<T>
     }
 
     pub fn map_covariance(
-        &self,
         pixel: &mut Array2<T>,
         means: &Array1<T>,
         std_devs: &Array1<T>,
