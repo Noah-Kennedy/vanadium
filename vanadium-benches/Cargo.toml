@@ -8,3 +8,16 @@ edition = "2018"
 [dependencies.vanadium-core]
 path = "../vanadium-core"
 features = ["glommio-support"]
+
+[dependencies.ndarray]
+version = "^0.15.3"
+features = ["blas", "matrixmultiply-threading"]
+
+[dependencies.blas-src]
+version = "^0.8.0"
+features = ["openblas"]
+
+#[dependencies.openblas-src]
+#version = "^0.10.4"
+#default-features = false
+#features = ["cblas", "system"]

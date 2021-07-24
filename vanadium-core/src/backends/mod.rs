@@ -1,15 +1,16 @@
 use std::error::Error;
 
-use nalgebra::{ComplexField, DMatrix, Dynamic, SymmetricEigen};
-
 use sync_syscall::bip::SyncBip;
 use sync_syscall::bsq::SyncBsq;
 
 use crate::backends::glommio::bip::GlommioBip;
 use crate::headers::{Header, ImageFormat};
+use ndarray::{Array2, Array1};
 
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
+
+pub (crate) const BATCH_SIZE: usize = 256;
 
 // #[cfg(feature = "progress")]
 // const UPDATE_MASK: usize = 0xFF_FF;
@@ -31,12 +32,10 @@ macro_rules! make_bar {
 }
 
 macro_rules! inc_bar {
-    ($b:expr) => {
+    ($b:expr, $x:expr) => {
         cfg_if::cfg_if! {
             if #[cfg(feature = "progress")] {
-                // if ($x & $crate::backends::UPDATE_MASK) > 0 {
-                    $b.inc(1);
-                // }
+                $b.inc($x);
             }
         }
     }
@@ -67,14 +66,8 @@ pub fn get_image_f32(backend: Option<&str>, header: Header)
     })
 }
 
-pub trait Image<T> where T: ComplexField {
-    fn means(&mut self) -> GenericResult<Vec<T>>;
-    fn std_deviations(&mut self, means: &[T]) -> GenericResult<Vec<T>>;
-    fn covariance_matrix(&mut self, means: &[T], std_devs: &[T]) -> GenericResult<DMatrix<T>>;
-    fn write_standardized(
-        &mut self,
-        path: &str,
-        means: &[T], std_devs: &[T],
-        eigen: &SymmetricEigen<T, Dynamic>,
-    ) -> GenericResult<()>;
+pub trait Image<T> {
+    fn means(&mut self) -> GenericResult<Array1<T>>;
+    fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>>;
+    fn covariance_matrix(&mut self, means: &Array1<T>, std_devs: &Array1<T>) -> GenericResult<Array2<T>>;
 }

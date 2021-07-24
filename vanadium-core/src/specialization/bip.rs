@@ -1,12 +1,13 @@
+use std::fmt::Debug;
 use std::iter::Sum;
 use std::marker::PhantomData;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 
-use nalgebra::{DMatrix, Scalar};
+use ndarray::{Array1, Array2, Axis};
 use num_traits::{Float, FromPrimitive};
 
+use crate::backends::BATCH_SIZE;
 use crate::headers::ImageDims;
-use crate::util::standardize;
 
 #[derive(Clone)]
 pub struct Bip<T> {
@@ -33,70 +34,55 @@ impl<T> Bip<T> {
 
 impl<T> Bip<T>
     where T: Float + Clone + FromPrimitive + Sum
-    + AddAssign + SubAssign + DivAssign + Scalar
+    + AddAssign + SubAssign + DivAssign + 'static + Debug
 {
-    #[inline(always)]
-    pub fn map_mean(&self, pixel: &[T], acc: &mut [T]) {
-        for (acc, c) in acc.iter_mut().zip(pixel.iter()) {
-            *acc += c.clone();
-        }
+    pub fn map_mean(&self, pixel: &mut Array2<T>, acc: &mut Array1<T>) {
+        *acc += &pixel.mean_axis(Axis(0)).unwrap()
     }
 
-    #[inline(always)]
-    pub fn reduce_mean(&self, acc: &mut [T]) {
-        let length = T::from_usize(self.num_pixels()).unwrap();
-
-        for x in acc.iter_mut() {
-            *x /= length;
-        }
+    pub fn reduce_mean(&self, acc: &mut Array1<T>) {
+        let length = T::from_usize(self.num_pixels() / BATCH_SIZE).unwrap();
+        acc.mapv_inplace(|x| x / length);
     }
 
-    #[inline(always)]
-    pub fn map_std_dev(&self, pixel: &[T], means: &[T], acc: &mut [T]) {
-        for (acc, (c, m)) in acc.iter_mut().zip(pixel.iter().zip(means)) {
-            *acc += (*c - *m).powi(2);
-        }
+    pub fn map_std_dev(&self, pixel: &mut Array2<T>, means: &Array1<T>, acc: &mut Array1<T>) {
+        *pixel -= means;
+
+        let batch = T::from_usize(BATCH_SIZE).unwrap();
+
+        pixel.mapv_inplace(|x| x.powi(2) / batch);
+
+        pixel.accumulate_axis_inplace(Axis(0), |x, sum| *sum += *x);
+
+        *acc += &pixel.row(BATCH_SIZE - 1);
     }
 
-    #[inline(always)]
-    pub fn reduce_std_dev(&self, acc: &mut [T]) {
-        let length = T::from_usize(self.num_pixels()).unwrap();
-
-        for c in acc.iter_mut() {
-            *c = (*c / length).sqrt();
-        }
+    pub fn reduce_std_dev(&self, acc: &mut Array1<T>) {
+        let length = T::from_usize(self.num_pixels() / BATCH_SIZE).unwrap();
+        acc.mapv_inplace(|x| (x / length).sqrt());
     }
 
-    #[inline(always)]
-    pub fn map_covariance(&self, pixel: &mut [T], means: &[T], std_devs: &[T], acc: &mut DMatrix<T>) {
-        for ((x, m), s) in pixel.iter_mut().zip(means).zip(std_devs) {
-            *x = standardize(*x, *m, *s)
-        }
+    pub fn map_covariance(
+        &self,
+        pixel: &mut Array2<T>,
+        means: &Array1<T>,
+        std_devs: &Array1<T>,
+        acc: &mut Array2<T>,
+    ) {
+        let batch = T::from_usize(BATCH_SIZE).unwrap();
 
-        for i in 0..pixel.len() {
-            for j in i..pixel.len() {
-                unsafe {
-                    let x = *pixel.get_unchecked(i);
-                    let y = *pixel.get_unchecked(j);
+        *pixel -= means;
+        *pixel /= std_devs;
 
-                    let r = acc.get_unchecked_mut((i, j));
+        let mut cov = pixel.t().dot(pixel);
 
-                    *r += (x * y).powi(2);
-                }
-            }
-        }
+        cov.mapv_inplace(|x| (x / batch));
+
+        *acc += &cov;
     }
 
-    #[inline(always)]
-    pub fn reduce_covariance(&self, acc: &mut DMatrix<T>) {
-        let length = T::from_usize(self.num_pixels()).unwrap();
-
-        let (rows, cols) = acc.shape();
-
-        for i in 0..rows {
-            for j in i..cols {
-                acc[(i, j)] /= length;
-            }
-        }
+    pub fn reduce_covariance(&self, acc: &mut Array2<T>) {
+        let length = T::from_usize(self.num_pixels() / BATCH_SIZE).unwrap();
+        acc.mapv_inplace(|x| x / length);
     }
 }

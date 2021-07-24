@@ -1,11 +1,12 @@
-use std::{mem, slice};
+use std::{mem};
 
+use byteorder::{ByteOrder, LittleEndian};
 use futures::AsyncReadExt;
 use glommio::io::{DmaFile, DmaStreamReaderBuilder};
 use glommio::LocalExecutorBuilder;
-use nalgebra::{DMatrix, Dynamic, SymmetricEigen};
+use ndarray::{Array1, Array2};
 
-use crate::backends::{GenericResult, Image};
+use crate::backends::{BATCH_SIZE, GenericResult, Image};
 use crate::headers::Header;
 use crate::specialization::bip::Bip;
 
@@ -15,7 +16,7 @@ pub struct GlommioBip<T> {
 }
 
 impl Image<f32> for GlommioBip<f32> {
-    fn means(&mut self) -> GenericResult<Vec<f32>> {
+    fn means(&mut self) -> GenericResult<Array1<f32>> {
         let ex = LocalExecutorBuilder::new()
             .name("means")
             .pin_to_cpu(1)
@@ -25,27 +26,32 @@ impl Image<f32> for GlommioBip<f32> {
             make_bar!(pb, self.bip.num_pixels() as u64, "mean");
 
             let file = DmaFile::open(&self.headers.path).await?;
-            let mut accumulator = vec![0.0; self.bip.pixel_length()];
-            let mut raw_buffer = vec![0; self.bip.pixel_length() * mem::size_of::<f32>()];
+            let mut accumulator = Array1::zeros(self.bip.pixel_length());
+            let mut raw_buffer = vec![0; BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>()];
+            let mut buffer: Vec<f32> = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
                 .with_buffer_size(self.buffer_size())
                 .with_read_ahead(self.read_ahead())
                 .build();
 
-            for _ in 0..self.bip.num_pixels() {
-                reader.read_exact(&mut raw_buffer).await?;
+            while reader.read_exact(&mut raw_buffer).await.is_ok() {
+                LittleEndian::read_f32_into(&raw_buffer, &mut buffer);
 
-                let buffer = unsafe {
-                    slice::from_raw_parts(
-                        raw_buffer.as_ptr() as *const f32,
-                        raw_buffer.len() / mem::size_of::<f32>(),
-                    )
-                };
+                let mut tmp = Vec::new();
 
-                self.bip.map_mean(&buffer, &mut accumulator);
+                mem::swap(&mut tmp, &mut buffer);
 
-                inc_bar!(pb);
+                let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), tmp)
+                    .unwrap();
+
+                self.bip.map_mean(&mut pixel, &mut accumulator);
+
+                tmp = pixel.into_raw_vec();
+
+                mem::swap(&mut tmp, &mut buffer);
+
+                inc_bar!(pb, BATCH_SIZE as u64);
             }
 
             self.bip.reduce_mean(&mut accumulator);
@@ -54,7 +60,7 @@ impl Image<f32> for GlommioBip<f32> {
         })
     }
 
-    fn std_deviations(&mut self, means: &[f32]) -> GenericResult<Vec<f32>> {
+    fn std_deviations(&mut self, means: &Array1<f32>) -> GenericResult<Array1<f32>> {
         let ex = LocalExecutorBuilder::new()
             .name("std-devs")
             .pin_to_cpu(1)
@@ -65,27 +71,32 @@ impl Image<f32> for GlommioBip<f32> {
             make_bar!(pb, self.bip.num_pixels() as u64, "std");
 
             let file = DmaFile::open(&self.headers.path).await?;
-            let mut accumulator = vec![0.0; self.bip.pixel_length()];
-            let mut raw_buffer = vec![0; self.bip.pixel_length() * mem::size_of::<f32>()];
+            let mut accumulator = Array1::zeros(self.bip.pixel_length());
+            let mut raw_buffer = vec![0; BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>()];
+            let mut buffer: Vec<f32> = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
                 .with_buffer_size(self.buffer_size())
                 .with_read_ahead(self.read_ahead())
                 .build();
 
-            for _ in 0..self.bip.num_pixels() {
-                reader.read_exact(&mut raw_buffer).await?;
+            while reader.read_exact(&mut raw_buffer).await.is_ok() {
+                LittleEndian::read_f32_into(&raw_buffer, &mut buffer);
 
-                let buffer = unsafe {
-                    slice::from_raw_parts(
-                        raw_buffer.as_ptr() as *const f32,
-                        raw_buffer.len() / mem::size_of::<f32>(),
-                    )
-                };
+                let mut tmp = Vec::new();
 
-                self.bip.map_std_dev(&buffer, means, &mut accumulator);
+                mem::swap(&mut tmp, &mut buffer);
 
-                inc_bar!(pb);
+                let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), tmp)
+                    .unwrap();
+
+                self.bip.map_std_dev(&mut pixel, means, &mut accumulator);
+
+                tmp = pixel.into_raw_vec();
+
+                mem::swap(&mut tmp, &mut buffer);
+
+                inc_bar!(pb, BATCH_SIZE as u64);
             }
 
             self.bip.reduce_std_dev(&mut accumulator);
@@ -94,7 +105,7 @@ impl Image<f32> for GlommioBip<f32> {
         })
     }
 
-    fn covariance_matrix(&mut self, means: &[f32], std_devs: &[f32]) -> GenericResult<DMatrix<f32>> {
+    fn covariance_matrix(&mut self, means: &Array1<f32>, std_devs: &Array1<f32>) -> GenericResult<Array2<f32>> {
         let ex = LocalExecutorBuilder::new()
             .name("covariance")
             .pin_to_cpu(1)
@@ -104,37 +115,38 @@ impl Image<f32> for GlommioBip<f32> {
             make_bar!(pb, self.bip.num_pixels() as u64, "cov");
 
             let file = DmaFile::open(&self.headers.path).await?;
-            let mut accumulator = DMatrix::zeros(self.bip.dims.channels, self.bip.dims.channels);
-            let mut raw_buffer = vec![0; self.bip.pixel_length() * mem::size_of::<f32>()];
+            let mut accumulator = Array2::zeros((self.bip.dims.channels, self.bip.dims.channels));
+            let mut raw_buffer = vec![0; BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>()];
+            let mut buffer: Vec<f32> = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
                 .with_buffer_size(self.buffer_size())
                 .with_read_ahead(self.read_ahead())
                 .build();
 
-            for _ in 0..self.bip.num_pixels() {
-                reader.read_exact(&mut raw_buffer).await?;
+            while reader.read_exact(&mut raw_buffer).await.is_ok() {
+                LittleEndian::read_f32_into(&raw_buffer, &mut buffer);
 
-                let buffer = unsafe {
-                    slice::from_raw_parts_mut(
-                        raw_buffer.as_mut_ptr() as *mut f32,
-                        raw_buffer.len() / mem::size_of::<f32>(),
-                    )
-                };
+                let mut tmp = Vec::new();
 
-                self.bip.map_covariance(buffer, means, std_devs, &mut accumulator);
+                mem::swap(&mut tmp, &mut buffer);
 
-                inc_bar!(pb);
+                let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), tmp)
+                    .unwrap();
+
+                self.bip.map_covariance(&mut pixel, &means, &std_devs, &mut accumulator);
+
+                tmp = pixel.into_raw_vec();
+
+                mem::swap(&mut tmp, &mut buffer);
+
+                inc_bar!(pb, BATCH_SIZE as u64);
             }
 
             self.bip.reduce_covariance(&mut accumulator);
 
             Ok(accumulator)
         })
-    }
-
-    fn write_standardized(&mut self, _path: &str, _means: &[f32], _std_devs: &[f32], _eigen: &SymmetricEigen<f32, Dynamic>) -> GenericResult<()> {
-        todo!()
     }
 }
 

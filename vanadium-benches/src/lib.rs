@@ -1,17 +1,18 @@
-use vanadium_core::Image;
-use std::time::Instant;
-use vanadium_core::headers::{Header, ImageDims, ImageFormat};
 use std::path::PathBuf;
+use std::time::Instant;
+
+use vanadium_core::headers::{Header, ImageDims, ImageFormat};
+use vanadium_core::Image;
 
 pub fn small_header() -> Header {
     Header {
         dims: ImageDims {
             channels: 5,
             lines: 21954,
-            pixels: 28740
+            pixels: 28740,
         },
         format: ImageFormat::Bip,
-        path: PathBuf::from("/data/undergrad-research/bench-data/small-bip")
+        path: PathBuf::from("/data/undergrad-research/bench-data/small-bip"),
     }
 }
 
@@ -20,10 +21,10 @@ pub fn large_header() -> Header {
         dims: ImageDims {
             channels: 394,
             lines: 17408,
-            pixels: 18176
+            pixels: 18176,
         },
         format: ImageFormat::Bip,
-        path: PathBuf::from("/data/undergrad-research/bench-data/large-bip")
+        path: PathBuf::from("/data/undergrad-research/bench-data/large-bip"),
     }
 }
 
@@ -32,17 +33,15 @@ pub fn bench_image(image: &mut dyn Image<f32>) {
 
     let mean_timer = Instant::now();
     let means = image.means().unwrap();
-    println!("Means: {}", mean_timer.elapsed().as_secs_f64());
+    println!("Means:\t{}\n\t{}", mean_timer.elapsed().as_secs_f64(), &means);
 
     let std_timer = Instant::now();
     let std_devs = image.std_deviations(&means).unwrap();
-    println!("Std: {}", std_timer.elapsed().as_secs_f64());
+    println!("STDs:\t{}\n\t{}", std_timer.elapsed().as_secs_f64(), &std_devs);
 
     let cov_timer = Instant::now();
     let covariances = image.covariance_matrix(&means, &std_devs).unwrap();
-    println!("Covariances: {}", cov_timer.elapsed().as_secs_f64());
+    println!("Covs:\t{}\n\t{}", cov_timer.elapsed().as_secs_f64(), &covariances);
 
     println!("Total: {}", timer.elapsed().as_secs_f64());
-
-    println!("Cov matrix: {:?}", covariances)
 }

@@ -17,9 +17,15 @@ progress = ["indicatif"]
 ###################################################################################################
 [dependencies]
 num-traits = "^0.2.14"
-nalgebra = "^0.28.0"
 byteorder = "^1.4"
 cfg-if = "^1.0.0"
+
+[dependencies.ndarray]
+version = "^0.15.3"
+features = ["blas"]
+
+[dependencies.blas-src]
+version = "^0.8.0"
 
 ###################################################################################################
 # Not always needed for libraries
