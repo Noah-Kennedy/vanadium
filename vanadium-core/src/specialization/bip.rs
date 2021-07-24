@@ -37,20 +37,19 @@ impl<T> Bip<T>
     + AddAssign + SubAssign + DivAssign + 'static + Debug
 {
     pub fn map_mean(pixel: &mut Array2<T>, acc: &mut Array1<T>) {
-        *acc += &pixel.mean_axis(Axis(0)).unwrap()
+        pixel.accumulate_axis_inplace(Axis(0), |x, sum| *sum += *x);
+        *acc += &pixel.row(BATCH_SIZE - 1);
     }
 
     pub fn reduce_mean(&self, acc: &mut Array1<T>) {
-        let length = T::from_usize(self.num_pixels() / BATCH_SIZE).unwrap();
+        let length = T::from_usize(self.num_pixels()).unwrap();
         acc.mapv_inplace(|x| x / length);
     }
 
     pub fn map_std_dev(pixel: &mut Array2<T>, means: &Array1<T>, acc: &mut Array1<T>) {
         *pixel -= means;
 
-        let batch = T::from_usize(BATCH_SIZE).unwrap();
-
-        pixel.mapv_inplace(|x| x.powi(2) / batch);
+        pixel.mapv_inplace(|x| x.powi(2));
 
         pixel.accumulate_axis_inplace(Axis(0), |x, sum| *sum += *x);
 
@@ -58,30 +57,31 @@ impl<T> Bip<T>
     }
 
     pub fn reduce_std_dev(&self, acc: &mut Array1<T>) {
-        let length = T::from_usize(self.num_pixels() / BATCH_SIZE).unwrap();
+        let length = T::from_usize(self.num_pixels()).unwrap();
         acc.mapv_inplace(|x| (x / length).sqrt());
     }
 
     pub fn map_covariance(
         pixel: &mut Array2<T>,
-        means: &Array1<T>,
-        std_devs: &Array1<T>,
+        means: Option<&Array1<T>>,
+        std_devs: Option<&Array1<T>>,
         acc: &mut Array2<T>,
     ) {
-        let batch = T::from_usize(BATCH_SIZE).unwrap();
+        if let Some(means) = means {
+            *pixel -= means;
+        }
 
-        *pixel -= means;
-        *pixel /= std_devs;
+        if let Some(std_devs) = std_devs {
+            *pixel /= std_devs;
+        }
 
-        let mut cov = pixel.t().dot(pixel);
-
-        cov.mapv_inplace(|x| (x / batch));
+        let cov = pixel.t().dot(pixel);
 
         *acc += &cov;
     }
 
     pub fn reduce_covariance(&self, acc: &mut Array2<T>) {
-        let length = T::from_usize(self.num_pixels() / BATCH_SIZE).unwrap();
+        let length = T::from_usize(self.num_pixels()).unwrap();
         acc.mapv_inplace(|x| x / length);
     }
 }

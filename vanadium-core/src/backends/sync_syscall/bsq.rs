@@ -57,7 +57,7 @@ impl Image<f32> for SyncBsq<f32> {
         // Ok(std_devs)
     }
 
-    fn covariance_matrix(&mut self, _means: &Array1<f32>, _std_devs: &Array1<f32>) -> GenericResult<Array2<f32>> {
+    fn covariance_matrix(&mut self, _means: Option<&Array1<f32>>, _std_devs: Option<&Array1<f32>>) -> GenericResult<Array2<f32>> {
         todo!()
         // let mut cov_mat = Array2::zeros((self.bsq.dims.channels, self.bsq.dims.channels));
         // let mut major_buffer = vec![0.0; self.bsq.channel_length()];

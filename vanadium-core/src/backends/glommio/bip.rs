@@ -33,7 +33,7 @@ impl<T> GlommioBip<T> {
 }
 
 impl BatchedPixelReduce<f32> for GlommioBip<f32> {
-    fn reduce_pixels_batched<F, A>(&mut self, mut accumulator: A, mut f: F) -> GenericResult<A>
+    fn reduce_pixels_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
         let ex = LocalExecutorBuilder::new()
@@ -41,8 +41,10 @@ impl BatchedPixelReduce<f32> for GlommioBip<f32> {
             .pin_to_cpu(1)
             .make()?;
 
+        let name = name.to_owned();
+
         ex.run(async {
-            make_bar!(pb, self.bip.num_pixels() as u64, "mean");
+            make_bar!(pb, self.bip.num_pixels() as u64, name);
 
             let file = DmaFile::open(&self.headers.path).await?;
             let mut raw_buffer = vec![0; BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>()];

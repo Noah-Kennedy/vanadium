@@ -31,12 +31,14 @@ impl<T> SyncBip<T> {
 }
 
 impl BatchedPixelReduce<f32> for SyncBip<f32> {
-    fn reduce_pixels_batched<F, A>(&mut self, mut accumulator: A, mut f: F) -> GenericResult<A>
+    fn reduce_pixels_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
         self.file.seek(SeekFrom::Start(0))?;
 
-        make_bar!(pb, self.bip.num_pixels() as u64, "mean");
+        let name = name.to_owned();
+
+        make_bar!(pb, self.bip.num_pixels() as u64, name);
 
         let mut buffer = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 

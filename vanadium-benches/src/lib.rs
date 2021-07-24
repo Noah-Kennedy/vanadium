@@ -28,7 +28,21 @@ pub fn large_header() -> Header {
     }
 }
 
-pub fn bench_image(image: &mut dyn Image<f32>) {
+pub fn bench_covariance(image: &mut dyn Image<f32>) {
+    let timer = Instant::now();
+
+    let mean_timer = Instant::now();
+    let means = image.means().unwrap();
+    println!("Means:\t{}\n\t{}", mean_timer.elapsed().as_secs_f64(), &means);
+
+    let cov_timer = Instant::now();
+    let covariances = image.covariance_matrix(Some(&means), None).unwrap();
+    println!("Covs:\t{}\n\t{}", cov_timer.elapsed().as_secs_f64(), &covariances);
+
+    println!("Total: {}", timer.elapsed().as_secs_f64());
+}
+
+pub fn bench_covariance_standardized(image: &mut dyn Image<f32>) {
     let timer = Instant::now();
 
     let mean_timer = Instant::now();
@@ -40,7 +54,7 @@ pub fn bench_image(image: &mut dyn Image<f32>) {
     println!("STDs:\t{}\n\t{}", std_timer.elapsed().as_secs_f64(), &std_devs);
 
     let cov_timer = Instant::now();
-    let covariances = image.covariance_matrix(&means, &std_devs).unwrap();
+    let covariances = image.covariance_matrix(Some(&means), Some(&std_devs)).unwrap();
     println!("Covs:\t{}\n\t{}", cov_timer.elapsed().as_secs_f64(), &covariances);
 
     println!("Total: {}", timer.elapsed().as_secs_f64());

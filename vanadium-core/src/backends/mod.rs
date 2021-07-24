@@ -78,11 +78,11 @@ pub fn get_image_f32(backend: BackendSelector, header: Header)
 pub trait Image<T> {
     fn means(&mut self) -> GenericResult<Array1<T>>;
     fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>>;
-    fn covariance_matrix(&mut self, means: &Array1<T>, std_devs: &Array1<T>) -> GenericResult<Array2<T>>;
+    fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> GenericResult<Array2<T>>;
 }
 
 pub trait BatchedPixelReduce<T> {
-    fn reduce_pixels_batched<F, A>(&mut self, accumulator: A, f: F) -> GenericResult<A>
+    fn reduce_pixels_batched<F, A>(&mut self, name: &str, accumulator: A, f: F) -> GenericResult<A>
         where F: FnMut(&mut Array2<T>, &mut A);
     fn bip(&self) -> &Bip<T>;
 }
@@ -95,7 +95,7 @@ impl<C, T> Image<T> for C
     fn means(&mut self) -> GenericResult<Array1<T>> {
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
-        let mut res = self.reduce_pixels_batched(accumulator, |pixels, acc| {
+        let mut res = self.reduce_pixels_batched("mean", accumulator, |pixels, acc| {
             Bip::map_mean(pixels, acc)
         })?;
 
@@ -107,7 +107,7 @@ impl<C, T> Image<T> for C
     fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>> {
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
-        let mut res = self.reduce_pixels_batched(accumulator, |pixels, acc| {
+        let mut res = self.reduce_pixels_batched("std", accumulator, |pixels, acc| {
             Bip::map_std_dev(pixels, means, acc)
         })?;
 
@@ -116,10 +116,10 @@ impl<C, T> Image<T> for C
         Ok(res)
     }
 
-    fn covariance_matrix(&mut self, means: &Array1<T>, std_devs: &Array1<T>) -> GenericResult<Array2<T>> {
+    fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> GenericResult<Array2<T>> {
         let accumulator = Array2::zeros((self.bip().dims.channels, self.bip().dims.channels));
 
-        let mut res = self.reduce_pixels_batched(accumulator, |pixels, acc| {
+        let mut res = self.reduce_pixels_batched("cov", accumulator, |pixels, acc| {
             Bip::map_covariance(pixels, means, std_devs, acc)
         })?;
 
