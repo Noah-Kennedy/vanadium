@@ -6,6 +6,10 @@ edition = "2018"
 [dependencies]
 tcmalloc = "^0.3.0"
 
+[dependencies.ndarray]
+version = "^0.15.3"
+features = ["blas", "matrixmultiply-threading"]
+
 [dependencies.vanadium-core]
 path = "../vanadium-core"
 

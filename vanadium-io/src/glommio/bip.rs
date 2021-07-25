@@ -52,7 +52,7 @@ impl<T> BatchedPixelReduce<T> for GlommioBip<T>
             let mut buffer: Vec<T> = vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
-                .with_buffer_size(131072)
+                .with_buffer_size(524_288)
                 .with_read_ahead(16)
                 .build();
 
