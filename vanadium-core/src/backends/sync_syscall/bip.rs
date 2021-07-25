@@ -1,4 +1,4 @@
-use std::{io, mem};
+use std::io;
 use std::fs::File;
 use std::io::{Seek, SeekFrom};
 
@@ -7,7 +7,7 @@ use ndarray::Array2;
 
 use crate::backends::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
 use crate::headers::Header;
-use crate::specialization::bip::Bip;
+use crate::image_formats::bip::Bip;
 
 pub struct SyncBip<T> {
     file: File,
@@ -43,15 +43,12 @@ impl BatchedPixelReduce<f32> for SyncBip<f32> {
         let mut buffer = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
         while self.file.read_f32_into::<LittleEndian>(&mut buffer).is_ok() {
-            let mut tmp = Vec::new();
-            mem::swap(&mut tmp, &mut buffer);
-
-            let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), tmp).unwrap();
+            let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), buffer)
+                .unwrap();
 
             f(&mut pixel, &mut accumulator);
 
-            tmp = pixel.into_raw_vec();
-            mem::swap(&mut tmp, &mut buffer);
+            buffer = pixel.into_raw_vec();
 
             inc_bar!(pb, BATCH_SIZE as u64);
         }

@@ -4,7 +4,7 @@ extern crate serde;
 
 pub mod headers;
 
-mod specialization;
+mod image_formats;
 
 mod backends;
 

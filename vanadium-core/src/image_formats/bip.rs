@@ -6,7 +6,6 @@ use std::ops::{AddAssign, DivAssign, SubAssign};
 use ndarray::{Array1, Array2, Axis};
 use num_traits::{Float, FromPrimitive};
 
-use crate::backends::BATCH_SIZE;
 use crate::headers::ImageDims;
 
 #[derive(Clone)]
@@ -32,35 +31,50 @@ impl<T> Bip<T> {
     }
 }
 
+/// # Bip-Specific Methods & Functions
+///
+/// Bip files lend themselves well to a workflow in which operations are split into two
+/// sub-operations.
+/// Initially, an accumulate operation moves along the file and folds batches of pixels into an
+/// accumulator, before a final normalization phase which is conducted solely on the accumulator.
+///
+/// The accumulation operation should not require `&self` or `&mut self` as a parameter, as the
+/// fold method provided by the IO backend requires a mutable reference itself.
+///
+///
 impl<T> Bip<T>
     where T: Float + Clone + FromPrimitive + Sum
     + AddAssign + SubAssign + DivAssign + 'static + Debug
 {
-    pub fn map_mean(pixel: &mut Array2<T>, acc: &mut Array1<T>) {
+    pub fn accumulate_means(pixel: &mut Array2<T>, acc: &mut Array1<T>) {
         pixel.accumulate_axis_inplace(Axis(0), |x, sum| *sum += *x);
-        *acc += &pixel.row(BATCH_SIZE - 1);
+        *acc += &pixel.row(pixel.nrows() - 1);
     }
 
-    pub fn reduce_mean(&self, acc: &mut Array1<T>) {
+    pub fn normalize_means_accumulator(&self, acc: &mut Array1<T>) {
         let length = T::from_usize(self.num_pixels()).unwrap();
         acc.mapv_inplace(|x| x / length);
     }
 
-    pub fn map_std_dev(pixel: &mut Array2<T>, means: &Array1<T>, acc: &mut Array1<T>) {
+    pub fn accumulate_standard_deviations(
+        pixel: &mut Array2<T>,
+        means: &Array1<T>,
+        acc: &mut Array1<T>
+    ) {
         *pixel -= means;
 
         pixel.mapv_inplace(|x| x.powi(2));
         pixel.accumulate_axis_inplace(Axis(0), |x, sum| *sum += *x);
 
-        *acc += &pixel.row(BATCH_SIZE - 1);
+        *acc += &pixel.row(pixel.nrows() - 1);
     }
 
-    pub fn reduce_std_dev(&self, acc: &mut Array1<T>) {
+    pub fn normalize_standard_deviations_accumulator(&self, acc: &mut Array1<T>) {
         let length = T::from_usize(self.num_pixels()).unwrap();
         acc.mapv_inplace(|x| (x / length).sqrt());
     }
 
-    pub fn map_covariance(
+    pub fn accumulate_covariances(
         pixel: &mut Array2<T>,
         means: Option<&Array1<T>>,
         std_devs: Option<&Array1<T>>,
@@ -74,12 +88,11 @@ impl<T> Bip<T>
             *pixel /= std_devs;
         }
 
-        let cov = pixel.t().dot(pixel);
-
-        *acc += &cov;
+        // hot
+        *acc += &pixel.t().dot(pixel);
     }
 
-    pub fn reduce_covariance(&self, acc: &mut Array2<T>) {
+    pub fn normalize_covariances_accumulator(&self, acc: &mut Array2<T>) {
         let length = T::from_usize(self.num_pixels()).unwrap();
         acc.mapv_inplace(|x| x / length);
     }

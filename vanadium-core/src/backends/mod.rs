@@ -10,12 +10,12 @@ use sync_syscall::bip::SyncBip;
 
 use crate::backends::glommio::bip::GlommioBip;
 use crate::headers::{Header, ImageFormat};
-use crate::specialization::bip::Bip;
+use crate::image_formats::bip::Bip;
 
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
 
-pub(crate) const BATCH_SIZE: usize = 256;
+const BATCH_SIZE: usize = 256;
 
 macro_rules! make_bar {
     ($i:ident, $x:expr, $m:expr) => {
@@ -96,10 +96,10 @@ impl<C, T> Image<T> for C
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
         let mut res = self.reduce_pixels_batched("mean", accumulator, |pixels, acc| {
-            Bip::map_mean(pixels, acc)
+            Bip::accumulate_means(pixels, acc)
         })?;
 
-        self.bip().reduce_mean(&mut res);
+        self.bip().normalize_means_accumulator(&mut res);
 
         Ok(res)
     }
@@ -108,10 +108,10 @@ impl<C, T> Image<T> for C
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
         let mut res = self.reduce_pixels_batched("std", accumulator, |pixels, acc| {
-            Bip::map_std_dev(pixels, means, acc)
+            Bip::accumulate_standard_deviations(pixels, means, acc)
         })?;
 
-        self.bip().reduce_std_dev(&mut res);
+        self.bip().normalize_standard_deviations_accumulator(&mut res);
 
         Ok(res)
     }
@@ -120,10 +120,10 @@ impl<C, T> Image<T> for C
         let accumulator = Array2::zeros((self.bip().dims.channels, self.bip().dims.channels));
 
         let mut res = self.reduce_pixels_batched("cov", accumulator, |pixels, acc| {
-            Bip::map_covariance(pixels, means, std_devs, acc)
+            Bip::accumulate_covariances(pixels, means, std_devs, acc)
         })?;
 
-        self.bip().reduce_covariance(&mut res);
+        self.bip().normalize_covariances_accumulator(&mut res);
 
         Ok(res)
     }

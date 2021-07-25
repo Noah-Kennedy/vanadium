@@ -4,7 +4,7 @@ use std::fs::File;
 use ndarray::{Array1, Array2};
 
 use crate::headers::Header;
-use crate::specialization::bsq::Bsq;
+use crate::image_formats::bsq::Bsq;
 use crate::backends::{GenericResult, Image};
 
 pub struct SyncBsq<T> {

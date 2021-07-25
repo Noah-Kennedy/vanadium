@@ -1,6 +1,5 @@
 use std::mem;
 
-use byteorder::{ByteOrder, LittleEndian};
 use futures::AsyncReadExt;
 use glommio::io::{DmaFile, DmaStreamReaderBuilder};
 use glommio::LocalExecutorBuilder;
@@ -8,7 +7,7 @@ use ndarray::Array2;
 
 use crate::backends::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
 use crate::headers::Header;
-use crate::specialization::bip::Bip;
+use crate::image_formats::bip::Bip;
 
 pub struct GlommioBip<T> {
     headers: Header,
@@ -23,12 +22,6 @@ impl<T> GlommioBip<T> {
         };
 
         Self { headers, bip }
-    }
-    fn buffer_size(&self) -> usize {
-        131072
-    }
-    fn read_ahead(&self) -> usize {
-        16
     }
 }
 
@@ -47,29 +40,35 @@ impl BatchedPixelReduce<f32> for GlommioBip<f32> {
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
             let file = DmaFile::open(&self.headers.path).await?;
-            let mut raw_buffer = vec![0; BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>()];
             let mut buffer: Vec<f32> = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
-                .with_buffer_size(self.buffer_size())
-                .with_read_ahead(self.read_ahead())
+                .with_buffer_size(131072)
+                .with_read_ahead(16)
                 .build();
 
-            while reader.read_exact(&mut raw_buffer).await.is_ok() {
-                LittleEndian::read_f32_into(&raw_buffer, &mut buffer);
-
-                let mut tmp = Vec::new();
-
-                mem::swap(&mut tmp, &mut buffer);
-
-                let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), tmp)
-                    .unwrap();
+            while {
+                // Safety: here, we are effectively just taking a slice from the vec but as bytes
+                // rather than floats.
+                //
+                // Since any byte pattern is a valid float, this is safe.
+                //
+                // We do not attempt to account for endianness here, we assume that the data is
+                // already in LE form, as further support will be added in the next MVP.
+                unsafe {
+                    let raw_buffer = std::slice::from_raw_parts_mut(
+                        buffer.as_mut_ptr() as *mut u8,
+                        BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>(),
+                    );
+                    reader.read_exact(raw_buffer).await.is_ok()
+                }
+            } {
+                let shape = (BATCH_SIZE, self.bip.pixel_length());
+                let mut pixel = Array2::from_shape_vec(shape, buffer).unwrap();
 
                 f(&mut pixel, &mut accumulator);
 
-                tmp = pixel.into_raw_vec();
-
-                mem::swap(&mut tmp, &mut buffer);
+                buffer = pixel.into_raw_vec();
 
                 inc_bar!(pb, BATCH_SIZE as u64);
             }
