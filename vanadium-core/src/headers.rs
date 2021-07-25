@@ -21,5 +21,5 @@ pub struct ImageDims {
 #[cfg_attr(feature = "header-parsing", derive(Serialize, Deserialize))]
 pub enum ImageFormat {
     Bip,
-    Bsq
+    Bsq,
 }

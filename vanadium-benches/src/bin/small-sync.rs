@@ -3,7 +3,7 @@ extern crate openblas_src;
 use tcmalloc::TCMalloc;
 
 use vanadium_benches::{bench_covariance, small_header};
-use vanadium_core::ops::{BackendSelector, get_image_f32};
+use vanadium_io::{BackendSelector, get_image_f32};
 
 #[global_allocator]
 static GLOBAL: TCMalloc = TCMalloc;

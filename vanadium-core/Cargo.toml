@@ -8,24 +8,16 @@ edition = "2018"
 ###################################################################################################
 [features]
 header-parsing = ["serde"]
-tokio-uring-support = ["tokio-uring", "futures"]
-glommio-support = ["glommio", "futures"]
-progress = ["indicatif"]
 
 ###################################################################################################
 # Dependencies
 ###################################################################################################
 [dependencies]
 num-traits = "^0.2.14"
-byteorder = "^1.4"
 cfg-if = "^1.0.0"
 
 [dependencies.ndarray]
 version = "^0.15.3"
-features = ["blas", "matrixmultiply-threading"]
-
-[dependencies.blas-src]
-version = "^0.8.0"
 
 ###################################################################################################
 # Not always needed for libraries
@@ -33,23 +25,4 @@ version = "^0.8.0"
 [dependencies.serde]
 version = "^1.0.0"
 features = ["derive"]
-optional = true
-
-[dependencies.indicatif]
-version = "^0.16.2"
-optional = true
-
-###################################################################################################
-# Async backends
-###################################################################################################
-[dependencies.futures]
-version = "^0.3.15"
-optional = true
-
-[dependencies.tokio-uring]
-version = "^0.1.0"
-optional = true
-
-[dependencies.glommio]
-version = "^0.5.0"
 optional = true

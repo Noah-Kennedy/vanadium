@@ -1,13 +1,14 @@
-use std::io;
 use std::fs::File;
+use std::io;
 use std::io::{Seek, SeekFrom};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use ndarray::Array2;
 
-use crate::backends::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
-use crate::headers::Header;
-use crate::image_formats::bip::Bip;
+use vanadium_core::headers::Header;
+use vanadium_core::image_formats::bip::Bip;
+
+use crate::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
 
 pub struct SyncBip<T> {
     file: File,

@@ -8,7 +8,10 @@ tcmalloc = "^0.3.0"
 
 [dependencies.vanadium-core]
 path = "../vanadium-core"
-features = ["glommio-support"]
+
+[dependencies.vanadium-io]
+path = "../vanadium-io"
+features = ["progress", "glommio-support"]
 
 [dependencies.blas-src]
 version = "^0.8.0"

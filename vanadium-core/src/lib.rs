@@ -4,18 +4,6 @@ extern crate serde;
 
 pub mod headers;
 
-mod image_formats;
-
-mod backends;
+pub mod image_formats;
 
 mod util;
-
-pub mod ops {
-    pub use crate::backends::{
-        get_image_f32,
-        BackendSelector,
-        GenericResult,
-        BatchedPixelReduce,
-        Image
-    };
-}

@@ -1,10 +1,10 @@
+use std::marker::PhantomData;
 use std::ops::{DivAssign, SubAssign};
 
 use num_traits::{Float, FromPrimitive};
 
-use crate::util::_standardize;
 use crate::headers::ImageDims;
-use std::marker::PhantomData;
+use crate::util::_standardize;
 
 pub struct Bsq<T> {
     pub dims: ImageDims,

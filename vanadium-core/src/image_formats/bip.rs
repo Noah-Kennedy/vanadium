@@ -59,7 +59,7 @@ impl<T> Bip<T>
     pub fn accumulate_standard_deviations(
         pixel: &mut Array2<T>,
         means: &Array1<T>,
-        acc: &mut Array1<T>
+        acc: &mut Array1<T>,
     ) {
         *pixel -= means;
 

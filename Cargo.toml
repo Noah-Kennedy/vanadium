@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "vanadium-core",
-    "vanadium-benches"
+    "vanadium-benches",
+    "vanadium-io"
 ]
 
 [profile.release]

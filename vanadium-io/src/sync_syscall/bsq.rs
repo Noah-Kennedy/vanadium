@@ -1,11 +1,12 @@
-use std::io;
 use std::fs::File;
+use std::io;
 
 use ndarray::{Array1, Array2};
 
-use crate::headers::Header;
-use crate::image_formats::bsq::Bsq;
-use crate::backends::{GenericResult, Image};
+use vanadium_core::headers::Header;
+use vanadium_core::image_formats::bsq::Bsq;
+
+use crate::{GenericResult, Image};
 
 pub struct SyncBsq<T> {
     _file: File,

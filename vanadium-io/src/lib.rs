@@ -7,10 +7,10 @@ use ndarray::{Array1, Array2};
 use num_traits::{Float, FromPrimitive};
 
 use sync_syscall::bip::SyncBip;
+use vanadium_core::headers::{Header, ImageFormat};
+use vanadium_core::image_formats::bip::Bip;
 
-use crate::backends::glommio::bip::GlommioBip;
-use crate::headers::{Header, ImageFormat};
-use crate::image_formats::bip::Bip;
+use crate::glommio::bip::GlommioBip;
 
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
@@ -27,7 +27,7 @@ macro_rules! make_bar {
                     .progress_chars("##-")
                 );
                 $i.set_message($m);
-                $i.set_draw_rate($crate::backends::UPDATE_FREQ);
+                $i.set_draw_rate($crate::UPDATE_FREQ);
             }
         }
     }
@@ -46,7 +46,7 @@ macro_rules! inc_bar {
 // #[cfg(feature = "tokio-uring-support")]
 // pub mod tokio_uring;
 
-#[cfg(feature = "glommio-support")]
+#[cfg(feature = "glommio")]
 pub mod glommio;
 
 pub mod sync_syscall;

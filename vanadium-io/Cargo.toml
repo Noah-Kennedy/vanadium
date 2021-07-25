@@ -1,0 +1,29 @@
+[package]
+name = "vanadium-io"
+version = "0.1.0"
+edition = "2018"
+
+[features]
+progress = ["indicatif"]
+glommio-support = ["glommio", "futures"]
+
+[dependencies]
+ndarray = "^0.15.3"
+cfg-if = "^1.0.0"
+num-traits = "^0.2.14"
+byteorder = "^1.4.3"
+
+[dependencies.indicatif]
+version = "^0.16.2"
+optional = true
+
+[dependencies.glommio]
+version = "^0.5.0"
+optional = true
+
+[dependencies.futures]
+version = "^0.3.16"
+optional = true
+
+[dependencies.vanadium-core]
+path = "../vanadium-core"

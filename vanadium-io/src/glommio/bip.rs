@@ -5,9 +5,10 @@ use glommio::io::{DmaFile, DmaStreamReaderBuilder};
 use glommio::LocalExecutorBuilder;
 use ndarray::Array2;
 
-use crate::backends::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
-use crate::headers::Header;
-use crate::image_formats::bip::Bip;
+use vanadium_core::headers::Header;
+use vanadium_core::image_formats::bip::Bip;
+
+use crate::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
 
 pub struct GlommioBip<T> {
     headers: Header,

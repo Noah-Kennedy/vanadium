@@ -1,9 +1,8 @@
 use std::mem;
-
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio_uring::fs;
 
-use crate::headers::{Header};
+use crate::headers::Header;
 use crate::specialization::bip::Bip;
 
 const BACKPRESSURE_LIMIT: usize = 8;
