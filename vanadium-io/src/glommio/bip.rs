@@ -1,9 +1,13 @@
+use std::fmt::Debug;
+use std::iter::Sum;
 use std::mem;
+use std::ops::{AddAssign, DivAssign, SubAssign};
 
 use futures::AsyncReadExt;
 use glommio::io::{DmaFile, DmaStreamReaderBuilder};
 use glommio::LocalExecutorBuilder;
 use ndarray::Array2;
+use num_traits::{Float, FromPrimitive};
 
 use vanadium_core::headers::Header;
 use vanadium_core::image_formats::bip::Bip;
@@ -27,9 +31,12 @@ impl<T> GlommioBip<T> {
     }
 }
 
-impl BatchedPixelReduce<f32> for GlommioBip<f32> {
+impl<T> BatchedPixelReduce<T> for GlommioBip<T>
+    where T: Float + Clone + Copy + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign +
+    'static + Debug
+{
     fn reduce_pixels_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
-        where F: FnMut(&mut Array2<f32>, &mut A)
+        where F: FnMut(&mut Array2<T>, &mut A)
     {
         let ex = LocalExecutorBuilder::new()
             .name("means")
@@ -42,7 +49,7 @@ impl BatchedPixelReduce<f32> for GlommioBip<f32> {
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
             let file = DmaFile::open(&self.headers.path).await?;
-            let mut buffer: Vec<f32> = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
+            let mut buffer: Vec<T> = vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
                 .with_buffer_size(131072)
@@ -60,7 +67,7 @@ impl BatchedPixelReduce<f32> for GlommioBip<f32> {
                 unsafe {
                     let raw_buffer = std::slice::from_raw_parts_mut(
                         buffer.as_mut_ptr() as *mut u8,
-                        BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>(),
+                        BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<T>(),
                     );
                     reader.read_exact(raw_buffer).await.is_ok()
                 }
@@ -75,11 +82,32 @@ impl BatchedPixelReduce<f32> for GlommioBip<f32> {
                 inc_bar!(pb, BATCH_SIZE as u64);
             }
 
+            // Safety: similar to other section, but we need to double check that we read a valid
+            // amount of bytes.
+            let n_elements = unsafe {
+                let raw_buffer = std::slice::from_raw_parts_mut(
+                    buffer.as_mut_ptr() as *mut u8,
+                    BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<T>(),
+                );
+
+                let n_bytes = reader.read(raw_buffer).await?;
+
+                assert_eq!(0, n_bytes % mem::size_of::<T>());
+                n_bytes / mem::size_of::<T>()
+            };
+
+            if n_elements > 0 {
+                let shape = (n_elements / self.bip.pixel_length(), self.bip.pixel_length());
+                let mut pixel = Array2::from_shape_vec(shape, buffer[..n_elements].to_vec()).unwrap();
+
+                f(&mut pixel, &mut accumulator);
+            }
+
             Ok(accumulator)
         })
     }
 
-    fn bip(&self) -> &Bip<f32> {
+    fn bip(&self) -> &Bip<T> {
         &self.bip
     }
 }
