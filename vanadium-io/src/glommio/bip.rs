@@ -8,7 +8,8 @@ use ndarray::Array2;
 use vanadium_core::headers::Header;
 use vanadium_core::image_formats::bip::Bip;
 
-use crate::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
+use crate::{BATCH_SIZE, GenericResult};
+use crate::bip::BatchedPixelReduce;
 
 pub struct GlommioBip<T> {
     headers: Header,

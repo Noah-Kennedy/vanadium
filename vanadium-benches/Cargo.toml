@@ -11,7 +11,7 @@ path = "../vanadium-core"
 
 [dependencies.vanadium-io]
 path = "../vanadium-io"
-features = ["progress", "glommio-support"]
+features = ["progress", "glommio-backend", "syscall-backend"]
 
 [dependencies.blas-src]
 version = "^0.8.0"

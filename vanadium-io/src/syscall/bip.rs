@@ -8,14 +8,15 @@ use ndarray::Array2;
 use vanadium_core::headers::Header;
 use vanadium_core::image_formats::bip::Bip;
 
-use crate::{BATCH_SIZE, BatchedPixelReduce, GenericResult};
+use crate::{BATCH_SIZE, GenericResult};
+use crate::bip::BatchedPixelReduce;
 
-pub struct SyncBip<T> {
+pub struct SyscallBip<T> {
     file: File,
     bip: Bip<T>,
 }
 
-impl<T> SyncBip<T> {
+impl<T> SyscallBip<T> {
     pub fn new(header: Header) -> io::Result<Self> {
         let bip = Bip {
             dims: header.dims,
@@ -31,7 +32,7 @@ impl<T> SyncBip<T> {
     }
 }
 
-impl BatchedPixelReduce<f32> for SyncBip<f32> {
+impl BatchedPixelReduce<f32> for SyscallBip<f32> {
     fn reduce_pixels_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
