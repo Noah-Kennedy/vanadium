@@ -5,7 +5,7 @@ members = [
 ]
 
 [profile.release]
-lto = "fat"
-codegen-units = 1
-debug-assertions = false
-overflow-checks = false
+#lto = "fat"
+#codegen-units = 1
+#debug-assertions = false
+#overflow-checks = false
