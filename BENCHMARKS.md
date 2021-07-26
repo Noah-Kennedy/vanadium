@@ -25,7 +25,7 @@ This benchmark should also heavily reward batching compute and IO operations, as
 This also minimizes any overhead associated with system calls, and works more effectively with how disk IO tends to work.
 
 | Tool                | Machine Configuration | Cache State | Format | Average Time [s] | Human Time       |
-|:-------------------:|:----------------------|:-----------:|:------:|-----------------:|-----------------:|
+|:--------------------|:----------------------|:-----------:|:------:|-----------------:|-----------------:|
 | vanadium (syscall)  | Workstation A         | Warm        | bip    |             9.16 |           9.16 s |
 | vanadium (syscall)  | Workstation A         | Cool        | bip    |            29.49 |          29.49 s |
 | vanadium (io-uring) | Workstation A         | N/A         | bip    |            44.52 |          44.52 s |
@@ -36,7 +36,7 @@ This also minimizes any overhead associated with system calls, and works more ef
 The "large" files are 464.41 GiB in size, with 394 bands.
 
 | Tool                | Machine Configuration | Format | Average Time [s] | Human Time       |
-|:-------------------:|:----------------------|:------:|:-----------------|:-----------------|
+|:--------------------|:----------------------|:------:|-----------------:|-----------------:|
 | siproc (cuda)       | Workstation A         | bip    |          4926.85 | 1 h 20 m 44.75 s |
 | siproc (cpu)        | Workstation A         | bip    |          7638.12 | 2 h  7 m 18.12 s |
 | vanadium (syscall)  | Workstation A         | bip    |          3127.82 |     52 m  7.82 s |
