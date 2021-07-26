@@ -35,7 +35,7 @@ impl<T> BatchedPixelReduce<T> for GlommioBip<T>
     where T: Float + Clone + Copy + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign +
     'static + Debug
 {
-    fn reduce_pixels_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
+    fn fold_over_batched_pixels<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
         where F: FnMut(&mut Array2<T>, &mut A)
     {
         let ex = LocalExecutorBuilder::new()
@@ -57,6 +57,8 @@ impl<T> BatchedPixelReduce<T> for GlommioBip<T>
                 .build();
 
             while {
+                // "do" part of while loop, evaluates loop continuation condition
+
                 // Safety: here, we are effectively just taking a slice from the vec but as bytes
                 // rather than floats.
                 //
@@ -69,9 +71,12 @@ impl<T> BatchedPixelReduce<T> for GlommioBip<T>
                         buffer.as_mut_ptr() as *mut u8,
                         BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<T>(),
                     );
+
+                    // loop condition
                     reader.read_exact(raw_buffer).await.is_ok()
                 }
             } {
+                // main loop body
                 let shape = (BATCH_SIZE, self.bip.pixel_length());
                 let mut pixel = Array2::from_shape_vec(shape, buffer).unwrap();
 
@@ -92,6 +97,7 @@ impl<T> BatchedPixelReduce<T> for GlommioBip<T>
 
                 let n_bytes = reader.read(raw_buffer).await?;
 
+                // todo use a proper error handling approach, this can be triggered by user error
                 assert_eq!(0, n_bytes % mem::size_of::<T>());
                 n_bytes / mem::size_of::<T>()
             };

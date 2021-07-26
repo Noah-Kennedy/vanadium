@@ -33,7 +33,7 @@ impl<T> SyscallBip<T> {
 }
 
 impl BatchedPixelReduce<f32> for SyscallBip<f32> {
-    fn reduce_pixels_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
+    fn fold_over_batched_pixels<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
         self.file.seek(SeekFrom::Start(0))?;
@@ -55,7 +55,10 @@ impl BatchedPixelReduce<f32> for SyscallBip<f32> {
             inc_bar!(pb, BATCH_SIZE as u64);
         }
 
-        // Safety: same as with equivalent glommio section
+        // # Safety
+        // We are just reading bytes into the float-aligned buffer, which is fine.
+        // There is no invalid aliasing here.
+        // We also check at the end that we actually read the correct amount of bytes.
         let n_elements = unsafe {
             let raw_buffer = std::slice::from_raw_parts_mut(
                 buffer.as_mut_ptr() as *mut u8,
@@ -64,6 +67,7 @@ impl BatchedPixelReduce<f32> for SyscallBip<f32> {
 
             let n_bytes = self.file.read(raw_buffer)?;
 
+            // todo use a proper error handling approach, this can be triggered by user error
             assert_eq!(0, n_bytes % mem::size_of::<f32>());
             n_bytes / mem::size_of::<f32>()
         };

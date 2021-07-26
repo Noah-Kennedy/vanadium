@@ -8,7 +8,7 @@ tcmalloc = "^0.3.0"
 
 [dependencies.ndarray]
 version = "^0.15.3"
-features = ["blas", "matrixmultiply-threading"]
+features = ["blas"]
 
 [dependencies.vanadium-core]
 path = "../vanadium-core"
@@ -23,5 +23,4 @@ features = ["openblas"]
 
 [dependencies.openblas-src]
 version = "^0.10.4"
-default-features = false
 features = ["cblas", "system"]
