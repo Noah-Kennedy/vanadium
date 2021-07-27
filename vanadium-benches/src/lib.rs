@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use vanadium_core::headers::{Header, ImageDims, ImageFormat};
-use vanadium_io::Image;
+use vanadium_io::ImageStats;
 
 pub fn small_header() -> Header {
     Header {
@@ -28,7 +28,7 @@ pub fn large_header() -> Header {
     }
 }
 
-pub fn bench_covariance(image: &mut dyn Image<f32>) {
+pub fn bench_covariance(image: &mut dyn ImageStats<f32>) {
     let timer = Instant::now();
 
     let mean_timer = Instant::now();
@@ -42,7 +42,7 @@ pub fn bench_covariance(image: &mut dyn Image<f32>) {
     println!("Total: {}", timer.elapsed().as_secs_f64());
 }
 
-pub fn bench_covariance_standardized(image: &mut dyn Image<f32>) {
+pub fn bench_covariance_standardized(image: &mut dyn ImageStats<f32>) {
     let timer = Instant::now();
 
     let mean_timer = Instant::now();

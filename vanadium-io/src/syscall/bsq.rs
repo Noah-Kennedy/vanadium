@@ -6,7 +6,7 @@ use ndarray::{Array1, Array2};
 use vanadium_core::headers::Header;
 use vanadium_core::image_formats::bsq::Bsq;
 
-use crate::{GenericResult, Image};
+use crate::{GenericResult, ImageStats};
 
 pub struct SyncBsq<T> {
     _file: File,
@@ -29,7 +29,7 @@ impl<T> SyncBsq<T> {
     }
 }
 
-impl Image<f32> for SyncBsq<f32> {
+impl ImageStats<f32> for SyncBsq<f32> {
     fn means(&mut self) -> GenericResult<Array1<f32>> {
         todo!()
         // let mut means = Vec::with_capacity(self.bsq.dims.channels);

@@ -46,7 +46,7 @@ pub mod syscall;
 
 pub type GenericResult<T> = Result<T, Box<dyn Error>>;
 
-pub trait Image<T> {
+pub trait ImageStats<T> {
     fn means(&mut self) -> GenericResult<Array1<T>>;
     fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>>;
     fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> GenericResult<Array2<T>>;

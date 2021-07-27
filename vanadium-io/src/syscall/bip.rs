@@ -1,6 +1,7 @@
 use std::{io, mem};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
+use std::path::PathBuf;
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use ndarray::Array2;
@@ -9,7 +10,7 @@ use vanadium_core::headers::Header;
 use vanadium_core::image_formats::bip::Bip;
 
 use crate::{BATCH_SIZE, GenericResult};
-use crate::bip::BatchedPixelReduce;
+use crate::bip::SequentialPixels;
 
 pub struct SyscallBip<T> {
     file: File,
@@ -32,8 +33,8 @@ impl<T> SyscallBip<T> {
     }
 }
 
-impl BatchedPixelReduce<f32> for SyscallBip<f32> {
-    fn fold_over_batched_pixels<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
+impl SequentialPixels<f32> for SyscallBip<f32> {
+    fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
         self.file.seek(SeekFrom::Start(0))?;
@@ -84,5 +85,13 @@ impl BatchedPixelReduce<f32> for SyscallBip<f32> {
 
     fn bip(&self) -> &Bip<f32> {
         &self.bip
+    }
+
+    fn map_and_write_batched<F>(
+        &mut self, _name: &str, _out: PathBuf, _shape: (usize, usize), _f: F,
+    ) -> GenericResult<()>
+        where F: FnMut(&mut Array2<f32>, &mut Array2<f32>)
+    {
+        todo!()
     }
 }
