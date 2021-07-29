@@ -3,7 +3,7 @@ use std::iter::Sum;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 use std::path::PathBuf;
 
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, ArrayViewMut2};
 use num_traits::{Float, FromPrimitive};
 
 use vanadium_core::image_formats::bip::Bip;
@@ -22,10 +22,10 @@ pub trait SequentialPixels<T> {
         &mut self,
         name: &str,
         out: PathBuf,
-        shape: (usize, usize),
+        n_output_channels: usize,
         f: F,
     ) -> GenericResult<()>
-        where F: FnMut(&mut Array2<T>, &mut Array2<T>);
+        where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>);
 }
 
 impl<C, T> ImageStats<T> for C

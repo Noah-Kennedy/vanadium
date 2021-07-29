@@ -4,7 +4,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 
 use byteorder::{LittleEndian, ReadBytesExt};
-use ndarray::Array2;
+use ndarray::{Array2, ArrayViewMut2};
 
 use vanadium_core::headers::{Header, ImageFormat};
 use vanadium_core::image_formats::bip::Bip;
@@ -89,9 +89,9 @@ impl SequentialPixels<f32> for SyscallBip<f32> {
     }
 
     fn map_and_write_batched<F>(
-        &mut self, _name: &str, _out: PathBuf, _shape: (usize, usize), _f: F,
+        &mut self, _name: &str, _out: PathBuf, _n_output_channels: usize, _f: F,
     ) -> GenericResult<()>
-        where F: FnMut(&mut Array2<f32>, &mut Array2<f32>)
+        where F: FnMut(&mut ArrayViewMut2<f32>, &mut Array2<f32>)
     {
         todo!()
     }

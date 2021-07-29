@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use futures::AsyncReadExt;
 use glommio::io::{DmaFile, DmaStreamReaderBuilder};
 use glommio::LocalExecutorBuilder;
-use ndarray::Array2;
+use ndarray::{Array2, ArrayViewMut2};
 use num_traits::{Float, FromPrimitive};
 
 use vanadium_core::headers::{Header, ImageFormat};
@@ -122,11 +122,11 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
     fn map_and_write_batched<F>(
         &mut self,
         name: &str,
-        _out: PathBuf,
-        _shape: (usize, usize),
+        out: PathBuf,
+        n_output_channels: usize,
         mut f: F,
     ) -> GenericResult<()>
-        where F: FnMut(&mut Array2<T>, &mut Array2<T>)
+        where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>)
     {
         let ex = LocalExecutorBuilder::new()
             .name("means")

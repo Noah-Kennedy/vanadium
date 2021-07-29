@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate ndarray;
+
 use std::error::Error;
 
 use ndarray::{Array1, Array2};
