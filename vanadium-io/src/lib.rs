@@ -8,6 +8,7 @@ use ndarray::{Array1, Array2};
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
 
+// todo possibly make variable
 const BATCH_SIZE: usize = 1024;
 
 macro_rules! make_bar {
