@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use byteorder::{LittleEndian, ReadBytesExt};
 use ndarray::Array2;
 
-use vanadium_core::headers::Header;
+use vanadium_core::headers::{Header, ImageFormat};
 use vanadium_core::image_formats::bip::Bip;
 
 use crate::{BATCH_SIZE, GenericResult};
@@ -19,6 +19,7 @@ pub struct SyscallBip<T> {
 
 impl<T> SyscallBip<T> {
     pub fn new(header: Header) -> io::Result<Self> {
+        assert_eq!(ImageFormat::Bip, header.format);
         let bip = Bip {
             dims: header.dims,
             phantom: Default::default(),

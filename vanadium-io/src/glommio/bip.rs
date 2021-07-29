@@ -10,7 +10,7 @@ use glommio::LocalExecutorBuilder;
 use ndarray::Array2;
 use num_traits::{Float, FromPrimitive};
 
-use vanadium_core::headers::Header;
+use vanadium_core::headers::{Header, ImageFormat};
 use vanadium_core::image_formats::bip::Bip;
 
 use crate::{BATCH_SIZE, GenericResult};
@@ -23,6 +23,7 @@ pub struct GlommioBip<T> {
 
 impl<T> GlommioBip<T> {
     pub fn new(headers: Header) -> Self {
+        assert_eq!(ImageFormat::Bip, headers.format);
         let bip = Bip {
             dims: headers.dims.clone(),
             phantom: Default::default(),
