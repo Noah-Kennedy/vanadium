@@ -4,8 +4,8 @@ use std::mem;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 use std::path::PathBuf;
 
-use futures::AsyncReadExt;
-use glommio::io::{DmaFile, DmaStreamReaderBuilder};
+use futures::{AsyncReadExt, AsyncWriteExt};
+use glommio::io::{DmaFile, DmaStreamReaderBuilder, DmaStreamWriterBuilder};
 use glommio::LocalExecutorBuilder;
 use ndarray::{Array2, ArrayViewMut2};
 use num_traits::{Float, FromPrimitive};
@@ -146,13 +146,16 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
         ex.run(async {
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
-            let shape = (BATCH_SIZE, self.bip.pixel_length());
-
             let read_file = DmaFile::open(&self.headers.path).await?;
+            let write_file = DmaFile::open(&out).await?;
 
-            let mut read_buffer: Vec<T> = vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()];
+            let mut read_array = Array2::from_shape_vec(
+                (BATCH_SIZE, self.bip.pixel_length()),
+                vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()],
+            ).unwrap();
+
             let mut write_array = Array2::from_shape_vec(
-                shape,
+                (BATCH_SIZE, n_output_channels),
                 vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()],
             ).unwrap();
 
@@ -161,9 +164,12 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                 .with_read_ahead(READ_AHEAD)
                 .build();
 
-            while {
-                // "do" part of while loop, evaluates loop continuation condition
+            let mut writer = DmaStreamWriterBuilder::new(write_file)
+                .with_buffer_size(LOCKED_MEMORY)
+                .with_write_behind(READ_AHEAD)
+                .build();
 
+            while {
                 // Safety: here, we are effectively just taking a slice from the vec but as bytes
                 // rather than floats.
                 //
@@ -173,7 +179,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                 // already in LE form, as further support will be added in the next MVP.
                 unsafe {
                     let raw_read_buffer = std::slice::from_raw_parts_mut(
-                        read_buffer.as_mut_ptr() as *mut u8,
+                        read_array.as_mut_ptr() as *mut u8,
                         BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<T>(),
                     );
 
@@ -181,23 +187,29 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                     reader.read_exact(raw_read_buffer).await.is_ok()
                 }
             } {
-                // main loop body
-                let mut pixel = Array2::from_shape_vec(shape, read_buffer).unwrap();
+                f(&mut read_array.view_mut(), &mut write_array);
 
-                f(&mut pixel, &mut write_array);
+                // Safety: Same as above
+                unsafe {
+                    let raw_write_buffer = std::slice::from_raw_parts(
+                        write_array.as_ptr() as *const u8,
+                        BATCH_SIZE * n_output_channels * mem::size_of::<T>(),
+                    );
 
-                read_buffer = pixel.into_raw_vec();
-
-                // todo write
+                    writer.write_all(raw_write_buffer).await?;
+                }
 
                 inc_bar!(pb, BATCH_SIZE as u64);
             }
+
+            // warning: We are really making some assumptions about how read_array stores data
+            // internally
 
             // Safety: similar to other section, but we need to double check that we read a valid
             // amount of bytes.
             let n_elements = unsafe {
                 let raw_buffer = std::slice::from_raw_parts_mut(
-                    read_buffer.as_mut_ptr() as *mut u8,
+                    read_array.as_mut_ptr() as *mut u8,
                     BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<T>(),
                 );
 
@@ -209,12 +221,20 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
             };
 
             if n_elements > 0 {
-                let shape = (n_elements / self.bip.pixel_length(), self.bip.pixel_length());
-                let mut pixel = Array2::from_shape_vec(shape, read_buffer[..n_elements].to_vec()).unwrap();
+                let mut pixel = read_array.slice_mut(
+                    s![..n_elements / self.bip.pixel_length(),..]);
 
                 f(&mut pixel, &mut write_array);
 
-                // todo write
+                // Safety: Same as above
+                unsafe {
+                    let raw_write_buffer = std::slice::from_raw_parts(
+                        write_array.as_ptr() as *const u8,
+                        (n_elements / self.bip.pixel_length()) * n_output_channels * mem::size_of::<T>(),
+                    );
+
+                    writer.write_all(raw_write_buffer).await?;
+                }
             }
 
             Ok(())
