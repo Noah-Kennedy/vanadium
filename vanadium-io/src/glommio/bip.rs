@@ -16,6 +16,14 @@ use vanadium_core::image_formats::bip::Bip;
 use crate::{BATCH_SIZE, GenericResult};
 use crate::bip::SequentialPixels;
 
+const READ_AHEAD: usize = 16;
+const PIN_CPU: usize = 1;
+
+// todo make variable
+// not everyone has exactly this much locked memory
+// maybe make it static or part of structure?
+const LOCKED_MEMORY: usize = 524_288;
+
 pub struct GlommioBip<T> {
     headers: Header,
     bip: Bip<T>,
@@ -41,8 +49,8 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
         where F: FnMut(&mut Array2<T>, &mut A)
     {
         let ex = LocalExecutorBuilder::new()
-            .name("means")
-            .pin_to_cpu(1)
+            .name(name)
+            .pin_to_cpu(PIN_CPU)
             .make()?;
 
         let name = name.to_owned();
@@ -54,8 +62,8 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
             let mut buffer: Vec<T> = vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
-                .with_buffer_size(524_288)
-                .with_read_ahead(16)
+                .with_buffer_size(LOCKED_MEMORY)
+                .with_read_ahead(READ_AHEAD)
                 .build();
 
             while {
@@ -129,8 +137,8 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
         where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>)
     {
         let ex = LocalExecutorBuilder::new()
-            .name("means")
-            .pin_to_cpu(1)
+            .name(name)
+            .pin_to_cpu(PIN_CPU)
             .make()?;
 
         let name = name.to_owned();
@@ -149,8 +157,8 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
             ).unwrap();
 
             let mut reader = DmaStreamReaderBuilder::new(read_file)
-                .with_buffer_size(524_288)
-                .with_read_ahead(16)
+                .with_buffer_size(LOCKED_MEMORY)
+                .with_read_ahead(READ_AHEAD)
                 .build();
 
             while {
