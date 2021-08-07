@@ -2,8 +2,8 @@ extern crate openblas_src;
 
 use tcmalloc::TCMalloc;
 
-use vanadium_benches::{large_header, bench_covariance};
-use vanadium_io::bip::GlommioBip;
+use vanadium_benches::{bench_covariance, large_header};
+use vanadium_core::io::bip::GlommioBip;
 
 #[global_allocator]
 static GLOBAL: TCMalloc = TCMalloc;

@@ -13,9 +13,6 @@ features = ["blas", "serde"]
 
 [dependencies.vanadium-core]
 path = "../vanadium-core"
-
-[dependencies.vanadium-io]
-path = "../vanadium-io"
 features = ["progress", "glommio-backend", "syscall-backend"]
 
 [dependencies.blas-src]
