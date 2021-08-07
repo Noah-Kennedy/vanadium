@@ -1,8 +1,9 @@
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use structopt::StructOpt;
+
 use vanadium_core::error::VanadiumError;
-use std::path::PathBuf;
 
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum IoBackend {
@@ -38,7 +39,7 @@ pub enum Operation {
         #[structopt(long)]
         header: PathBuf,
         #[structopt(short, long)]
-        output: PathBuf
+        output: PathBuf,
     },
     StandardDeviations {
         #[structopt(long)]
@@ -57,5 +58,5 @@ pub enum Operation {
         means: Option<PathBuf>,
         #[structopt(short, long)]
         std_devs: Option<PathBuf>,
-    }
+    },
 }

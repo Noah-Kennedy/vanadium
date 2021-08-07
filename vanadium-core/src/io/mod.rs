@@ -1,13 +1,10 @@
-#[macro_use]
-extern crate ndarray;
-
 use std::path::Path;
 
 use ndarray::{Array1, Array2};
 use ndarray_linalg::{Eig, Lapack, Scalar};
 use num_traits::real::Real;
 
-use vanadium_core::error::{VanadiumError, VanadiumResult};
+use crate::error::{VanadiumError, VanadiumResult};
 
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
@@ -25,7 +22,7 @@ macro_rules! make_bar {
                     .progress_chars("##-")
                 );
                 $i.set_message($m);
-                $i.set_draw_rate($crate::UPDATE_FREQ);
+                $i.set_draw_rate($crate::io::UPDATE_FREQ);
             }
         }
     }

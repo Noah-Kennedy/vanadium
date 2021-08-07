@@ -6,12 +6,11 @@ use std::path::Path;
 use byteorder::{LittleEndian, ReadBytesExt};
 use ndarray::{Array2, ArrayViewMut2};
 
-use vanadium_core::error::{VanadiumError, VanadiumResult};
-use vanadium_core::headers::{Header, ImageFormat};
-use vanadium_core::image_formats::bip::Bip;
-
-use crate::BATCH_SIZE;
-use crate::bip::SequentialPixels;
+use crate::error::{VanadiumError, VanadiumResult};
+use crate::headers::{Header, ImageFormat};
+use crate::image_formats::bip::Bip;
+use crate::io::BATCH_SIZE;
+use crate::io::bip::SequentialPixels;
 
 pub struct SyscallBip<T> {
     file: File,

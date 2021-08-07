@@ -4,8 +4,8 @@ use std::fs::{File, OpenOptions};
 use structopt::StructOpt;
 
 use vanadium_core::headers::{Header, ImageFormat};
-use vanadium_io::bip::{GlommioBip, SyscallBip};
-use vanadium_io::ImageStats;
+use vanadium_core::io::bip::{GlommioBip, SyscallBip};
+use vanadium_core::io::ImageStats;
 
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
 

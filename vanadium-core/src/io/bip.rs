@@ -4,17 +4,17 @@ use std::ops::{AddAssign, DivAssign, SubAssign};
 use std::path::Path;
 
 use ndarray::{Array1, Array2, ArrayViewMut2};
+use ndarray_linalg::{Lapack, Scalar};
 use num_traits::{Float, FromPrimitive};
 
-use vanadium_core::image_formats::bip::Bip;
+use crate::error::VanadiumResult;
+use crate::image_formats::bip::Bip;
+use crate::io::ImageStats;
 
-use crate::{ImageStats};
 #[cfg(feature = "glommio-backend")]
-pub use crate::glommio::bip::GlommioBip;
+pub use super::glommio::bip::GlommioBip;
 #[cfg(feature = "syscall-backend")]
-pub use crate::syscall::bip::SyscallBip;
-use ndarray_linalg::{Scalar, Lapack};
-use vanadium_core::error::VanadiumResult;
+pub use super::syscall::bip::SyscallBip;
 
 pub trait SequentialPixels<T> {
     fn fold_batched<F, A>(&mut self, name: &str, accumulator: A, f: F) -> VanadiumResult<A>
