@@ -1,12 +1,6 @@
 [workspace]
 members = [
     "vanadium-core",
-#    "vanadium-benches",
+    "vanadium-benches",
     "vanadium-cli"
 ]
-
-[profile.release]
-#lto = "fat"
-#codegen-units = 1
-#debug-assertions = false
-#overflow-checks = false
