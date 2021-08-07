@@ -1,41 +1,44 @@
 [package]
 name = "vanadium-core"
-version = "1.0.0-alpha"
-authors = ["noah <nomaxx117@gmail.com>"]
+version = "0.1.0"
 edition = "2018"
 
+###################################################################################################
+# Features
+###################################################################################################
 [features]
-header-serialization = ["serde"]
+header-parsing = ["serde"]
+progress = ["indicatif"]
+glommio-backend = ["glommio", "futures"]
+syscall-backend = []
 
+###################################################################################################
+# Dependencies
+###################################################################################################
 [dependencies]
-either = "1.6"
-memmap2 = "0.2.0"
-rayon = "1.5"
-nalgebra = "0.24.0"
-parking_lot = "0.11.1"
+num-traits = "^0.2.14"
+cfg-if = "^1.0.0"
+thiserror = "^1.0.0"
+ndarray = "^0.15.3"
+byteorder = "^1.4.3"
+ndarray-linalg = "^0.14.0"
 
-[dependencies.num]
-version = "0.3.1"
-default-features = false
-
-[dependencies.image]
-version = "0.23.12"
-default-features = false
-features = ["png"]
-
-[dependencies.indicatif]
-version = "0.15.0"
-features = ["improved_unicode"]
-
+###################################################################################################
+# Not always needed for libraries
+###################################################################################################
 [dependencies.serde]
-version = "1.0"
+version = "^1.0.0"
 features = ["derive"]
 optional = true
 
-[dependencies.regex]
-version = "1.4"
-default-features = false
-features = ["std"]
+[dependencies.indicatif]
+version = "^0.16.2"
+optional = true
 
-[dev-dependencies.rand]
-version = "0.8.3"
+[dependencies.glommio]
+version = "^0.5.0"
+optional = true
+
+[dependencies.futures]
+version = "^0.3.16"
+optional = true

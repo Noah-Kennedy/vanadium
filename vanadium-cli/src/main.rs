@@ -1,37 +1,85 @@
-#[macro_use]
-extern crate clap;
+extern crate openblas_src;
 
 use std::error::Error;
+use std::fs::{File, OpenOptions};
 
-use clap::Clap;
-#[cfg(not(target_env = "msvc"))]
-use jemallocator::Jemalloc;
+use structopt::StructOpt;
 
-use crate::cli::{Opt, SubcommandOpt};
-use crate::convert::execute_conversion;
-use crate::pca::execute_pca;
-use crate::render::normalize;
+use vanadium_core::headers::{Header, ImageFormat};
+use vanadium_core::io::bip::{GlommioBip, SyscallBip};
+use vanadium_core::io::ImageStats;
 
-#[cfg(not(target_env = "msvc"))]
-#[global_allocator]
-static GLOBAL: Jemalloc = Jemalloc;
+use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
-#[cfg(not(tarpaulin_include))]
-mod cli;
-#[cfg(not(tarpaulin_include))]
-mod convert;
-#[cfg(not(tarpaulin_include))]
-mod pca;
-#[cfg(not(tarpaulin_include))]
-mod render;
+mod opt;
 
-#[cfg(not(tarpaulin_include))]
-fn main() -> Result<(), Box<dyn Error>> {
-    let opt: Opt = Opt::parse();
-
-    match opt.subcommand {
-        SubcommandOpt::Convert(cvt) => execute_conversion(cvt),
-        SubcommandOpt::Color(norm_opt) => normalize(norm_opt),
-        SubcommandOpt::Pca(pca) => execute_pca(pca),
+fn get_image(backend: IoBackend, headers: Header) -> Box<dyn ImageStats<f32>> {
+    assert_eq!(ImageFormat::Bip, headers.format);
+    match backend {
+        IoBackend::Glommio => Box::new(GlommioBip::new(headers)),
+        IoBackend::Syscall => Box::new(SyscallBip::new(headers).unwrap())
     }
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let args: VanadiumArgs = VanadiumArgs::from_args();
+
+    match args.op {
+        Operation::Means { header, output } => {
+            let header: Header = serde_json::from_reader(File::open(header).unwrap()).unwrap();
+            let mut image = get_image(args.backend, header);
+
+            let file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(output)
+                .unwrap();
+
+            let means = image.means()?;
+
+            serde_json::to_writer(file, &means).unwrap();
+        }
+        Operation::StandardDeviations { header, output, means } => {
+            let header: Header = serde_json::from_reader(File::open(header)?)?;
+            let mut image = get_image(args.backend, header);
+
+            let file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(output)
+                .unwrap();
+
+            let means = if let Some(m) = means {
+                serde_json::from_reader(File::open(m)?)?
+            } else {
+                image.means()?
+            };
+
+            let std_devs = image.std_deviations(&means)?;
+
+            serde_json::to_writer(file, &std_devs).unwrap();
+        }
+        Operation::Covariances { header, output, means, std_devs } => {
+            let header: Header = serde_json::from_reader(File::open(header)?)?;
+            let mut image = get_image(args.backend, header);
+
+            let means = means.map(|x| serde_json::from_reader(File::open(x).unwrap()).unwrap());
+            let std_devs = std_devs.map(|x| serde_json::from_reader(File::open(x).unwrap()).unwrap());
+
+            let file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(output)
+                .unwrap();
+
+            let cov = image.covariance_matrix(means.as_ref(), std_devs.as_ref())?;
+
+            serde_json::to_writer(file, &cov).unwrap();
+        }
+    }
+
+    Ok(())
 }

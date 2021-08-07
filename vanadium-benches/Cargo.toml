@@ -1,24 +1,27 @@
 [package]
-name = "vanadium-cli"
+name = "vanadium-benches"
 version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-structopt = "^0.3.0"
+tcmalloc = "^0.3.0"
 serde_json = "^1.0.0"
+
+[dependencies.ndarray]
+version = "^0.15.3"
+features = ["blas", "serde"]
 
 [dependencies.vanadium-core]
 path = "../vanadium-core"
-features = ["header-parsing", "glommio-backend", "syscall-backend", "progress"]
 
-[dependencies.ndarray]
-version = "^0.15.0"
-features = ["blas", "serde"]
+[dependencies.vanadium-io]
+path = "../vanadium-io"
+features = ["progress", "glommio-backend", "syscall-backend"]
 
 [dependencies.blas-src]
 version = "^0.8.0"
 features = ["openblas"]
 
 [dependencies.openblas-src]
-version = "^0.10.0"
+version = "^0.10.4"
 features = ["cblas", "system"]

@@ -1,13 +1,16 @@
-/.idea
+# Vendored siproc libraries
 /vendored
+# Vendored siproc bins
 /bins
-/python
-*.png
+
+# Rust build artifacts
 /target
 
+# Data files from test runs
+*.png
+*.csv
 *.bsq
 *.bip
 *.bil
 
-/.cargo
-/bench-data
+data

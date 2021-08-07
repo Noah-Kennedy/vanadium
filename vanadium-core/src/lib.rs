@@ -1,10 +1,15 @@
-#[cfg_attr(feature = "serde", macro_use)]
-#[cfg(feature = "serde")]
+#[macro_use]
+extern crate ndarray;
+#[cfg(feature = "header-parsing")]
+#[macro_use]
 extern crate serde;
 
-pub mod header;
+pub mod headers;
 
-pub mod container;
+pub mod image_formats;
 
-#[cfg(not(tarpaulin_include))]
-pub mod bar;
+pub mod error;
+
+pub mod io;
+
+mod util;
