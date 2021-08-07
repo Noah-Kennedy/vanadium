@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::iter::Sum;
 use std::mem;
 use std::ops::{AddAssign, DivAssign, SubAssign};
-use std::path::PathBuf;
+use std::path::{Path};
 
 use futures::{AsyncReadExt, AsyncWriteExt};
 use glommio::io::{DmaFile, DmaStreamReaderBuilder, DmaStreamWriterBuilder};
@@ -130,7 +130,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
     fn map_and_write_batched<F>(
         &mut self,
         name: &str,
-        out: PathBuf,
+        out: &dyn AsRef<Path>,
         n_output_channels: usize,
         mut f: F,
     ) -> GenericResult<()>
@@ -147,7 +147,11 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
             let read_file = DmaFile::open(&self.headers.path).await?;
-            let write_file = DmaFile::open(&out).await?;
+            let write_file = glommio::io::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .dma_open(out).await?;
 
             let mut read_array = Array2::from_shape_vec(
                 (BATCH_SIZE, self.bip.pixel_length()),
@@ -156,7 +160,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
 
             let mut write_array = Array2::from_shape_vec(
                 (BATCH_SIZE, n_output_channels),
-                vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()],
+                vec![T::zero(); BATCH_SIZE * n_output_channels],
             ).unwrap();
 
             let mut reader = DmaStreamReaderBuilder::new(read_file)
@@ -193,10 +197,10 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                 unsafe {
                     let raw_write_buffer = std::slice::from_raw_parts(
                         write_array.as_ptr() as *const u8,
-                        BATCH_SIZE * n_output_channels * mem::size_of::<T>(),
+                        write_array.len() * mem::size_of::<T>(),
                     );
 
-                    writer.write_all(raw_write_buffer).await?;
+                    writer.write(raw_write_buffer).await?;
                 }
 
                 inc_bar!(pb, BATCH_SIZE as u64);

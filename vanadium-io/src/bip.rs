@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::iter::Sum;
 use std::ops::{AddAssign, DivAssign, SubAssign};
-use std::path::PathBuf;
+use std::path::Path;
 
 use ndarray::{Array1, Array2, ArrayViewMut2};
 use num_traits::{Float, FromPrimitive};
@@ -13,6 +13,7 @@ use crate::{GenericResult, ImageStats};
 pub use crate::glommio::bip::GlommioBip;
 #[cfg(feature = "syscall-backend")]
 pub use crate::syscall::bip::SyscallBip;
+use ndarray_linalg::{Scalar, Lapack};
 
 pub trait SequentialPixels<T> {
     fn fold_batched<F, A>(&mut self, name: &str, accumulator: A, f: F) -> GenericResult<A>
@@ -21,7 +22,7 @@ pub trait SequentialPixels<T> {
     fn map_and_write_batched<F>(
         &mut self,
         name: &str,
-        out: PathBuf,
+        out: &dyn AsRef<Path>,
         n_output_channels: usize,
         f: F,
     ) -> GenericResult<()>
@@ -30,8 +31,8 @@ pub trait SequentialPixels<T> {
 
 impl<C, T> ImageStats<T> for C
     where C: SequentialPixels<T>,
-          T: Float + Clone + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign + Debug
-          + 'static
+          T: Float + Clone + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign + Debug + Lapack
+          + 'static + Scalar
 {
     fn means(&mut self) -> GenericResult<Array1<T>> {
         let accumulator = Array1::zeros(self.bip().pixel_length());
@@ -67,5 +68,18 @@ impl<C, T> ImageStats<T> for C
         self.bip().normalize_covariances_accumulator(&mut res);
 
         Ok(res)
+    }
+
+    fn write_transformed(
+        &mut self,
+        transform: &Array2<T>,
+        out: &dyn AsRef<Path>,
+        means: Option<&Array1<T>>,
+        std_devs: Option<&Array1<T>>,
+    ) -> GenericResult<()>
+    {
+        self.map_and_write_batched("write", out, transform.ncols(), |pixels, write_array| {
+            Bip::map_transform(pixels, transform, write_array, means, std_devs)
+        })
     }
 }

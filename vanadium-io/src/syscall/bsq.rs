@@ -7,6 +7,7 @@ use vanadium_core::headers::Header;
 use vanadium_core::image_formats::bsq::Bsq;
 
 use crate::{GenericResult, ImageStats};
+use std::path::Path;
 
 pub struct SyncBsq<T> {
     _file: File,
@@ -93,5 +94,9 @@ impl ImageStats<f32> for SyncBsq<f32> {
         // }
         //
         // Ok(cov_mat)
+    }
+
+    fn write_transformed(&mut self, _transform: &Array2<f32>, _out: &dyn AsRef<Path>, _means: Option<&Array1<f32>>, _std_devs: Option<&Array1<f32>>) -> GenericResult<()> {
+        todo!()
     }
 }

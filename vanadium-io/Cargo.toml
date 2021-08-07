@@ -13,6 +13,7 @@ ndarray = "^0.15.3"
 cfg-if = "^1.0.0"
 num-traits = "^0.2.14"
 byteorder = "^1.4.3"
+ndarray-linalg = "^0.14.0"
 
 [dependencies.indicatif]
 version = "^0.16.2"

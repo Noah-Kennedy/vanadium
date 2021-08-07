@@ -3,7 +3,7 @@ use std::iter::Sum;
 use std::marker::PhantomData;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 
-use ndarray::{Array1, Array2, Axis};
+use ndarray::{Array1, Array2, ArrayViewMut2, Axis};
 use num_traits::{Float, FromPrimitive};
 
 use crate::headers::ImageDims;
@@ -95,5 +95,24 @@ impl<T> Bip<T>
     pub fn normalize_covariances_accumulator(&self, acc: &mut Array2<T>) {
         let length = T::from_usize(self.num_pixels()).unwrap();
         acc.mapv_inplace(|x| x / length);
+    }
+
+    pub fn map_transform(
+        pixel: &mut ArrayViewMut2<T>,
+        transform: &Array2<T>,
+        out: &mut Array2<T>,
+        means: Option<&Array1<T>>,
+        std_devs: Option<&Array1<T>>,
+    ) {
+        if let Some(means) = means {
+            *pixel -= means;
+        }
+
+        if let Some(std_devs) = std_devs {
+            *pixel /= std_devs;
+        }
+
+        // hot
+        *out = transform.dot(&pixel.t())
     }
 }

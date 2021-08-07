@@ -5,10 +5,11 @@ edition = "2018"
 
 [dependencies]
 tcmalloc = "^0.3.0"
+serde_json = "^1.0.0"
 
 [dependencies.ndarray]
 version = "^0.15.3"
-features = ["blas"]
+features = ["blas", "serde"]
 
 [dependencies.vanadium-core]
 path = "../vanadium-core"
