@@ -8,15 +8,16 @@ use num_traits::{Float, FromPrimitive};
 
 use vanadium_core::image_formats::bip::Bip;
 
-use crate::{GenericResult, ImageStats};
+use crate::{ImageStats};
 #[cfg(feature = "glommio-backend")]
 pub use crate::glommio::bip::GlommioBip;
 #[cfg(feature = "syscall-backend")]
 pub use crate::syscall::bip::SyscallBip;
 use ndarray_linalg::{Scalar, Lapack};
+use vanadium_core::error::VanadiumResult;
 
 pub trait SequentialPixels<T> {
-    fn fold_batched<F, A>(&mut self, name: &str, accumulator: A, f: F) -> GenericResult<A>
+    fn fold_batched<F, A>(&mut self, name: &str, accumulator: A, f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<T>, &mut A);
     fn bip(&self) -> &Bip<T>;
     fn map_and_write_batched<F>(
@@ -25,7 +26,7 @@ pub trait SequentialPixels<T> {
         out: &dyn AsRef<Path>,
         n_output_channels: usize,
         f: F,
-    ) -> GenericResult<()>
+    ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>);
 }
 
@@ -34,7 +35,7 @@ impl<C, T> ImageStats<T> for C
           T: Float + Clone + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign + Debug + Lapack
           + 'static + Scalar
 {
-    fn means(&mut self) -> GenericResult<Array1<T>> {
+    fn means(&mut self) -> VanadiumResult<Array1<T>> {
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
         let mut res = self.fold_batched("mean", accumulator, |pixels, acc| {
@@ -46,7 +47,7 @@ impl<C, T> ImageStats<T> for C
         Ok(res)
     }
 
-    fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>> {
+    fn std_deviations(&mut self, means: &Array1<T>) -> VanadiumResult<Array1<T>> {
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
         let mut res = self.fold_batched("std", accumulator, |pixels, acc| {
@@ -58,7 +59,7 @@ impl<C, T> ImageStats<T> for C
         Ok(res)
     }
 
-    fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> GenericResult<Array2<T>> {
+    fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> VanadiumResult<Array2<T>> {
         let accumulator = Array2::zeros((self.bip().dims.channels, self.bip().dims.channels));
 
         let mut res = self.fold_batched("cov", accumulator, |pixels, acc| {
@@ -76,7 +77,7 @@ impl<C, T> ImageStats<T> for C
         out: &dyn AsRef<Path>,
         means: Option<&Array1<T>>,
         std_devs: Option<&Array1<T>>,
-    ) -> GenericResult<()>
+    ) -> VanadiumResult<()>
     {
         self.map_and_write_batched("write", out, transform.ncols(), |pixels, write_array| {
             Bip::map_transform(pixels, transform, write_array, means, std_devs)

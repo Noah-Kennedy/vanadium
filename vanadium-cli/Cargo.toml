@@ -1,0 +1,28 @@
+[package]
+name = "vanadium-cli"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+structopt = "^0.3.0"
+serde_json = "^1.0.0"
+
+[dependencies.vanadium-core]
+path = "../vanadium-core"
+features = ["header-parsing"]
+
+[dependencies.vanadium-io]
+path = "../vanadium-io"
+features = ["glommio-backend", "syscall-backend", "progress"]
+
+[dependencies.ndarray]
+version = "^0.15.0"
+features = ["blas", "serde"]
+
+[dependencies.blas-src]
+version = "^0.8.0"
+features = ["openblas"]
+
+[dependencies.openblas-src]
+version = "^0.10.0"
+features = ["cblas", "system"]

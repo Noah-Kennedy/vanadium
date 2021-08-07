@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::iter::Sum;
 use std::mem;
 use std::ops::{AddAssign, DivAssign, SubAssign};
-use std::path::{Path};
+use std::path::Path;
 
 use futures::{AsyncReadExt, AsyncWriteExt};
 use glommio::io::{DmaFile, DmaStreamReaderBuilder, DmaStreamWriterBuilder};
@@ -10,10 +10,11 @@ use glommio::LocalExecutorBuilder;
 use ndarray::{Array2, ArrayViewMut2};
 use num_traits::{Float, FromPrimitive};
 
+use vanadium_core::error::{VanadiumError, VanadiumResult};
 use vanadium_core::headers::{Header, ImageFormat};
 use vanadium_core::image_formats::bip::Bip;
 
-use crate::{BATCH_SIZE, GenericResult};
+use crate::BATCH_SIZE;
 use crate::bip::SequentialPixels;
 
 const READ_AHEAD: usize = 16;
@@ -45,20 +46,25 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
     where T: Float + Clone + Copy + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign +
     'static + Debug
 {
-    fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
+    fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<T>, &mut A)
     {
+        // todo handle errors
+
         let ex = LocalExecutorBuilder::new()
             .name(name)
             .pin_to_cpu(PIN_CPU)
-            .make()?;
+            .make()
+            .map_err(|_| VanadiumError::Unknown)?;
 
         let name = name.to_owned();
 
         ex.run(async {
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
-            let file = DmaFile::open(&self.headers.path).await?;
+            let file = DmaFile::open(&self.headers.path).await
+                .map_err(|_| VanadiumError::FileNotFound(self.headers.path.to_str().unwrap().to_string()))?;
+
             let mut buffer: Vec<T> = vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()];
 
             let mut reader = DmaStreamReaderBuilder::new(file)
@@ -105,7 +111,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                     BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<T>(),
                 );
 
-                let n_bytes = reader.read(raw_buffer).await?;
+                let n_bytes = reader.read(raw_buffer).await.map_err(|_| VanadiumError::IoError)?;
 
                 // todo use a proper error handling approach, this can be triggered by user error
                 assert_eq!(0, n_bytes % mem::size_of::<T>());
@@ -133,25 +139,29 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
         out: &dyn AsRef<Path>,
         n_output_channels: usize,
         mut f: F,
-    ) -> GenericResult<()>
+    ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>)
     {
         let ex = LocalExecutorBuilder::new()
             .name(name)
             .pin_to_cpu(PIN_CPU)
-            .make()?;
+            .make()
+            .map_err(|_| VanadiumError::Unknown)?;
 
         let name = name.to_owned();
 
         ex.run(async {
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
-            let read_file = DmaFile::open(&self.headers.path).await?;
+            let read_file = DmaFile::open(&self.headers.path).await
+                .map_err(|_| VanadiumError::FileNotFound(self.headers.path.to_str().unwrap().to_string()))?;
+
             let write_file = glommio::io::OpenOptions::new()
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .dma_open(out).await?;
+                .dma_open(out).await
+                .map_err(|_| VanadiumError::FileNotFound(self.headers.path.to_str().unwrap().to_string()))?;
 
             let mut read_array = Array2::from_shape_vec(
                 (BATCH_SIZE, self.bip.pixel_length()),
@@ -200,7 +210,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                         write_array.len() * mem::size_of::<T>(),
                     );
 
-                    writer.write(raw_write_buffer).await?;
+                    writer.write(raw_write_buffer).await.map_err(|_| VanadiumError::IoError)?;
                 }
 
                 inc_bar!(pb, BATCH_SIZE as u64);
@@ -217,7 +227,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                     BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<T>(),
                 );
 
-                let n_bytes = reader.read(raw_buffer).await?;
+                let n_bytes = reader.read(raw_buffer).await.map_err(|_| VanadiumError::IoError)?;
 
                 // todo use a proper error handling approach, this can be triggered by user error
                 assert_eq!(0, n_bytes % mem::size_of::<T>());
@@ -237,7 +247,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                         (n_elements / self.bip.pixel_length()) * n_output_channels * mem::size_of::<T>(),
                     );
 
-                    writer.write_all(raw_write_buffer).await?;
+                    writer.write_all(raw_write_buffer).await.map_err(|_| VanadiumError::IoError)?;
                 }
             }
 

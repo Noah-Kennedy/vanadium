@@ -6,4 +6,6 @@ pub mod headers;
 
 pub mod image_formats;
 
+pub mod error;
+
 mod util;

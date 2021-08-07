@@ -2,7 +2,8 @@
 members = [
     "vanadium-core",
     "vanadium-benches",
-    "vanadium-io"
+    "vanadium-io",
+    "vanadium-cli"
 ]
 
 [profile.release]

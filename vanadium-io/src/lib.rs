@@ -1,12 +1,13 @@
 #[macro_use]
 extern crate ndarray;
 
-use std::error::Error;
 use std::path::Path;
 
 use ndarray::{Array1, Array2};
 use ndarray_linalg::{Eig, Lapack, Scalar};
 use num_traits::real::Real;
+
+use vanadium_core::error::{VanadiumError, VanadiumResult};
 
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
@@ -51,27 +52,25 @@ pub mod glommio;
 #[cfg(feature = "syscall-backend")]
 pub mod syscall;
 
-pub type GenericResult<T> = Result<T, Box<dyn Error>>;
-
 pub trait ImageStats<T> where
     T: Real + Lapack
 {
-    fn means(&mut self) -> GenericResult<Array1<T>>;
-    fn std_deviations(&mut self, means: &Array1<T>) -> GenericResult<Array1<T>>;
-    fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> GenericResult<Array2<T>>;
+    fn means(&mut self) -> VanadiumResult<Array1<T>>;
+    fn std_deviations(&mut self, means: &Array1<T>) -> VanadiumResult<Array1<T>>;
+    fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> VanadiumResult<Array2<T>>;
     fn write_transformed(
         &mut self,
         transform: &Array2<T>,
         out: &dyn AsRef<Path>,
         means: Option<&Array1<T>>,
         std_devs: Option<&Array1<T>>,
-    ) -> GenericResult<()>;
+    ) -> VanadiumResult<()>;
     fn pca_eigen(
         &mut self,
         n_dims: usize,
         cov_mat: &Array2<T>,
-    ) -> GenericResult<Array2<T>> {
-        let (_e_val, e_vec) = cov_mat.eig()?;
+    ) -> VanadiumResult<Array2<T>> {
+        let (_e_val, e_vec) = cov_mat.eig().map_err(|_| VanadiumError::Unknown)?;
 
         Ok(e_vec.slice(s![..n_dims, ..]).mapv(|x| T::from_real(x.re())))
     }

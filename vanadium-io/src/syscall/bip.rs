@@ -1,15 +1,16 @@
 use std::{io, mem};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use std::path::{Path};
+use std::path::Path;
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use ndarray::{Array2, ArrayViewMut2};
 
+use vanadium_core::error::{VanadiumError, VanadiumResult};
 use vanadium_core::headers::{Header, ImageFormat};
 use vanadium_core::image_formats::bip::Bip;
 
-use crate::{BATCH_SIZE, GenericResult};
+use crate::BATCH_SIZE;
 use crate::bip::SequentialPixels;
 
 pub struct SyscallBip<T> {
@@ -35,10 +36,10 @@ impl<T> SyscallBip<T> {
 }
 
 impl SequentialPixels<f32> for SyscallBip<f32> {
-    fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> GenericResult<A>
+    fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
-        self.file.seek(SeekFrom::Start(0))?;
+        self.file.seek(SeekFrom::Start(0)).map_err(|_| VanadiumError::IoError)?;
 
         let name = name.to_owned();
 
@@ -67,7 +68,7 @@ impl SequentialPixels<f32> for SyscallBip<f32> {
                 BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>(),
             );
 
-            let n_bytes = self.file.read(raw_buffer)?;
+            let n_bytes = self.file.read(raw_buffer).map_err(|_| VanadiumError::IoError)?;
 
             // todo use a proper error handling approach, this can be triggered by user error
             assert_eq!(0, n_bytes % mem::size_of::<f32>());
@@ -90,7 +91,7 @@ impl SequentialPixels<f32> for SyscallBip<f32> {
 
     fn map_and_write_batched<F>(
         &mut self, _name: &str, _out: &dyn AsRef<Path>, _n_output_channels: usize, _f: F,
-    ) -> GenericResult<()>
+    ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<f32>, &mut Array2<f32>)
     {
         todo!()
