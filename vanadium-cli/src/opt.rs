@@ -71,4 +71,14 @@ pub enum Operation {
         #[structopt(short, long)]
         pixels: usize,
     },
+    Crop {
+        #[structopt(long)]
+        header: PathBuf,
+        #[structopt(short, long)]
+        output: PathBuf,
+        #[structopt(short, long, number_of_values = 2)]
+        rows: Option<Vec<u64>>,
+        #[structopt(short, long, number_of_values = 2)]
+        cols: Option<Vec<u64>>,
+    },
 }

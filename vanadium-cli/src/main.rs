@@ -99,6 +99,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             serde_json::to_writer(file, &header).unwrap();
         }
+        Operation::Crop { header, output, rows, cols } => {
+            let rows = rows.map(|x| (x[0], x[1]));
+            let cols = cols.map(|x| (x[0], x[1]));
+
+            let header = serde_json::from_reader(File::open(header)?)?;
+
+            let mut image = get_image(args.backend, header);
+
+            image.crop(rows, cols, &output)?;
+        }
     }
 
     Ok(())
