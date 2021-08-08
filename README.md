@@ -11,11 +11,14 @@ Vanadium is split into two parts.
 - Features
     - [x] Basic statistical operations
     - [x] Principal Component Analysis
-    - [x] 32-bit float support.
-    - [ ] Image conversion.
+    - [x] 32-bit float support
+    - [x] Image cropping
+    - [x] BIP support
+    - [ ] BSQ support
+    - [ ] BIL support
+    - [ ] Image conversion
     - [ ] Image rendering
     - [ ] Image masking
-    - [ ] Image cropping
     - [ ] Minimum Noise Fraction
     - [ ] 64-bit float support
     - [ ] Python wrapper
