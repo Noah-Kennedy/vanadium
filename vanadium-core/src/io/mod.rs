@@ -49,7 +49,7 @@ pub mod glommio;
 #[cfg(feature = "syscall-backend")]
 pub mod syscall;
 
-pub trait ImageStats<T> where
+pub trait BasicImage<T> where
     T: Real + Lapack
 {
     fn means(&mut self) -> VanadiumResult<Array1<T>>;
@@ -71,4 +71,10 @@ pub trait ImageStats<T> where
 
         Ok(e_vec.slice(s![..n_dims, ..]).mapv(|x| T::from_real(x.re())))
     }
+    fn crop(
+        &mut self,
+        rows: Option<(u64, u64)>,
+        cols: Option<(u64, u64)>,
+        out: &dyn AsRef<Path>,
+    ) -> VanadiumResult<()>;
 }

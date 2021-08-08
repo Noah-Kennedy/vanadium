@@ -7,13 +7,13 @@ use structopt::StructOpt;
 
 use vanadium_core::headers::{Header, ImageFormat};
 use vanadium_core::io::bip::{GlommioBip, SyscallBip};
-use vanadium_core::io::ImageStats;
+use vanadium_core::io::BasicImage;
 
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
 mod opt;
 
-fn get_image(backend: IoBackend, headers: Header) -> Box<dyn ImageStats<f32>> {
+fn get_image(backend: IoBackend, headers: Header) -> Box<dyn BasicImage<f32>> {
     assert_eq!(ImageFormat::Bip, headers.format);
     match backend {
         IoBackend::Glommio => Box::new(GlommioBip::new(headers)),

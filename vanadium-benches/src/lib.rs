@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use vanadium_core::headers::{Header, ImageDims, ImageFormat};
-use vanadium_core::io::ImageStats;
+use vanadium_core::io::BasicImage;
 
 pub fn small_header() -> Header {
     Header {
@@ -29,7 +29,7 @@ pub fn large_header() -> Header {
     }
 }
 
-pub fn bench_means(image: &mut dyn ImageStats<f32>) {
+pub fn bench_means(image: &mut dyn BasicImage<f32>) {
     let mean_timer = Instant::now();
     let means = image.means().unwrap();
 
@@ -45,7 +45,7 @@ pub fn bench_means(image: &mut dyn ImageStats<f32>) {
     serde_json::to_writer(file, &means).unwrap();
 }
 
-pub fn bench_stds(image: &mut dyn ImageStats<f32>) {
+pub fn bench_stds(image: &mut dyn BasicImage<f32>) {
     let means = serde_json::from_reader(File::open("means.json").unwrap()).unwrap();
 
     let timer = Instant::now();
@@ -63,7 +63,7 @@ pub fn bench_stds(image: &mut dyn ImageStats<f32>) {
     serde_json::to_writer(file, &std_devs).unwrap();
 }
 
-pub fn bench_covariance(image: &mut dyn ImageStats<f32>) {
+pub fn bench_covariance(image: &mut dyn BasicImage<f32>) {
     let means = serde_json::from_reader(File::open("means.json").unwrap()).unwrap();
     let std_devs = serde_json::from_reader(File::open("std_devs.json").unwrap()).unwrap();
 
@@ -82,7 +82,7 @@ pub fn bench_covariance(image: &mut dyn ImageStats<f32>) {
     serde_json::to_writer(file, &covariances).unwrap();
 }
 
-pub fn bench_pca_eigen(image: &mut dyn ImageStats<f32>) {
+pub fn bench_pca_eigen(image: &mut dyn BasicImage<f32>) {
     let covariances = serde_json::from_reader(File::open("covariances.json").unwrap()).unwrap();
 
     let timer = Instant::now();
@@ -101,7 +101,7 @@ pub fn bench_pca_eigen(image: &mut dyn ImageStats<f32>) {
     serde_json::to_writer(file, &eigen).unwrap();
 }
 
-pub fn bench_pca_write(image: &mut dyn ImageStats<f32>) {
+pub fn bench_pca_write(image: &mut dyn BasicImage<f32>) {
     let means = serde_json::from_reader(File::open("means.json").unwrap()).unwrap();
     let std_devs = serde_json::from_reader(File::open("std_devs.json").unwrap()).unwrap();
     let eigen = serde_json::from_reader(File::open("eigen.json").unwrap()).unwrap();

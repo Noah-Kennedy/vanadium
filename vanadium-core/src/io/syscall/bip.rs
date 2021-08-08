@@ -11,6 +11,7 @@ use crate::headers::{Header, ImageFormat};
 use crate::image_formats::bip::Bip;
 use crate::io::BATCH_SIZE;
 use crate::io::bip::SequentialPixels;
+use crate::util::make_raw_mut;
 
 pub struct SyscallBip<T> {
     file: File,
@@ -62,10 +63,7 @@ impl SequentialPixels<f32> for SyscallBip<f32> {
         // There is no invalid aliasing here.
         // We also check at the end that we actually read the correct amount of bytes.
         let n_elements = unsafe {
-            let raw_buffer = std::slice::from_raw_parts_mut(
-                buffer.as_mut_ptr() as *mut u8,
-                BATCH_SIZE * self.bip.pixel_length() * mem::size_of::<f32>(),
-            );
+            let raw_buffer = make_raw_mut(&mut buffer);
 
             let n_bytes = self.file.read(raw_buffer).map_err(|_| VanadiumError::IoError)?;
 
@@ -93,6 +91,12 @@ impl SequentialPixels<f32> for SyscallBip<f32> {
     ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<f32>, &mut Array2<f32>)
     {
+        todo!()
+    }
+
+    fn crop_map<F>(&mut self, _name: &str, _rows: Option<(u64, u64)>, _cols: Option<(u64, u64)>,
+                   _n_output_channels: usize, _out: &dyn AsRef<Path>, _f: F) -> VanadiumResult<()>
+        where F: FnMut(&mut ArrayViewMut2<f32>, &mut Array2<f32>) {
         todo!()
     }
 }

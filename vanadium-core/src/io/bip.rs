@@ -9,7 +9,7 @@ use num_traits::{Float, FromPrimitive};
 
 use crate::error::VanadiumResult;
 use crate::image_formats::bip::Bip;
-use crate::io::ImageStats;
+use crate::io::BasicImage;
 
 #[cfg(feature = "glommio-backend")]
 pub use super::glommio::bip::GlommioBip;
@@ -28,9 +28,19 @@ pub trait SequentialPixels<T> {
         f: F,
     ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>);
+    fn crop_map<F>(
+        &mut self,
+        name: &str,
+        rows: Option<(u64, u64)>,
+        cols: Option<(u64, u64)>,
+        n_output_channels: usize,
+        out: &dyn AsRef<Path>,
+        f: F,
+    ) -> VanadiumResult<()>
+        where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>);
 }
 
-impl<C, T> ImageStats<T> for C
+impl<C, T> BasicImage<T> for C
     where C: SequentialPixels<T>,
           T: Float + Clone + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign + Debug + Lapack
           + 'static + Scalar
@@ -82,5 +92,9 @@ impl<C, T> ImageStats<T> for C
         self.map_and_write_batched("write", out, transform.ncols(), |pixels, write_array| {
             Bip::map_transform(pixels, transform, write_array, means, std_devs)
         })
+    }
+
+    fn crop(&mut self, _rows: Option<(u64, u64)>, _cols: Option<(u64, u64)>, _out: &dyn AsRef<Path>) -> VanadiumResult<()> {
+        todo!()
     }
 }
