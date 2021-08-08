@@ -292,7 +292,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                     writer.write(raw_write_buffer).await.map_err(|_| VanadiumError::IoError)?;
                 }
 
-                inc_bar!(pb, BATCH_SIZE as u64);
+                inc_bar!(pb, self.headers.dims.pixels as u64);
             }
 
             let n_elements = unsafe {

@@ -70,5 +70,5 @@ pub enum Operation {
         lines: usize,
         #[structopt(short, long)]
         pixels: usize,
-    }
+    },
 }

@@ -94,7 +94,7 @@ impl<C, T> BasicImage<T> for C
         })
     }
 
-    fn crop(&mut self, _rows: Option<(u64, u64)>, _cols: Option<(u64, u64)>, _out: &dyn AsRef<Path>) -> VanadiumResult<()> {
-        todo!()
+    fn crop(&mut self, rows: Option<(u64, u64)>, cols: Option<(u64, u64)>, out: &dyn AsRef<Path>) -> VanadiumResult<()> {
+        self.crop_map("crop", rows, cols, self.bip().dims.channels, out, |r, w| *w = r.to_owned())
     }
 }
