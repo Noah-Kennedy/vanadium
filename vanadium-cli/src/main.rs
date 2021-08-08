@@ -5,9 +5,9 @@ use std::fs::{File, OpenOptions};
 
 use structopt::StructOpt;
 
-use vanadium_core::headers::{Header, ImageFormat};
-use vanadium_core::io::bip::{GlommioBip, SyscallBip};
+use vanadium_core::headers::{Header, ImageDims, ImageFormat};
 use vanadium_core::io::BasicImage;
+use vanadium_core::io::bip::{GlommioBip, SyscallBip};
 
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
@@ -78,6 +78,26 @@ fn main() -> Result<(), Box<dyn Error>> {
             let cov = image.covariance_matrix(means.as_ref(), std_devs.as_ref())?;
 
             serde_json::to_writer(file, &cov).unwrap();
+        }
+        Operation::NewHeader { output, data_path, channels, lines, pixels } => {
+            let file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(output)
+                .unwrap();
+
+            let header = Header {
+                dims: ImageDims {
+                    channels,
+                    lines,
+                    pixels,
+                },
+                format: ImageFormat::Bip,
+                path: data_path,
+            };
+
+            serde_json::to_writer(file, &header).unwrap();
         }
     }
 

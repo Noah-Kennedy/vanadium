@@ -59,4 +59,16 @@ pub enum Operation {
         #[structopt(short, long)]
         std_devs: Option<PathBuf>,
     },
+    NewHeader {
+        #[structopt(short, long)]
+        output: PathBuf,
+        #[structopt(short, long)]
+        data_path: PathBuf,
+        #[structopt(short, long)]
+        channels: usize,
+        #[structopt(short, long)]
+        lines: usize,
+        #[structopt(short, long)]
+        pixels: usize,
+    }
 }
