@@ -243,7 +243,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
             * self.bip.pixel_length() as u64
             * mem::size_of::<T>() as u64;
 
-        let (start_col, _) = cols.unwrap_or((0, self.bip.pixel_length() as u64));
+        let (start_col, _) = cols.unwrap_or((0, self.headers.dims.pixels as u64));
         let (start_row, end_row) = rows.unwrap_or((0, self.headers.dims.lines as u64));
 
         let name = name.to_owned();
@@ -252,7 +252,7 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
             let mut reader = self.open_input_reader().await?;
             let mut writer = self.open_output_writer(out).await?;
 
-            make_bar!(pb, self.bip.num_pixels() as u64, name);
+            make_bar!(pb, end_row - start_row, name);
 
             let mut read_array = Array2::from_shape_vec(
                 (row_length as usize, self.bip.pixel_length()),
@@ -264,62 +264,34 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                 vec![T::zero(); row_length as usize * n_output_channels],
             ).unwrap();
 
+            let initial_skip = (start_row * self.headers.dims.pixels as u64 + start_col)
+                * self.bip.pixel_length() as u64
+                * mem::size_of::<T>() as u64;
+
             // move to initial offset
-            reader.skip(
-                (start_row * self.headers.dims.pixels as u64 + start_col)
-                    * self.bip.pixel_length() as u64
-                    * mem::size_of::<T>() as u64
-            );
+            reader.skip(initial_skip);
 
             let mut row = start_row;
 
-            while {
-                unsafe {
-                    let raw_read_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
-                    let sentinel = row < end_row && reader.read_exact(raw_read_buffer).await.is_ok();
+            while unsafe {
+                let raw_read_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
+                let sentinel = row < end_row && reader.read_exact(raw_read_buffer).await.is_ok();
 
-                    reader.skip(skip);
+                reader.skip(skip);
 
-                    row += 1;
+                row += 1;
 
-                    sentinel
-                }
+                sentinel
             } {
                 f(&mut read_array.view_mut(), &mut write_array);
 
                 unsafe {
                     let raw_write_buffer = make_raw(write_array.as_slice().unwrap());
-                    writer.write(raw_write_buffer).await.map_err(|_| VanadiumError::IoError)?;
+                    writer.write_all(raw_write_buffer).await.map_err(|_|
+                        VanadiumError::IoError)?;
                 }
 
-                inc_bar!(pb, self.headers.dims.pixels as u64);
-            }
-
-            let n_elements = unsafe {
-                let raw_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
-
-                let n_bytes = reader.read(raw_buffer).await.map_err(|_| VanadiumError::IoError)?;
-
-                // todo use a proper error handling approach, this can be triggered by user error
-                assert_eq!(0, n_bytes % mem::size_of::<T>());
-                n_bytes / mem::size_of::<T>()
-            };
-
-            if n_elements > 0 {
-                let mut pixel = read_array.slice_mut(
-                    s![..n_elements / self.bip.pixel_length(),..]);
-
-                f(&mut pixel, &mut write_array);
-
-                unsafe {
-                    let write_slice = write_array.as_slice().unwrap();
-
-                    let ws = &write_slice[..((n_elements / self.bip.pixel_length()) * n_output_channels)];
-
-                    let raw_write_buffer = make_raw(ws);
-
-                    writer.write_all(raw_write_buffer).await.map_err(|_| VanadiumError::IoError)?;
-                }
+                inc_bar!(pb, 1);
             }
 
             Ok(())

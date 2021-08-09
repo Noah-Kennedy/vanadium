@@ -27,8 +27,10 @@ impl FromStr for IoBackend {
 #[derive(Debug, StructOpt)]
 #[structopt(name = "Vanadium", about = "A tool for fast hyperspectral image processing.")]
 pub struct VanadiumArgs {
+    /// Specifies the IO backend to use. Currently, glommio (io-uring) and syscall are supported.
     #[structopt(long)]
     pub backend: IoBackend,
+    /// Subcommand to invoke.
     #[structopt(subcommand)]
     pub op: Operation,
 }
