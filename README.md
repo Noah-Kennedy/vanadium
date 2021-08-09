@@ -70,21 +70,20 @@ You can use the tool to construct header files quite easily.
 
 ### Small File (5 bands, 11.75 GiB)
 #### Spectral Means
-| Tool                | Machine Configuration | Cache State | Time (mean ± σ)      |
-|:--------------------|:----------------------|:-----------:|---------------------:|
-| vanadium (syscall)  | Workstation A         | Warm        |    2.672 s ± 0.004 s |
-| vanadium (io-uring) | Laptop                | N/A         |    4.067 s ± 0.025 s |
-| vanadium (syscall)  | Laptop                | Cool        |   12.531 s ± 0.139 s |
-| vanadium (io-uring) | Workstation A         | N/A         |   22.276 s ± 0.020 s |
-| vanadium (syscall)  | Workstation A         | Cool        |   22.839 s ± 0.012 s |
-| siproc              | Workstation A         | Cool        |                      |
+| Tool                | Machine Configuration | Time (mean ± σ)      |
+|:--------------------|:----------------------|---------------------:|
+| vanadium (io-uring) | Laptop                |    4.067 s ± 0.025 s |
+| vanadium (syscall)  | Laptop                |   12.531 s ± 0.139 s |
+| vanadium (io-uring) | Workstation A         |   22.276 s ± 0.020 s |
+| vanadium (syscall)  | Workstation A         |   22.839 s ± 0.012 s |
+| siproc              | Workstation A         |                      |
 
 #### Covariance Matrix
-| Tool                | Machine Configuration | Cache State | Average Time [s] |
-|:--------------------|:----------------------|:-----------:|-----------------:|
-| vanadium (syscall)  | Workstation A         | Cool        |                  |
-| vanadium (io-uring) | Workstation A         | N/A         |                  |
-| siproc (cpu)        | Workstation A         | Cool        |                  |
+| Tool                | Machine Configuration | Average Time [s] |
+|:--------------------|:----------------------|-----------------:|
+| vanadium (syscall)  | Workstation A         |                  |
+| vanadium (io-uring) | Workstation A         |                  |
+| siproc (cpu)        | Workstation A         |                  |
 
 ### Medium File (394 bands, ~106 GiB)
 #### Spectral Means
