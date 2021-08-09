@@ -12,5 +12,6 @@
 *.bsq
 *.bip
 *.bil
+*.json
 
 data
