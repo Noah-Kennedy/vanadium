@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::iter::Sum;
 use std::marker::PhantomData;
+use std::mem;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 
 use ndarray::{Array1, Array2, ArrayViewMut2, Axis};
@@ -23,6 +24,11 @@ impl<T> Bip<T> {
     #[inline(always)]
     pub fn pixel_length(&self) -> usize {
         self.dims.channels
+    }
+
+    #[inline(always)]
+    pub fn get_image_size(&self) -> usize {
+        self.dims.channels * self.dims.lines * self.dims.pixels * mem::size_of::<T>()
     }
 
     #[inline(always)]

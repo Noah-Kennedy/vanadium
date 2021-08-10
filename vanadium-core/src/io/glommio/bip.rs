@@ -25,13 +25,13 @@ const PIN_CPU: usize = 1;
 // maybe make it static or part of structure?
 const LOCKED_MEMORY: usize = 524_288;
 
-pub struct GlommioBip<T> {
-    headers: Header,
+pub struct GlommioBip<P, T> where P: AsRef<Path> {
+    headers: Header<P>,
     bip: Bip<T>,
 }
 
-impl<T> GlommioBip<T> {
-    pub fn new(headers: Header) -> Self {
+impl<P, T> GlommioBip<P, T> where P: AsRef<Path> + ToString {
+    pub fn new(headers: Header<P>) -> Self {
         assert_eq!(ImageFormat::Bip, headers.format);
         let bip = Bip {
             dims: headers.dims.clone(),
@@ -50,9 +50,13 @@ impl<T> GlommioBip<T> {
     }
 
     async fn open_input_file(&self) -> VanadiumResult<DmaFile> {
-        DmaFile::open(&self.headers.path)
+        let f = DmaFile::open(&self.headers.path)
             .await
-            .map_err(|_| VanadiumError::FileNotFound(self.headers.path.to_str().unwrap().to_string()))
+            .map_err(|_| VanadiumError::FileNotFound(self.headers.path.to_string()))?;
+
+        assert_eq!(self.bip.get_image_size() as u64, f.file_size().await.unwrap());
+
+        Ok(f)
     }
 
     async fn open_input_reader(&self) -> VanadiumResult<DmaStreamReader> {
@@ -71,7 +75,7 @@ impl<T> GlommioBip<T> {
             .truncate(true)
             .dma_open(out)
             .await
-            .map_err(|_| VanadiumError::FileNotFound(self.headers.path.to_str().unwrap().to_string()))
+            .map_err(|_| VanadiumError::FileNotFound(self.headers.path.to_string()))
     }
 
     async fn open_output_writer(&self, out: &dyn AsRef<Path>) -> VanadiumResult<DmaStreamWriter> {
@@ -83,9 +87,10 @@ impl<T> GlommioBip<T> {
     }
 }
 
-impl<T> SequentialPixels<T> for GlommioBip<T>
+impl<P, T> SequentialPixels<T> for GlommioBip<P, T>
     where T: Float + Clone + Copy + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign +
-    'static + Debug
+    'static + Debug,
+          P: AsRef<Path> + ToString
 {
     fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<T>, &mut A)
@@ -268,30 +273,29 @@ impl<T> SequentialPixels<T> for GlommioBip<T>
                 * self.bip.pixel_length() as u64
                 * mem::size_of::<T>() as u64;
 
-            // move to initial offset
             reader.skip(initial_skip);
 
             let mut row = start_row;
 
-            while unsafe {
-                let raw_read_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
-                let sentinel = row < end_row && reader.read_exact(raw_read_buffer).await.is_ok();
-
-                reader.skip(skip);
-
-                row += 1;
-
-                sentinel
-            } {
-                f(&mut read_array.view_mut(), &mut write_array);
-
+            while row < end_row {
                 unsafe {
+                    let raw_read_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
+
+                    reader.read_exact(raw_read_buffer).await.unwrap();
+
+                    row += 1;
+
+                    f(&mut read_array.view_mut(), &mut write_array);
+
                     let raw_write_buffer = make_raw(write_array.as_slice().unwrap());
-                    writer.write_all(raw_write_buffer).await.map_err(|_|
-                        VanadiumError::IoError)?;
+                    writer.write_all(raw_write_buffer)
+                        .await
+                        .map_err(|_| VanadiumError::IoError)?;
+
+                    inc_bar!(pb, 1);
                 }
 
-                inc_bar!(pb, 1);
+                reader.skip(skip);
             }
 
             Ok(())

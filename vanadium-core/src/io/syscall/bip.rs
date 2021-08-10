@@ -19,7 +19,7 @@ pub struct SyscallBip<T> {
 }
 
 impl<T> SyscallBip<T> {
-    pub fn new(header: Header) -> io::Result<Self> {
+    pub fn new<P>(header: Header<P>) -> io::Result<Self> where P: AsRef<Path> {
         assert_eq!(ImageFormat::Bip, header.format);
         let bip = Bip {
             dims: header.dims,

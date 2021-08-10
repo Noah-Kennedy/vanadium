@@ -1,5 +1,5 @@
 use std::{io, mem};
-use std::fs::{OpenOptions};
+use std::fs::OpenOptions;
 use std::path::Path;
 
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -18,7 +18,7 @@ pub struct MappedBip<T> {
 }
 
 impl<T> MappedBip<T> {
-    pub fn new(header: Header) -> io::Result<Self> {
+    pub fn new<P>(header: Header<P>) -> io::Result<Self> where P: AsRef<Path> {
         assert_eq!(ImageFormat::Bip, header.format);
 
         let file = OpenOptions::new()
@@ -52,7 +52,7 @@ impl SequentialPixels<f32> for MappedBip<f32> {
 
         let mut buffer = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
-        let byte_len = buffer.len()  * mem::size_of::<f32>();
+        let byte_len = buffer.len() * mem::size_of::<f32>();
 
         while {
             let end = seek + byte_len;

@@ -14,7 +14,7 @@ use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
 mod opt;
 
-fn get_image(backend: IoBackend, headers: Header) -> Box<dyn BasicImage<f32>> {
+fn get_image(backend: IoBackend, headers: Header<String>) -> Box<dyn BasicImage<f32>> {
     assert_eq!(ImageFormat::Bip, headers.format);
     match backend {
         IoBackend::Glommio => Box::new(GlommioBip::new(headers)),
@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match args.op {
         Operation::Means { header, output } => {
-            let header: Header = serde_json::from_reader(File::open(header).unwrap()).unwrap();
+            let header = serde_json::from_reader(File::open(header).unwrap()).unwrap();
             let mut image = get_image(args.backend, header);
 
             let file = OpenOptions::new()
@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             serde_json::to_writer(file, &means).unwrap();
         }
         Operation::StandardDeviations { header, output, means } => {
-            let header: Header = serde_json::from_reader(File::open(header)?)?;
+            let header = serde_json::from_reader(File::open(header)?)?;
             let mut image = get_image(args.backend, header);
 
             let file = OpenOptions::new()
@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             serde_json::to_writer(file, &std_devs).unwrap();
         }
         Operation::Covariances { header, output, means, std_devs } => {
-            let header: Header = serde_json::from_reader(File::open(header)?)?;
+            let header = serde_json::from_reader(File::open(header)?)?;
             let mut image = get_image(args.backend, header);
 
             let means = means.map(|x| serde_json::from_reader(File::open(x).unwrap()).unwrap());

@@ -13,3 +13,6 @@ pub mod error;
 pub mod io;
 
 mod util;
+
+#[cfg(test)]
+mod tests;
