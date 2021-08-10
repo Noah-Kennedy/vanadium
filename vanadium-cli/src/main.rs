@@ -19,7 +19,7 @@ fn get_image(backend: IoBackend, headers: Header) -> Box<dyn BasicImage<f32>> {
     match backend {
         IoBackend::Glommio => Box::new(GlommioBip::new(headers)),
         IoBackend::Syscall => Box::new(SyscallBip::new(headers).unwrap()),
-        IoBackend::Mapped => Box::new(unsafe { MappedBip::new(headers) }.unwrap())
+        IoBackend::Mapped => Box::new(MappedBip::new(headers).unwrap())
     }
 }
 

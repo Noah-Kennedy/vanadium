@@ -1,5 +1,5 @@
 use std::{io, mem};
-use std::fs::File;
+use std::fs::{OpenOptions};
 use std::path::Path;
 
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -18,15 +18,20 @@ pub struct MappedBip<T> {
 }
 
 impl<T> MappedBip<T> {
-    pub unsafe fn new(header: Header) -> io::Result<Self> {
+    pub fn new(header: Header) -> io::Result<Self> {
         assert_eq!(ImageFormat::Bip, header.format);
+
+        let file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .open(header.path)?;
+
         let bip = Bip {
             dims: header.dims,
             phantom: Default::default(),
         };
 
-        let file = File::open(header.path)?;
-        let map = MmapMut::map_mut(&file)?;
+        let map = unsafe { MmapMut::map_mut(&file).unwrap() };
 
         Ok(Self {
             map,
@@ -47,12 +52,20 @@ impl SequentialPixels<f32> for MappedBip<f32> {
 
         let mut buffer = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
-        while {
-            let mut d = &self.map[seek..buffer.len()];
+        let byte_len = buffer.len()  * mem::size_of::<f32>();
 
-            d.read_f32_into::<LittleEndian>(&mut buffer).is_ok()
+        while {
+            let end = seek + byte_len;
+
+            if end < self.map.len() {
+                let mut d = &self.map[seek..(seek + byte_len)];
+                d.read_f32_into::<LittleEndian>(&mut buffer).unwrap();
+                true
+            } else {
+                false
+            }
         } {
-            seek += buffer.len();
+            seek += byte_len;
 
             let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), buffer)
                 .unwrap();
@@ -64,7 +77,7 @@ impl SequentialPixels<f32> for MappedBip<f32> {
             inc_bar!(pb, BATCH_SIZE as u64);
         }
 
-        let d = &self.map[seek..buffer.len()];
+        let d = &self.map[seek..];
 
         let n_bytes = d.len();
 
