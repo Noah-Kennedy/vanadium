@@ -7,7 +7,10 @@ edition = "2018"
 # Features
 ###################################################################################################
 [features]
+default = ["glommio-backend", "syscall-backend", "mapped-backend"]
+
 progress = ["indicatif"]
+
 glommio-backend = ["glommio", "futures"]
 syscall-backend = []
 mapped-backend = ["memmap2"]
