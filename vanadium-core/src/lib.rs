@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate ndarray;
-#[cfg(feature = "header-parsing")]
+#[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde;
 

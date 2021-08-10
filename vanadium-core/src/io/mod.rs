@@ -43,11 +43,14 @@ macro_rules! inc_bar {
 
 pub mod bip;
 
-#[cfg(feature = "glommio-backend")]
+#[cfg(feature = "glommio")]
 pub mod glommio;
 
 #[cfg(feature = "syscall-backend")]
 pub mod syscall;
+
+#[cfg(feature = "memmap2")]
+pub mod mapped;
 
 pub trait BasicImage<T> where
     T: Real + Lapack

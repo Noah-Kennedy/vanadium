@@ -8,6 +8,7 @@ use structopt::StructOpt;
 use vanadium_core::headers::{Header, ImageDims, ImageFormat};
 use vanadium_core::io::BasicImage;
 use vanadium_core::io::bip::{GlommioBip, SyscallBip};
+use vanadium_core::io::mapped::bip::MappedBip;
 
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
@@ -17,7 +18,8 @@ fn get_image(backend: IoBackend, headers: Header) -> Box<dyn BasicImage<f32>> {
     assert_eq!(ImageFormat::Bip, headers.format);
     match backend {
         IoBackend::Glommio => Box::new(GlommioBip::new(headers)),
-        IoBackend::Syscall => Box::new(SyscallBip::new(headers).unwrap())
+        IoBackend::Syscall => Box::new(SyscallBip::new(headers).unwrap()),
+        IoBackend::Mapped => Box::new(unsafe { MappedBip::new(headers) }.unwrap())
     }
 }
 

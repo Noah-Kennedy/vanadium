@@ -7,32 +7,36 @@ edition = "2018"
 # Features
 ###################################################################################################
 [features]
-header-parsing = ["serde"]
 progress = ["indicatif"]
 glommio-backend = ["glommio", "futures"]
 syscall-backend = []
+mapped-backend = ["memmap2"]
 
 ###################################################################################################
 # Dependencies
 ###################################################################################################
 [dependencies]
-num-traits = "^0.2.14"
+num-traits = "^0.2.0"
 cfg-if = "^1.0.0"
 thiserror = "^1.0.0"
-ndarray = "^0.15.3"
-byteorder = "^1.4.3"
+ndarray = "^0.15.0"
+byteorder = "^1.4.0"
 ndarray-linalg = "^0.14.0"
 
 ###################################################################################################
 # Not always needed for libraries
 ###################################################################################################
+[dependencies.memmap2]
+version = "^0.3.0"
+optional = true
+
 [dependencies.serde]
 version = "^1.0.0"
 features = ["derive"]
 optional = true
 
 [dependencies.indicatif]
-version = "^0.16.2"
+version = "^0.16.0"
 optional = true
 
 [dependencies.glommio]
@@ -40,5 +44,5 @@ version = "^0.5.0"
 optional = true
 
 [dependencies.futures]
-version = "^0.3.16"
+version = "^0.3.0"
 optional = true

@@ -9,7 +9,7 @@ serde_json = "^1.0.0"
 
 [dependencies.vanadium-core]
 path = "../vanadium-core"
-features = ["header-parsing", "glommio-backend", "syscall-backend", "progress"]
+features = ["serde", "glommio-backend", "syscall-backend", "progress", "memmap2"]
 
 [dependencies.ndarray]
 version = "^0.15.0"

@@ -9,6 +9,7 @@ use vanadium_core::error::VanadiumError;
 pub enum IoBackend {
     Glommio,
     Syscall,
+    Mapped
 }
 
 impl FromStr for IoBackend {
@@ -18,6 +19,7 @@ impl FromStr for IoBackend {
         match s {
             "glommio" => Ok(IoBackend::Glommio),
             "syscall" => Ok(IoBackend::Syscall),
+            "mmap" => Ok(IoBackend::Mapped),
             _ => Err(VanadiumError::InvalidArgs("Invalid IO backend".to_owned()))
         }
     }

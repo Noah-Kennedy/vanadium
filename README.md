@@ -66,42 +66,46 @@ You can use the tool to construct header files quite easily.
 | Laptop        | 16G       |                      | NVME      | NA          | 5.13   |
 | HPC Node A    |           |                      | NVME      |             |        |
 
-## Results
+### Results
 
-### Small File (5 bands, 11.75 GiB)
-#### Spectral Means
+#### Small File (5 bands, 11.75 GiB)
+##### Spectral Means
 | Tool                | Machine Configuration | Time (mean ± σ)      |
 |:--------------------|:----------------------|---------------------:|
-| vanadium (io-uring) | Laptop                |    4.067 s ± 0.025 s |
 | vanadium (syscall)  | Laptop                |   12.531 s ± 0.139 s |
 | vanadium (io-uring) | Workstation A         |   22.276 s ± 0.020 s |
 | vanadium (syscall)  | Workstation A         |   22.839 s ± 0.012 s |
-| siproc              | Workstation A         |                      |
+| siproc              | Workstation A         |  484.511 s ± 2.917 s |
+| siproc              | Laptop                |  590.850 s ± 2.809 s |
 
-#### Covariance Matrix
-| Tool                | Machine Configuration | Average Time [s] |
+##### Covariance Matrix
+| Tool                | Machine Configuration | Time (mean ± σ) |
 |:--------------------|:----------------------|-----------------:|
-| vanadium (syscall)  | Workstation A         |                  |
-| vanadium (io-uring) | Workstation A         |                  |
-| siproc (cpu)        | Workstation A         |                  |
-
-### Medium File (394 bands, ~106 GiB)
-#### Spectral Means
-| Tool                | Machine Configuration | Time [s] |
-|:--------------------|:----------------------|---------:|
-| siproc              | Workstation A         |          |
-| vanadium (syscall)  | Workstation A         |          |
-| vanadium (io_uring) | Workstation A         |          |
+| vanadium (syscall)  | Workstation A         | s ± s |
+| vanadium (io-uring) | Workstation A         | 22.308 s ± 0.009 s |
+| siproc (cpu)        | Workstation A         | s ± s |
 | vanadium (io_uring) | Laptop                | s ± s |
-| vanadium (syscall)  | Laptop                | 79.864 s ± 0.840 s |
+| vanadium (syscall)  | Laptop                | s ± s |
+| siproc              | Laptop                | s ± s |
+
+#### Medium File (394 bands, ~106 GiB)
+##### Spectral Means
+| Tool                | Machine Configuration | Time (mean ± σ)     |
+|:--------------------|:----------------------|--------------------:|
+| vanadium (io_uring) | Laptop                |  39.123 s ± 3.695 s |
+| vanadium (syscall)  | Laptop                |  79.864 s ± 0.840 s |
+| siproc              | Laptop                | 199.767 s ± 1.026 s |
+| vanadium (io_uring) | Workstation A         | 202.313 s ± 0.504 s |
+| vanadium (syscall)  | Workstation A         | 210.469 s ± 0.301 s |
+| siproc              | Workstation A         | s ± s |
 
 
-#### Covariance Matrix
-| Tool                | Machine Configuration | Time [s] |
-|:--------------------|:----------------------|---------:|
-| siproc (cuda)       | Workstation A         |          |
-| siproc (cpu)        | Workstation A         |          |
-| vanadium (syscall)  | Workstation A         |          |
-| vanadium (io_uring) | Workstation A         |          |
+##### Covariance Matrix
+| Tool                | Machine Configuration | Time (mean ± σ) |
+|:--------------------|:----------------------|----------------:|
+| siproc (cuda)       | Workstation A         | s ± s |
+| siproc (cpu)        | Workstation A         | s ± s |
+| vanadium (syscall)  | Workstation A         | s ± s |
+| vanadium (io_uring) | Workstation A         | s ± s |
 | vanadium (io_uring) | Laptop                | s ± s |
 | vanadium (syscall)  | Laptop                | s ± s |
