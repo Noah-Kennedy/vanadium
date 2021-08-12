@@ -11,7 +11,7 @@ const TEST_HEADER: Header<&str> = Header {
         pixels: 1000,
     },
     format: ImageFormat::Bip,
-    path: "../data/tiny/bip",
+    path: "./data/tiny/bip",
 };
 
 #[cfg(test)]
