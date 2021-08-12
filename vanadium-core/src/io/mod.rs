@@ -5,6 +5,7 @@ use ndarray_linalg::{Eig, Lapack, Scalar};
 use num_traits::real::Real;
 
 use crate::error::{VanadiumError, VanadiumResult};
+use image::{RgbImage, Rgb};
 
 #[cfg(feature = "progress")]
 const UPDATE_FREQ: u64 = 8;
@@ -80,4 +81,6 @@ pub trait BasicImage<T> where
         cols: Option<(u64, u64)>,
         out: &dyn AsRef<Path>,
     ) -> VanadiumResult<()>;
+    fn rgb_batched<F>(&mut self, colormap: F) -> VanadiumResult<RgbImage>
+        where F: FnMut(&mut Array2<T>) -> Array2<u8>;
 }

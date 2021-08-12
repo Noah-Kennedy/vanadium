@@ -3,6 +3,7 @@ use std::iter::Sum;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 use std::path::Path;
 
+use image::{Rgb, RgbImage};
 use ndarray::{Array1, Array2, ArrayViewMut2};
 use ndarray_linalg::{Lapack, Scalar};
 use num_traits::{Float, FromPrimitive};
@@ -96,5 +97,24 @@ impl<C, T> BasicImage<T> for C
 
     fn crop(&mut self, rows: Option<(u64, u64)>, cols: Option<(u64, u64)>, out: &dyn AsRef<Path>) -> VanadiumResult<()> {
         self.crop_map("crop", rows, cols, self.bip().dims.channels, out, |r, w| *w = r.to_owned())
+    }
+
+    fn rgb_batched<F>(&mut self, mut colormap: F) -> VanadiumResult<RgbImage>
+        where F: FnMut(&mut Array2<T>) -> Array2<u8>,
+    {
+        let width = self.bip().dims.pixels;
+        let height = self.bip().dims.lines;
+
+        let length = width * height;
+
+        let mut vec: Vec<u8> = Vec::with_capacity(3 * length);
+
+        self.fold_batched("Rgb", &mut vec, |pixel, acc| {
+            let rgb = colormap(pixel);
+            acc.append(&mut rgb.into_raw_vec());
+        })?;
+
+
+        Ok(RgbImage::from_raw(width as u32, height as u32, vec).unwrap())
     }
 }
