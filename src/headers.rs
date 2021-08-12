@@ -3,7 +3,7 @@ use std::path::{Path};
 #[derive(Clone)]
 #[derive(Serialize, Deserialize)]
 pub struct Header<P> where P: AsRef<Path> {
-    #[cfg_attr(feature = "serde", serde(flatten))]
+    #[serde(flatten)]
     pub dims: ImageDims,
     pub format: ImageFormat,
     pub path: P,
