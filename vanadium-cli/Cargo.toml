@@ -3,6 +3,10 @@ name = "vanadium-cli"
 version = "0.1.0"
 edition = "2018"
 
+[features]
+openblas = ["blas-src/openblas", "openblas-src", "ndarray/blas"]
+netlib = ["blas-src/netlib", "netlib-src", "ndarray/blas"]
+
 [dependencies]
 structopt = "^0.3.0"
 serde_json = "^1.0.0"
@@ -13,12 +17,18 @@ features = ["serde", "glommio-backend", "syscall-backend", "progress", "memmap2"
 
 [dependencies.ndarray]
 version = "^0.15.0"
-features = ["blas", "serde"]
+features = ["serde"]
 
 [dependencies.blas-src]
 version = "^0.8.0"
-features = ["openblas"]
+optional = true
 
 [dependencies.openblas-src]
 version = "^0.10.0"
 features = ["cblas", "system"]
+optional = true
+
+[dependencies.netlib-src]
+version = "^0.8.0"
+features = ["cblas", "system"]
+optional = true

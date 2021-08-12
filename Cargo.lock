@@ -68,6 +68,7 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb48fbaa7a0cb9d6d96c46bac6cedb16f13a10aebcef1c4e73515aaae8c9909d"
 dependencies = [
+ "netlib-src",
  "openblas-src",
 ]
 
@@ -135,6 +136,15 @@ dependencies = [
  "textwrap",
  "unicode-width",
  "vec_map",
+]
+
+[[package]]
+name = "cmake"
+version = "0.1.45"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb6210b637171dfba4cda12e579ac6dc73f5165ad56133e5d72ef3131f320855"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -568,6 +578,15 @@ dependencies = [
  "num-traits",
  "rand",
  "thiserror",
+]
+
+[[package]]
+name = "netlib-src"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39f41f36bb4d46906d5a72da5b73a804d9de1a7282eb7c89617201acda7b8212"
+dependencies = [
+ "cmake",
 ]
 
 [[package]]
@@ -1041,6 +1060,7 @@ version = "0.1.0"
 dependencies = [
  "blas-src",
  "ndarray",
+ "netlib-src",
  "openblas-src",
  "serde_json",
  "structopt",

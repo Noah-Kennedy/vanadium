@@ -1,3 +1,6 @@
+#[cfg(feature = "netlib")]
+extern crate netlib_src;
+#[cfg(feature = "openblas")]
 extern crate openblas_src;
 
 use std::error::Error;

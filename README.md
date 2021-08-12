@@ -74,10 +74,10 @@ You can use the tool to construct header files quite easily.
 | vanadium (syscall)  | Laptop                |   12.531 s ± 0.139 s |
 | vanadium (io-uring) | Workstation           |   22.276 s ± 0.020 s |
 | vanadium (syscall)  | Workstation           |   22.839 s ± 0.012 s |
+| vanadium (mmap)     | Workstation           |   24.768 s ± 0.057 s |
 | siproc              | Workstation           |  484.511 s ± 2.917 s |
 | siproc              | Laptop                |  590.850 s ± 2.809 s |
 | vanadium (mmap)     | Laptop                |  s ± s |
-| vanadium (mmap)     | Workstation           |  s ± s |
 
 
 ##### Covariance Matrix
@@ -109,11 +109,11 @@ You can use the tool to construct header files quite easily.
 ##### Covariance Matrix
 | Tool                | Machine Configuration | Time (mean ± σ) |
 |:--------------------|:----------------------|----------------:|
+| vanadium (syscall)  | Workstation           | 323.917 s ± 1.018 s |
 | siproc (cuda)       | Workstation           | s ± s |
 | siproc (cpu)        | Workstation           | s ± s |
-| vanadium (syscall)  | Workstation           | s ± s |
 | vanadium (io_uring) | Workstation           | s ± s |
 | vanadium (io_uring) | Laptop                | s ± s |
 | vanadium (syscall)  | Laptop                | s ± s |
-| vanadium (mmap)     | Laptop                |  s ± s |
-| vanadium (mmap)     | Workstation           |  s ± s |
+| vanadium (mmap)     | Laptop                | s ± s |
+| vanadium (mmap)     | Workstation           | s ± s |

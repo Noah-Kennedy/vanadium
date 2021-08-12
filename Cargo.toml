@@ -1,6 +1,5 @@
 [workspace]
 members = [
     "vanadium-core",
-#    "vanadium-benches",
     "vanadium-cli"
 ]

@@ -67,8 +67,7 @@ impl SequentialPixels<f32> for MappedBip<f32> {
         } {
             seek += byte_len;
 
-            let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), buffer)
-                .unwrap();
+            let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), buffer).unwrap();
 
             f(&mut pixel, &mut accumulator);
 
