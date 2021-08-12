@@ -12,19 +12,20 @@ use std::fs::{File, OpenOptions};
 
 use structopt::StructOpt;
 
+use crate::error::VanadiumError;
 use crate::headers::{Header, ImageDims, ImageFormat};
 use crate::io::BasicImage;
 use crate::io::bip::{GlommioBip, SyscallBip};
 use crate::io::mapped::bip::MappedBip;
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
-pub mod headers;
+mod headers;
 
-pub mod image_formats;
+mod image_formats;
 
-pub mod error;
+mod error;
 
-pub mod io;
+mod io;
 
 mod util;
 
@@ -47,7 +48,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match args.op {
         Operation::Means { header, output } => {
-            let header = serde_json::from_reader(File::open(header).unwrap()).unwrap();
+            let header = serde_json::from_reader(File::open(header).unwrap()).map_err(|_|
+                VanadiumError::InvalidHeader)?;
             let mut image = get_image(args.backend, header);
 
             let file = OpenOptions::new()
@@ -62,7 +64,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             serde_json::to_writer(file, &means).unwrap();
         }
         Operation::StandardDeviations { header, output, means } => {
-            let header = serde_json::from_reader(File::open(header)?)?;
+            let header = serde_json::from_reader(File::open(header).unwrap()).map_err(|_|
+                VanadiumError::InvalidHeader)?;
             let mut image = get_image(args.backend, header);
 
             let file = OpenOptions::new()
@@ -83,7 +86,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             serde_json::to_writer(file, &std_devs).unwrap();
         }
         Operation::Covariances { header, output, means, std_devs } => {
-            let header = serde_json::from_reader(File::open(header)?)?;
+            let header = serde_json::from_reader(File::open(header).unwrap()).map_err(|_|
+                VanadiumError::InvalidHeader)?;
             let mut image = get_image(args.backend, header);
 
             let means = means.map(|x| serde_json::from_reader(File::open(x).unwrap()).unwrap());

@@ -6,12 +6,12 @@ use num_traits::{Float, FromPrimitive};
 use crate::headers::ImageDims;
 use crate::util::_standardize;
 
-pub struct Bsq<T> {
+pub struct _Bsq<T> {
     pub dims: ImageDims,
     pub phantom: PhantomData<T>,
 }
 
-impl<T> Bsq<T> {
+impl<T> _Bsq<T> {
     pub fn _index_channel(&self, channel: usize) -> usize {
         self._channel_length() * channel
     }
@@ -21,7 +21,7 @@ impl<T> Bsq<T> {
     }
 }
 
-impl<T> Bsq<T>
+impl<T> _Bsq<T>
     where T: Float + Copy + FromPrimitive + std::iter::Sum + SubAssign + DivAssign
 {
     pub fn _find_channel_mean(&self, channel: &[T]) -> T {
