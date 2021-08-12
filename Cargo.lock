@@ -1298,18 +1298,6 @@ name = "vanadium-cli"
 version = "0.1.0"
 dependencies = [
  "blas-src",
- "ndarray",
- "netlib-src",
- "openblas-src",
- "serde_json",
- "structopt",
- "vanadium-core",
-]
-
-[[package]]
-name = "vanadium-core"
-version = "0.1.0"
-dependencies = [
  "byteorder",
  "cfg-if",
  "futures",
@@ -1319,8 +1307,12 @@ dependencies = [
  "memmap2",
  "ndarray",
  "ndarray-linalg",
+ "netlib-src",
  "num-traits",
+ "openblas-src",
  "serde",
+ "serde_json",
+ "structopt",
  "thiserror",
 ]
 

@@ -3,7 +3,7 @@ use std::iter::Sum;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 use std::path::Path;
 
-use image::{Rgb, RgbImage};
+use image::{RgbImage};
 use ndarray::{Array1, Array2, ArrayViewMut2};
 use ndarray_linalg::{Lapack, Scalar};
 use num_traits::{Float, FromPrimitive};
@@ -99,9 +99,10 @@ impl<C, T> BasicImage<T> for C
         self.crop_map("crop", rows, cols, self.bip().dims.channels, out, |r, w| *w = r.to_owned())
     }
 
-    fn rgb_batched<F>(&mut self, mut colormap: F) -> VanadiumResult<RgbImage>
-        where F: FnMut(&mut Array2<T>) -> Array2<u8>,
-    {
+    fn rgb_batched(
+        &mut self,
+        colormap: &mut dyn FnMut(&mut Array2<T>) -> Array2<u8>,
+    ) -> VanadiumResult<RgbImage> {
         let width = self.bip().dims.pixels;
         let height = self.bip().dims.lines;
 

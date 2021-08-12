@@ -2,8 +2,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use structopt::StructOpt;
-
-use vanadium_core::error::VanadiumError;
+use crate::error::VanadiumError;
 
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum IoBackend {

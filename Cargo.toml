@@ -1,5 +1,67 @@
-[workspace]
-members = [
-    "vanadium-core",
-    "vanadium-cli"
-]
+[package]
+name = "vanadium-cli"
+version = "0.1.0"
+edition = "2018"
+
+[features]
+default = ["glommio-backend", "syscall-backend", "mapped-backend", "progress"]
+
+openblas = ["blas-src/openblas", "openblas-src", "ndarray/blas"]
+netlib = ["blas-src/netlib", "netlib-src", "ndarray/blas"]
+
+progress = ["indicatif"]
+
+glommio-backend = ["glommio", "futures"]
+syscall-backend = []
+mapped-backend = ["memmap2"]
+
+[dependencies]
+structopt = "^0.3.0"
+serde_json = "^1.0.0"
+num-traits = "^0.2.0"
+cfg-if = "^1.0.0"
+thiserror = "^1.0.0"
+byteorder = "^1.4.0"
+ndarray-linalg = "^0.14.0"
+image = "^0.23.14"
+
+[dependencies.serde]
+version = "^1.0.0"
+features = ["derive"]
+
+###################################################################################################
+# Optional Dependencies
+###################################################################################################
+[dependencies.memmap2]
+version = "^0.3.0"
+optional = true
+
+[dependencies.ndarray]
+version = "^0.15.0"
+features = ["serde"]
+
+[dependencies.blas-src]
+version = "^0.8.0"
+optional = true
+
+[dependencies.openblas-src]
+version = "^0.10.0"
+features = ["cblas", "system"]
+optional = true
+
+[dependencies.netlib-src]
+version = "^0.8.0"
+features = ["cblas", "system"]
+optional = true
+
+[dependencies.indicatif]
+version = "^0.16.0"
+optional = true
+
+[dependencies.glommio]
+version = "^0.5.0"
+optional = true
+
+[dependencies.futures]
+version = "^0.3.0"
+optional = true

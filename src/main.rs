@@ -1,19 +1,35 @@
+#[macro_use]
+extern crate ndarray;
 #[cfg(feature = "netlib")]
 extern crate netlib_src;
 #[cfg(feature = "openblas")]
 extern crate openblas_src;
+#[macro_use]
+extern crate serde;
 
 use std::error::Error;
 use std::fs::{File, OpenOptions};
 
 use structopt::StructOpt;
 
-use vanadium_core::headers::{Header, ImageDims, ImageFormat};
-use vanadium_core::io::BasicImage;
-use vanadium_core::io::bip::{GlommioBip, SyscallBip};
-use vanadium_core::io::mapped::bip::MappedBip;
-
+use crate::headers::{Header, ImageDims, ImageFormat};
+use crate::io::BasicImage;
+use crate::io::bip::{GlommioBip, SyscallBip};
+use crate::io::mapped::bip::MappedBip;
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
+
+pub mod headers;
+
+pub mod image_formats;
+
+pub mod error;
+
+pub mod io;
+
+mod util;
+
+#[cfg(test)]
+mod tests;
 
 mod opt;
 
