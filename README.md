@@ -43,7 +43,7 @@ install the toolchain, unless you know what you are doing.
 ```bash
 git clone https://github.com/Noah-Kennedy/vanadium.git
 cd vanadium
-cargo install --path ../vanadium-cli
+cargo install --path ../vanadium-cli --features=openblas
 ```
 
 ## Usage
