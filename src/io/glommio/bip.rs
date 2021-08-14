@@ -12,9 +12,9 @@ use num_traits::{Float, FromPrimitive};
 
 use crate::error::{VanadiumError, VanadiumResult};
 use crate::headers::{Header, ImageFormat};
-use crate::image_formats::bip::Bip;
+use crate::image_formats::bip::BipDims;
 use crate::io::BATCH_SIZE;
-use crate::io::bip::SequentialPixels;
+use crate::io::bip::Bip;
 use crate::util::{make_raw, make_raw_mut};
 
 const READ_AHEAD: usize = 16;
@@ -27,13 +27,13 @@ const LOCKED_MEMORY: usize = 524_288;
 
 pub struct GlommioBip<P, T> where P: AsRef<Path> {
     headers: Header<P>,
-    bip: Bip<T>,
+    bip: BipDims<T>,
 }
 
 impl<P, T> GlommioBip<P, T> where P: AsRef<Path> + ToString {
     pub fn new(headers: Header<P>) -> Self {
         assert_eq!(ImageFormat::Bip, headers.format);
-        let bip = Bip {
+        let bip = BipDims {
             dims: headers.dims.clone(),
             phantom: Default::default(),
         };
@@ -87,7 +87,7 @@ impl<P, T> GlommioBip<P, T> where P: AsRef<Path> + ToString {
     }
 }
 
-impl<P, T> SequentialPixels<T> for GlommioBip<P, T>
+impl<P, T> Bip<T> for GlommioBip<P, T>
     where T: Float + Clone + Copy + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign +
     'static + Debug,
           P: AsRef<Path> + ToString
@@ -145,7 +145,7 @@ impl<P, T> SequentialPixels<T> for GlommioBip<P, T>
         })
     }
 
-    fn bip(&self) -> &Bip<T> {
+    fn bip(&self) -> &BipDims<T> {
         &self.bip
     }
 

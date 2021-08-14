@@ -7,51 +7,20 @@ use crate::util::{make_raw, make_raw_mut};
 const TEST_HEADER: Header<&str> = Header {
     dims: ImageDims {
         channels: 5,
-        lines: 1000,
-        pixels: 1000,
+        lines: 21954,
+        pixels: 28740,
     },
     format: ImageFormat::Bip,
-    path: "./data/tiny/bip",
+    path: "/data/undergrad-research/bench-data/small-bip",
 };
 
 #[cfg(test)]
 #[cfg_attr(miri, ignore)]
-mod means {
-    use super::*;
+mod means;
 
-    #[test]
-    fn means_check_eq_sys_gl() {
-        let mut gl: GlommioBip<&str, f32> = GlommioBip::new(TEST_HEADER.clone());
-        let mut syscall: SyscallBip<f32> = SyscallBip::new(TEST_HEADER.clone()).unwrap();
-
-        let means_gl = gl.means().unwrap();
-        let means_sys = syscall.means().unwrap();
-
-        assert_eq!(means_gl, means_sys);
-    }
-
-    #[test]
-    fn means_check_eq_map_gl() {
-        let mut gl: GlommioBip<&str, f32> = GlommioBip::new(TEST_HEADER.clone());
-        let mut mapped: MappedBip<f32> = MappedBip::new(TEST_HEADER.clone()).unwrap();
-
-        let means_gl = gl.means().unwrap();
-        let means_map = mapped.means().unwrap();
-
-        assert_eq!(means_gl, means_map);
-    }
-
-    #[test]
-    fn means_check_eq_sys_map() {
-        let mut mapped: MappedBip<f32> = MappedBip::new(TEST_HEADER.clone()).unwrap();
-        let mut syscall: SyscallBip<f32> = SyscallBip::new(TEST_HEADER.clone()).unwrap();
-
-        let means_map = mapped.means().unwrap();
-        let means_sys = syscall.means().unwrap();
-
-        assert_eq!(means_map, means_sys);
-    }
-}
+#[cfg(test)]
+#[cfg_attr(miri, ignore)]
+mod std_devs;
 
 #[test]
 fn test_raw() {

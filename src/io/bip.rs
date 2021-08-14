@@ -9,7 +9,7 @@ use ndarray_linalg::{Lapack, Scalar};
 use num_traits::{Float, FromPrimitive};
 
 use crate::error::VanadiumResult;
-use crate::image_formats::bip::Bip;
+use crate::image_formats::bip::BipDims;
 use crate::io::BasicImage;
 
 #[cfg(feature = "glommio-backend")]
@@ -17,10 +17,10 @@ pub use super::glommio::bip::GlommioBip;
 #[cfg(feature = "syscall-backend")]
 pub use super::syscall::bip::SyscallBip;
 
-pub trait SequentialPixels<T> {
+pub trait Bip<T> {
     fn fold_batched<F, A>(&mut self, name: &str, accumulator: A, f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<T>, &mut A);
-    fn bip(&self) -> &Bip<T>;
+    fn bip(&self) -> &BipDims<T>;
     fn map_and_write_batched<F>(
         &mut self,
         name: &str,
@@ -42,7 +42,7 @@ pub trait SequentialPixels<T> {
 }
 
 impl<C, T> BasicImage<T> for C
-    where C: SequentialPixels<T>,
+    where C: Bip<T>,
           T: Float + Clone + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign + Debug + Lapack
           + 'static + Scalar
 {
@@ -50,7 +50,7 @@ impl<C, T> BasicImage<T> for C
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
         let mut res = self.fold_batched("mean", accumulator, |pixels, acc| {
-            Bip::accumulate_means(pixels, acc)
+            BipDims::accumulate_means(pixels, acc)
         })?;
 
         self.bip().normalize_means_accumulator(&mut res);
@@ -62,7 +62,7 @@ impl<C, T> BasicImage<T> for C
         let accumulator = Array1::zeros(self.bip().pixel_length());
 
         let mut res = self.fold_batched("std", accumulator, |pixels, acc| {
-            Bip::accumulate_standard_deviations(pixels, means, acc)
+            BipDims::accumulate_standard_deviations(pixels, means, acc)
         })?;
 
         self.bip().normalize_standard_deviations_accumulator(&mut res);
@@ -74,7 +74,7 @@ impl<C, T> BasicImage<T> for C
         let accumulator = Array2::zeros((self.bip().dims.channels, self.bip().dims.channels));
 
         let mut res = self.fold_batched("cov", accumulator, |pixels, acc| {
-            Bip::accumulate_covariances(pixels, means, std_devs, acc)
+            BipDims::accumulate_covariances(pixels, means, std_devs, acc)
         })?;
 
         self.bip().normalize_covariances_accumulator(&mut res);
@@ -91,7 +91,7 @@ impl<C, T> BasicImage<T> for C
     ) -> VanadiumResult<()>
     {
         self.map_and_write_batched("write", out, transform.ncols(), |pixels, write_array| {
-            Bip::map_transform(pixels, transform, write_array, means, std_devs)
+            BipDims::map_transform(pixels, transform, write_array, means, std_devs)
         })
     }
 

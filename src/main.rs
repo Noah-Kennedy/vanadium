@@ -15,7 +15,11 @@ use structopt::StructOpt;
 use crate::error::VanadiumError;
 use crate::headers::{Header, ImageDims, ImageFormat};
 use crate::io::BasicImage;
-use crate::io::bip::{GlommioBip, SyscallBip};
+#[cfg(feature = "glommio")]
+use crate::io::bip::GlommioBip;
+#[cfg(feature = "syscall-backend")]
+use crate::io::bip::SyscallBip;
+#[cfg(feature = "memmap2")]
 use crate::io::mapped::bip::MappedBip;
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
@@ -30,19 +34,27 @@ mod io;
 mod util;
 
 #[cfg(test)]
+#[cfg(not(tarpaulin_include))]
 mod tests;
 
 mod opt;
 
+#[cfg(not(tarpaulin_include))]
 fn get_image(backend: IoBackend, headers: Header<String>) -> Box<dyn BasicImage<f32>> {
     assert_eq!(ImageFormat::Bip, headers.format);
     match backend {
+        #[cfg(feature = "glommio")]
         IoBackend::Glommio => Box::new(GlommioBip::new(headers)),
+        #[cfg(feature = "syscall-backend")]
         IoBackend::Syscall => Box::new(SyscallBip::new(headers).unwrap()),
-        IoBackend::Mapped => Box::new(MappedBip::new(headers).unwrap())
+        #[cfg(feature = "memmap2")]
+        IoBackend::Mapped => Box::new(MappedBip::new(headers).unwrap()),
+        #[cfg(not(all(feature = "memmap2", feature = "glommio", feature = "syscall-backend")))]
+        _ => panic!("Unknown backend!")
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 fn main() -> Result<(), Box<dyn Error>> {
     let args: VanadiumArgs = VanadiumArgs::from_args();
 
@@ -52,14 +64,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 VanadiumError::InvalidHeader)?;
             let mut image = get_image(args.backend, header);
 
+            let means = image.means()?;
+
             let file = OpenOptions::new()
                 .write(true)
                 .create(true)
                 .truncate(true)
                 .open(output)
                 .unwrap();
-
-            let means = image.means()?;
 
             serde_json::to_writer(file, &means).unwrap();
         }

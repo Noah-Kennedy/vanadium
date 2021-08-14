@@ -10,12 +10,12 @@ use num_traits::{Float, FromPrimitive};
 use crate::headers::ImageDims;
 
 #[derive(Clone)]
-pub struct Bip<T> {
+pub struct BipDims<T> {
     pub dims: ImageDims,
     pub phantom: PhantomData<T>,
 }
 
-impl<T> Bip<T> {
+impl<T> BipDims<T> {
     #[inline(always)]
     pub fn _index_pixel(&self, pixel: usize) -> usize {
         self.pixel_length() * pixel
@@ -48,7 +48,7 @@ impl<T> Bip<T> {
 /// fold method provided by the IO backend requires a mutable reference itself.
 ///
 ///
-impl<T> Bip<T>
+impl<T> BipDims<T>
     where T: Float + Clone + FromPrimitive + Sum
     + AddAssign + SubAssign + DivAssign + 'static + Debug
 {

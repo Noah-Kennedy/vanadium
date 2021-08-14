@@ -8,13 +8,13 @@ use ndarray::{Array2, ArrayViewMut2};
 
 use crate::error::VanadiumResult;
 use crate::headers::{Header, ImageFormat};
-use crate::image_formats::bip::Bip;
+use crate::image_formats::bip::BipDims;
 use crate::io::BATCH_SIZE;
-use crate::io::bip::SequentialPixels;
+use crate::io::bip::Bip;
 
 pub struct MappedBip<T> {
     map: MmapMut,
-    bip: Bip<T>,
+    bip: BipDims<T>,
 }
 
 impl<T> MappedBip<T> {
@@ -26,7 +26,7 @@ impl<T> MappedBip<T> {
             .read(true)
             .open(header.path)?;
 
-        let bip = Bip {
+        let bip = BipDims {
             dims: header.dims,
             phantom: Default::default(),
         };
@@ -40,7 +40,7 @@ impl<T> MappedBip<T> {
     }
 }
 
-impl SequentialPixels<f32> for MappedBip<f32> {
+impl Bip<f32> for MappedBip<f32> {
     fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
@@ -94,7 +94,7 @@ impl SequentialPixels<f32> for MappedBip<f32> {
         Ok(accumulator)
     }
 
-    fn bip(&self) -> &Bip<f32> {
+    fn bip(&self) -> &BipDims<f32> {
         &self.bip
     }
 

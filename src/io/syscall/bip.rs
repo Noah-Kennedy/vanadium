@@ -8,20 +8,20 @@ use ndarray::{Array2, ArrayViewMut2};
 
 use crate::error::{VanadiumError, VanadiumResult};
 use crate::headers::{Header, ImageFormat};
-use crate::image_formats::bip::Bip;
+use crate::image_formats::bip::BipDims;
 use crate::io::BATCH_SIZE;
-use crate::io::bip::SequentialPixels;
+use crate::io::bip::Bip;
 use crate::util::make_raw_mut;
 
 pub struct SyscallBip<T> {
     file: File,
-    bip: Bip<T>,
+    bip: BipDims<T>,
 }
 
 impl<T> SyscallBip<T> {
     pub fn new<P>(header: Header<P>) -> io::Result<Self> where P: AsRef<Path> {
         assert_eq!(ImageFormat::Bip, header.format);
-        let bip = Bip {
+        let bip = BipDims {
             dims: header.dims,
             phantom: Default::default(),
         };
@@ -35,7 +35,7 @@ impl<T> SyscallBip<T> {
     }
 }
 
-impl SequentialPixels<f32> for SyscallBip<f32> {
+impl Bip<f32> for SyscallBip<f32> {
     fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<f32>, &mut A)
     {
@@ -82,7 +82,7 @@ impl SequentialPixels<f32> for SyscallBip<f32> {
         Ok(accumulator)
     }
 
-    fn bip(&self) -> &Bip<f32> {
+    fn bip(&self) -> &BipDims<f32> {
         &self.bip
     }
 
