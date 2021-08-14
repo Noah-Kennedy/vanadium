@@ -23,10 +23,12 @@ use crate::io::bip::SyscallBip;
 use crate::io::mapped::bip::MappedBip;
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
 
+#[cfg(not(tarpaulin_include))]
 mod headers;
 
 mod image_formats;
 
+#[cfg(not(tarpaulin_include))]
 mod error;
 
 mod io;
@@ -37,6 +39,7 @@ mod util;
 #[cfg(not(tarpaulin_include))]
 mod tests;
 
+#[cfg(not(tarpaulin_include))]
 mod opt;
 
 #[cfg(not(tarpaulin_include))]

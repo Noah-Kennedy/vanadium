@@ -76,7 +76,7 @@ impl Bip<f32> for MappedBip<f32> {
             inc_bar!(pb, BATCH_SIZE as u64);
         }
 
-        let d = &self.map[seek..];
+        let d = &mut self.map[seek..];
 
         let n_bytes = d.len();
 
@@ -84,9 +84,13 @@ impl Bip<f32> for MappedBip<f32> {
         assert_eq!(0, n_bytes % mem::size_of::<f32>());
         let n_elements = n_bytes / mem::size_of::<f32>();
 
+        let b = &mut buffer[..n_elements];
+
+        (&*d).read_f32_into::<LittleEndian>(b).unwrap();
+
         if n_elements > 0 {
             let shape = (n_elements / self.bip.pixel_length(), self.bip.pixel_length());
-            let mut pixel = Array2::from_shape_vec(shape, buffer[..n_elements].to_vec()).unwrap();
+            let mut pixel = Array2::from_shape_vec(shape, b.to_vec()).unwrap();
 
             f(&mut pixel, &mut accumulator);
         }

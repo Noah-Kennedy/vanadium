@@ -47,6 +47,9 @@ impl Bip<f32> for SyscallBip<f32> {
 
         let mut buffer = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
 
+        let mut seek = 0;
+        let byte_len = buffer.len() * mem::size_of::<f32>();
+
         while self.file.read_f32_into::<LittleEndian>(&mut buffer).is_ok() {
             let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), buffer)
                 .unwrap();
@@ -56,25 +59,27 @@ impl Bip<f32> for SyscallBip<f32> {
             buffer = pixel.into_raw_vec();
 
             inc_bar!(pb, BATCH_SIZE as u64);
+
+            seek += byte_len;
         }
 
-        // # Safety
-        // We are just reading bytes into the float-aligned buffer, which is fine.
-        // There is no invalid aliasing here.
-        // We also check at the end that we actually read the correct amount of bytes.
-        let n_elements = unsafe {
-            let raw_buffer = make_raw_mut(&mut buffer);
+        self.file.seek(SeekFrom::Start(seek as u64)).map_err(|_| VanadiumError::IoError)?;
 
-            let n_bytes = self.file.read(raw_buffer).map_err(|_| VanadiumError::IoError)?;
+        let mut raw_buf = Vec::new();
 
-            // todo use a proper error handling approach, this can be triggered by user error
-            assert_eq!(0, n_bytes % mem::size_of::<f32>());
-            n_bytes / mem::size_of::<f32>()
-        };
+        let n_bytes = self.file.read_to_end(&mut raw_buf)
+            .map_err(|_| VanadiumError::IoError)?;
 
-        if n_elements > 0 {
+        assert_eq!(0, n_bytes % 4);
+
+        if n_bytes > 0 {
+            let n_elements = n_bytes / mem::size_of::<f32>();
+            let b = &mut buffer[..n_elements];
+
+            raw_buf.as_slice().read_f32_into::<LittleEndian>(b);
+
             let shape = (n_elements / self.bip.pixel_length(), self.bip.pixel_length());
-            let mut pixel = Array2::from_shape_vec(shape, buffer[..n_elements].to_vec()).unwrap();
+            let mut pixel = Array2::from_shape_vec(shape, b.to_vec()).unwrap();
 
             f(&mut pixel, &mut accumulator);
         }

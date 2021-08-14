@@ -108,6 +108,9 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
 
             let mut buffer: Vec<T> = vec![T::zero(); BATCH_SIZE * self.bip.pixel_length()];
 
+            let mut seek = 0;
+            let byte_len = buffer.len() * mem::size_of::<T>();
+
             while {
                 unsafe {
                     let raw_buffer = make_raw_mut(&mut buffer);
@@ -122,7 +125,12 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
                 buffer = pixel.into_raw_vec();
 
                 inc_bar!(pb, BATCH_SIZE as u64);
+
+                seek += byte_len;
             }
+
+            let mut reader = self.open_input_reader().await?;
+            reader.skip(seek as u64);
 
             let n_elements = unsafe {
                 let raw_buffer = make_raw_mut(&mut buffer);
