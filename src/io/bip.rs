@@ -20,7 +20,7 @@ pub use super::syscall::bip::SyscallBip;
 pub trait Bip<T> {
     fn fold_batched<F, A>(&mut self, name: &str, accumulator: A, f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<T>, &mut A);
-    fn bip(&self) -> &BipDims<T>;
+    fn dims(&self) -> &BipDims<T>;
     fn map_and_write_batched<F>(
         &mut self,
         name: &str,
@@ -47,37 +47,37 @@ impl<C, T> BasicImage<T> for C
           + 'static + Scalar
 {
     fn means(&mut self) -> VanadiumResult<Array1<T>> {
-        let accumulator = Array1::zeros(self.bip().pixel_length());
+        let accumulator = Array1::zeros(self.dims().pixel_length());
 
         let mut res = self.fold_batched("mean", accumulator, |pixels, acc| {
             BipDims::accumulate_means(pixels, acc)
         })?;
 
-        self.bip().normalize_means_accumulator(&mut res);
+        self.dims().normalize_means_accumulator(&mut res);
 
         Ok(res)
     }
 
     fn std_deviations(&mut self, means: &Array1<T>) -> VanadiumResult<Array1<T>> {
-        let accumulator = Array1::zeros(self.bip().pixel_length());
+        let accumulator = Array1::zeros(self.dims().pixel_length());
 
         let mut res = self.fold_batched("std", accumulator, |pixels, acc| {
             BipDims::accumulate_standard_deviations(pixels, means, acc)
         })?;
 
-        self.bip().normalize_standard_deviations_accumulator(&mut res);
+        self.dims().normalize_standard_deviations_accumulator(&mut res);
 
         Ok(res)
     }
 
     fn covariance_matrix(&mut self, means: Option<&Array1<T>>, std_devs: Option<&Array1<T>>) -> VanadiumResult<Array2<T>> {
-        let accumulator = Array2::zeros((self.bip().dims.channels, self.bip().dims.channels));
+        let accumulator = Array2::zeros((self.dims().dims.channels, self.dims().dims.channels));
 
         let mut res = self.fold_batched("cov", accumulator, |pixels, acc| {
             BipDims::accumulate_covariances(pixels, means, std_devs, acc)
         })?;
 
-        self.bip().normalize_covariances_accumulator(&mut res);
+        self.dims().normalize_covariances_accumulator(&mut res);
 
         Ok(res)
     }
@@ -96,15 +96,15 @@ impl<C, T> BasicImage<T> for C
     }
 
     fn crop(&mut self, rows: Option<(u64, u64)>, cols: Option<(u64, u64)>, out: &dyn AsRef<Path>) -> VanadiumResult<()> {
-        self.crop_map("crop", rows, cols, self.bip().dims.channels, out, |r, w| *w = r.to_owned())
+        self.crop_map("crop", rows, cols, self.dims().dims.channels, out, |r, w| *w = r.to_owned())
     }
 
     fn rgb_batched(
         &mut self,
         colormap: &mut dyn FnMut(&mut Array2<T>) -> Array2<u8>,
     ) -> VanadiumResult<RgbImage> {
-        let width = self.bip().dims.pixels;
-        let height = self.bip().dims.lines;
+        let width = self.dims().dims.pixels;
+        let height = self.dims().dims.lines;
 
         let length = width * height;
 

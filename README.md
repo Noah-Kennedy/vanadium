@@ -153,8 +153,8 @@ Benchmarks were all run with a cold file cache between each trial, with 1 warmup
 | vanadium (io_uring) | Laptop                |   503.445 s ± 2.007 s |
 | vanadium (syscall)  | Workstation           |   513.370 s ± 1.796 s |
 | vanadium (mmap)     | Workstation           |   536.006 s ± 2.626 s |
+| vanadium (syscall)  | Laptop                |   559.402 s ± 7.951 s |
 | siproc (cuda)       | Workstation           | ~1541.157 s           |
 | siproc (cpu)        | Laptop                | ~7079.293 s           |
-| vanadium (syscall)  | Laptop                | s ± s |
 | vanadium (mmap)     | Laptop                | s ± s |
 | siproc (cpu)        | Workstation           | s ± s |

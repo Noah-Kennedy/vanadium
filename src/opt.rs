@@ -8,7 +8,8 @@ use crate::error::VanadiumError;
 pub enum IoBackend {
     Glommio,
     Syscall,
-    Mapped
+    Mapped,
+    Tokio
 }
 
 impl FromStr for IoBackend {
@@ -19,6 +20,7 @@ impl FromStr for IoBackend {
             "glommio" => Ok(IoBackend::Glommio),
             "syscall" => Ok(IoBackend::Syscall),
             "mmap" => Ok(IoBackend::Mapped),
+            "tokio" => Ok(IoBackend::Tokio),
             _ => Err(VanadiumError::InvalidArgs("Invalid IO backend".to_owned()))
         }
     }

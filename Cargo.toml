@@ -15,11 +15,11 @@ debug = true
 # Features
 ###################################################################################################
 [features]
-default = ["progress", "syscall-backend", "mapped-backend"]
+default = ["progress", "syscall-backend", "mapped-backend", "tokio-backend"]
 
-windows = ["progress", "syscall-backend", "mapped-backend"]
-macos = ["progress", "syscall-backend", "mapped-backend"]
-linux = ["progress", "glommio-backend", "syscall-backend", "mapped-backend"]
+windows = ["progress", "syscall-backend", "mapped-backend", "tokio-backend"]
+macos = ["progress", "syscall-backend", "mapped-backend", "tokio-backend"]
+linux = ["progress", "glommio-backend", "syscall-backend", "mapped-backend", "tokio-backend"]
 
 #################################################
 # BLAS implementations - choose ONE
@@ -42,6 +42,8 @@ syscall-backend = []
 # memory mapped file backend
 # is a bit inconsistent compared to others
 mapped-backend = ["memmap2"]
+
+tokio-backend = ["tokio", "futures"]
 
 #################################################
 # Other features
@@ -83,6 +85,11 @@ features = ["serde"]
 ###################################################################################################
 # Optional Dependencies
 ###################################################################################################
+[dependencies.tokio]
+version = "^1.10.0"
+features = ["rt", "fs", "io-util"]
+optional = true
+
 # Memory mapped IO
 [dependencies.memmap2]
 version = "^0.3.0"

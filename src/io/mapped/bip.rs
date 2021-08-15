@@ -98,7 +98,7 @@ impl Bip<f32> for MappedBip<f32> {
         Ok(accumulator)
     }
 
-    fn bip(&self) -> &BipDims<f32> {
+    fn dims(&self) -> &BipDims<f32> {
         &self.bip
     }
 

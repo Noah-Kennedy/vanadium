@@ -15,7 +15,7 @@ use crate::util::{make_raw, make_raw_mut};
 
 pub struct SyscallBip<T> {
     file: File,
-    bip: BipDims<T>,
+    dims: BipDims<T>,
 }
 
 impl<T> SyscallBip<T> {
@@ -30,7 +30,7 @@ impl<T> SyscallBip<T> {
 
         Ok(Self {
             file,
-            bip,
+            dims: bip,
         })
     }
 }
@@ -43,15 +43,15 @@ impl Bip<f32> for SyscallBip<f32> {
 
         let name = name.to_owned();
 
-        make_bar!(pb, self.bip.num_pixels() as u64, name);
+        make_bar!(pb, self.dims.num_pixels() as u64, name);
 
-        let mut buffer = vec![0.0; BATCH_SIZE * self.bip.pixel_length()];
+        let mut buffer = vec![0.0; BATCH_SIZE * self.dims.pixel_length()];
 
         let mut seek = 0;
         let byte_len = buffer.len() * mem::size_of::<f32>();
 
         while self.file.read_f32_into::<LittleEndian>(&mut buffer).is_ok() {
-            let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.bip.pixel_length()), buffer)
+            let mut pixel = Array2::from_shape_vec((BATCH_SIZE, self.dims.pixel_length()), buffer)
                 .unwrap();
 
             f(&mut pixel, &mut accumulator);
@@ -78,7 +78,7 @@ impl Bip<f32> for SyscallBip<f32> {
 
             raw_buf.as_slice().read_f32_into::<LittleEndian>(b).unwrap();
 
-            let shape = (n_elements / self.bip.pixel_length(), self.bip.pixel_length());
+            let shape = (n_elements / self.dims.pixel_length(), self.dims.pixel_length());
             let mut pixel = Array2::from_shape_vec(shape, b.to_vec()).unwrap();
 
             f(&mut pixel, &mut accumulator);
@@ -87,8 +87,8 @@ impl Bip<f32> for SyscallBip<f32> {
         Ok(accumulator)
     }
 
-    fn bip(&self) -> &BipDims<f32> {
-        &self.bip
+    fn dims(&self) -> &BipDims<f32> {
+        &self.dims
     }
 
     fn map_and_write_batched<F>(
@@ -121,30 +121,30 @@ impl Bip<f32> for SyscallBip<f32> {
             .create(true)
             .open(out).unwrap();
 
-        let (start_col, end_col) = cols.unwrap_or((0, self.bip.dims.pixels as u64));
-        let (start_row, end_row) = rows.unwrap_or((0, self.bip.dims.lines as u64));
+        let (start_col, end_col) = cols.unwrap_or((0, self.dims.dims.pixels as u64));
+        let (start_row, end_row) = rows.unwrap_or((0, self.dims.dims.lines as u64));
 
         let row_length = end_col - start_col;
 
-        let initial_skip = (start_row as i64 * self.bip.dims.pixels as i64)
-            * self.bip.pixel_length() as i64
+        let initial_skip = (start_row as i64 * self.dims.dims.pixels as i64)
+            * self.dims.pixel_length() as i64
             * mem::size_of::<f32>() as i64;
 
         let start_row_skip = start_col as i64
-            * self.bip.pixel_length() as i64
+            * self.dims.pixel_length() as i64
             * mem::size_of::<f32>() as i64;
 
-        let end_row_skip = (self.bip.dims.pixels as i64 - end_col as i64)
-            * self.bip.pixel_length() as i64
+        let end_row_skip = (self.dims.dims.pixels as i64 - end_col as i64)
+            * self.dims.pixel_length() as i64
             * mem::size_of::<f32>() as i64;
 
         let name = name.to_owned();
 
-        make_bar!(pb, self.bip.num_pixels() as u64, name);
+        make_bar!(pb, self.dims.num_pixels() as u64, name);
 
         let mut read_array = Array2::from_shape_vec(
-            (row_length as usize, self.bip.pixel_length()),
-            vec![0.0; row_length as usize * self.bip.pixel_length()],
+            (row_length as usize, self.dims.pixel_length()),
+            vec![0.0; row_length as usize * self.dims.pixel_length()],
         ).unwrap();
 
         let mut write_array = Array2::from_shape_vec(

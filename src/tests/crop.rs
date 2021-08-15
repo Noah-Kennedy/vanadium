@@ -17,7 +17,7 @@ fn glommio_init() {
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(CROP_HEADER.clone());
+        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(CROP_HEADER.clone()).unwrap();
         bip.crop(Some((0, 1000)), Some((0, 1000)), &GLO_PATH).unwrap();
     });
 }

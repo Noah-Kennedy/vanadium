@@ -22,6 +22,7 @@ use crate::io::bip::SyscallBip;
 #[cfg(feature = "memmap2")]
 use crate::io::mapped::bip::MappedBip;
 use crate::opt::{IoBackend, Operation, VanadiumArgs};
+use crate::io::tokio::bip::TokioBip;
 
 #[cfg(not(tarpaulin_include))]
 mod headers;
@@ -46,13 +47,20 @@ mod opt;
 fn get_image(backend: IoBackend, headers: Header<String>) -> Box<dyn BasicImage<f32>> {
     assert_eq!(ImageFormat::Bip, headers.format);
     match backend {
-        #[cfg(feature = "glommio")]
-        IoBackend::Glommio => Box::new(GlommioBip::new(headers)),
+        #[cfg(feature = "glommio-backend")]
+        IoBackend::Glommio => Box::new(GlommioBip::new(headers).unwrap()),
+        #[cfg(feature = "tokio-backend")]
+        IoBackend::Tokio => Box::new(TokioBip::new(headers).unwrap()),
         #[cfg(feature = "syscall-backend")]
         IoBackend::Syscall => Box::new(SyscallBip::new(headers).unwrap()),
-        #[cfg(feature = "memmap2")]
+        #[cfg(feature = "mapped-backend")]
         IoBackend::Mapped => Box::new(MappedBip::new(headers).unwrap()),
-        #[cfg(not(all(feature = "memmap2", feature = "glommio", feature = "syscall-backend")))]
+        #[cfg(not(all(
+        feature = "mapped-backend",
+        feature = "glommio-backend",
+        feature = "syscall-backend",
+        feature = "tokio-backend"
+        )))]
         _ => panic!("Unknown backend!")
     }
 }

@@ -5,8 +5,8 @@ use std::ops::{AddAssign, DivAssign, SubAssign};
 use std::path::Path;
 
 use futures::{AsyncReadExt, AsyncWriteExt};
+use glommio::{LocalExecutor, LocalExecutorBuilder};
 use glommio::io::{DmaFile, DmaStreamReader, DmaStreamReaderBuilder, DmaStreamWriter, DmaStreamWriterBuilder};
-use glommio::LocalExecutorBuilder;
 use ndarray::{Array2, ArrayViewMut2};
 use num_traits::{Float, FromPrimitive};
 
@@ -27,26 +27,25 @@ const LOCKED_MEMORY: usize = 524_288;
 
 pub struct GlommioBip<P, T> where P: AsRef<Path> {
     headers: Header<P>,
+    executor: LocalExecutor,
     bip: BipDims<T>,
 }
 
 impl<P, T> GlommioBip<P, T> where P: AsRef<Path> + ToString {
-    pub fn new(headers: Header<P>) -> Self {
+    pub fn new(headers: Header<P>) -> VanadiumResult<Self <>> {
         assert_eq!(ImageFormat::Bip, headers.format);
+
+        let executor = LocalExecutorBuilder::new()
+            .pin_to_cpu(PIN_CPU)
+            .make()
+            .map_err(|_| VanadiumError::Unknown).unwrap();
+
         let bip = BipDims {
             dims: headers.dims.clone(),
             phantom: Default::default(),
         };
 
-        Self { headers, bip }
-    }
-
-    fn make_executor(&self, name: &str) -> VanadiumResult<glommio::LocalExecutor> {
-        LocalExecutorBuilder::new()
-            .name(name)
-            .pin_to_cpu(PIN_CPU)
-            .make()
-            .map_err(|_| VanadiumError::Unknown)
+        Ok(Self { headers, executor, bip })
     }
 
     async fn open_input_file(&self) -> VanadiumResult<DmaFile> {
@@ -95,13 +94,9 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
     fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<T>, &mut A)
     {
-        // todo handle errors
-
-        let ex = self.make_executor(name)?;
-
         let name = name.to_owned();
 
-        ex.run(async {
+        self.executor.run(async {
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
             let mut reader = self.open_input_reader().await?;
@@ -153,7 +148,7 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
         })
     }
 
-    fn bip(&self) -> &BipDims<T> {
+    fn dims(&self) -> &BipDims<T> {
         &self.bip
     }
 
@@ -166,11 +161,9 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
     ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>)
     {
-        let ex = self.make_executor(name)?;
-
         let name = name.to_owned();
 
-        ex.run(async {
+        self.executor.run(async {
             make_bar!(pb, self.bip.num_pixels() as u64, name);
 
             let mut read_array = Array2::from_shape_vec(
@@ -230,6 +223,8 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
                 }
             }
 
+            writer.flush().await.unwrap();
+
             Ok(())
         })
     }
@@ -245,8 +240,6 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
     ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<T>, &mut Array2<T>)
     {
-        let ex = self.make_executor(name)?;
-
         let (start_col, end_col) = cols.unwrap_or((0, self.headers.dims.pixels as u64));
         let (start_row, end_row) = rows.unwrap_or((0, self.headers.dims.lines as u64));
 
@@ -266,7 +259,7 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
 
         let name = name.to_owned();
 
-        ex.run(async {
+        self.executor.run(async {
             let mut reader = self.open_input_reader().await?;
             let mut writer = self.open_output_writer(out).await?;
 

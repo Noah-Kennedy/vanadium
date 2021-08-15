@@ -6,10 +6,12 @@ use approx::assert_relative_eq;
 use ndarray::{Array2};
 
 use super::*;
+use crate::io::tokio::bip::TokioBip;
 
 static mut GLO_VAL: MaybeUninit<Array2<f32>> = MaybeUninit::uninit();
 static mut MAP_VAL: MaybeUninit<Array2<f32>> = MaybeUninit::uninit();
 static mut SYS_VAL: MaybeUninit<Array2<f32>> = MaybeUninit::uninit();
+static mut TOK_VAL: MaybeUninit<Array2<f32>> = MaybeUninit::uninit();
 
 fn glommio_init() {
     static INIT: Once = Once::new();
@@ -18,7 +20,7 @@ fn glommio_init() {
         let means = serde_json::from_reader(File::open("data/small/means.json").unwrap()).unwrap();
         let sd = serde_json::from_reader(File::open("data/small/std-devs.json").unwrap()).unwrap();
 
-        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TINY_HEADER.clone());
+        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TINY_HEADER.clone()).unwrap();
 
         unsafe {
             GLO_VAL = MaybeUninit::new(bip.covariance_matrix(Some(&means), Some(&sd)).unwrap());
@@ -54,6 +56,35 @@ fn sys_init() {
             SYS_VAL = MaybeUninit::new(bip.covariance_matrix(Some(&means), Some(&sd)).unwrap());
         }
     });
+}
+
+fn tok_init() {
+    static INIT: Once = Once::new();
+
+    INIT.call_once(|| {
+        let means = serde_json::from_reader(File::open("data/small/means.json").unwrap()).unwrap();
+        let sd = serde_json::from_reader(File::open("data/small/std-devs.json").unwrap()).unwrap();
+
+        let mut bip: TokioBip<f32> = TokioBip::new(TINY_HEADER.clone()).unwrap();
+
+        unsafe {
+            TOK_VAL = MaybeUninit::new(bip.covariance_matrix(Some(&means), Some(&sd)).unwrap());
+        }
+    });
+}
+
+#[test]
+fn cov_check_eq_sys_tok() {
+    tok_init();
+    sys_init();
+
+    unsafe {
+        assert_relative_eq!(
+            TOK_VAL.as_ptr().as_ref().unwrap().as_slice().unwrap(),
+            SYS_VAL.as_ptr().as_ref().unwrap().as_slice().unwrap(),
+            epsilon = f32::EPSILON
+        );
+    }
 }
 
 #[test]

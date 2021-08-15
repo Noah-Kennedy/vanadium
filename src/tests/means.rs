@@ -4,16 +4,18 @@ use std::sync::Once;
 use ndarray::Array1;
 
 use super::*;
+use crate::io::tokio::bip::TokioBip;
 
 static mut GLOMMIO_VAL: MaybeUninit<Array1<f32>> = MaybeUninit::uninit();
 static mut MAPPED_VAL: MaybeUninit<Array1<f32>> = MaybeUninit::uninit();
 static mut SYS_VAL: MaybeUninit<Array1<f32>> = MaybeUninit::uninit();
+static mut TOKIO_VAL: MaybeUninit<Array1<f32>> = MaybeUninit::uninit();
 
 fn glommio_init() {
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TINY_HEADER.clone());
+        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TINY_HEADER.clone()).unwrap();
 
         unsafe {
             GLOMMIO_VAL = MaybeUninit::new(bip.means().unwrap());
@@ -45,6 +47,18 @@ fn sys_init() {
     });
 }
 
+fn tok_init() {
+    static INIT: Once = Once::new();
+
+    INIT.call_once(|| {
+        let mut bip: TokioBip<f32> = TokioBip::new(TINY_HEADER.clone()).unwrap();
+
+        unsafe {
+            TOKIO_VAL = MaybeUninit::new(bip.means().unwrap());
+        }
+    });
+}
+
 #[test]
 fn means_check_eq_sys_gl() {
     glommio_init();
@@ -62,6 +76,16 @@ fn means_check_eq_map_gl() {
 
     unsafe {
         assert_eq!(*MAPPED_VAL.as_ptr(), *GLOMMIO_VAL.as_ptr());
+    }
+}
+
+#[test]
+fn means_check_eq_tok_sys() {
+    tok_init();
+    sys_init();
+
+    unsafe {
+        assert_eq!(*SYS_VAL.as_ptr(), *TOKIO_VAL.as_ptr());
     }
 }
 
