@@ -8,8 +8,8 @@ edition = "2018"
 ###################################################################################################
 [profile.release]
 debug = true
-codegen-units = 1
-lto = "fat"
+#codegen-units = 1
+#lto = "fat"
 
 ###################################################################################################
 # Features
@@ -17,65 +17,101 @@ lto = "fat"
 [features]
 default = ["glommio-backend", "syscall-backend", "mapped-backend", "progress"]
 
+#################################################
+# BLAS implementations - choose ONE
+#################################################
+
+# enables openBLAS implementation
 openblas = ["blas-src/openblas", "openblas-src", "ndarray/blas"]
+# enables netlib implementation
 netlib = ["blas-src/netlib", "netlib-src", "ndarray/blas"]
 
-progress = ["indicatif"]
+#################################################
+# IO backends
+#################################################
 
+# io_uring-based direct io backend, is generally the fastest
 glommio-backend = ["glommio", "futures"]
+# read/write syscall-based backend
+# is not bad in terms of performance
 syscall-backend = []
+# memory mapped file backend
+# is a bit inconsistent compared to others
 mapped-backend = ["memmap2"]
+
+#################################################
+# Other features
+#################################################
+# enables progress bar
+progress = ["indicatif"]
 
 ###################################################################################################
 # Dependencies
 ###################################################################################################
 [dependencies]
+# CLI arg microframework
 structopt = "^0.3.0"
+# JSON serialization/deserialization
 serde_json = "^1.0.0"
+# Used for numeric generics
 num-traits = "^0.2.0"
+# Used for ifdef statements
 cfg-if = "^1.0.0"
+# Error handling
 thiserror = "^1.0.0"
+# Handles reading primitives from bytes, as well as endianness (in some cases)
 byteorder = "^1.4.0"
+# Used for eigendecomposition
 ndarray-linalg = "^0.14.0"
+# Used for image generation
 image = "^0.23.14"
 
+# JSON serialization/deserialization
 [dependencies.serde]
 version = "^1.0.0"
 features = ["derive"]
 
-###################################################################################################
-# Optional Dependencies
-###################################################################################################
-[dependencies.memmap2]
-version = "^0.3.0"
-optional = true
-
+# n-dimensional array, used for vectorized operations and linear algebra
 [dependencies.ndarray]
 version = "^0.15.0"
 features = ["serde"]
 
+###################################################################################################
+# Optional Dependencies
+###################################################################################################
+# Memory mapped IO
+[dependencies.memmap2]
+version = "^0.3.0"
+optional = true
+
+# BLAS-src, used for ndarray BLAS
 [dependencies.blas-src]
 version = "^0.8.0"
 optional = true
 
+# OpenBLAS backend for ndarray BLAS
 [dependencies.openblas-src]
 version = "^0.10.0"
 features = ["cblas", "system"]
 optional = true
 
+# Netlib backend for ndarray BLAS
 [dependencies.netlib-src]
 version = "^0.8.0"
 features = ["cblas", "system"]
 optional = true
 
+# Progress bar
 [dependencies.indicatif]
 version = "^0.16.0"
 optional = true
 
+# io_uring framework
 [dependencies.glommio]
 version = "^0.5.0"
 optional = true
 
+# futures crate, is just really useful
 [dependencies.futures]
 version = "^0.3.0"
 optional = true
@@ -84,8 +120,10 @@ optional = true
 # Dev Dependencies
 ###################################################################################################
 [dev-dependencies]
+# used for checking approximate equality in tests
 approx = "^0.5.0"
 
+# enable approx support for ndarray
 [dev-dependencies.ndarray]
 version = "^0.15.0"
 features = ["approx"]
