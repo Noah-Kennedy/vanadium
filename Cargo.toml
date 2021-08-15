@@ -15,7 +15,11 @@ debug = true
 # Features
 ###################################################################################################
 [features]
-default = ["glommio-backend", "syscall-backend", "mapped-backend", "progress"]
+default = ["progress", "syscall-backend", "mapped-backend"]
+
+windows = ["progress", "syscall-backend", "mapped-backend"]
+macos = ["progress", "syscall-backend", "mapped-backend"]
+linux = ["progress", "glommio-backend", "syscall-backend", "mapped-backend"]
 
 #################################################
 # BLAS implementations - choose ONE
