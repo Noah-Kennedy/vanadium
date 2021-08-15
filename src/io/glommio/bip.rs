@@ -247,17 +247,22 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
     {
         let ex = self.make_executor(name)?;
 
-        let row_length = cols.map_or(
-            self.headers.dims.pixels as u64,
-            |(start, end)| end - start,
-        );
+        let (start_col, end_col) = cols.unwrap_or((0, self.headers.dims.pixels as u64));
+        let (start_row, end_row) = rows.unwrap_or((0, self.headers.dims.lines as u64));
 
-        let skip = (self.headers.dims.pixels as u64 - row_length)
+        let row_length = end_col - start_col;
+
+        let initial_skip = (start_row * self.headers.dims.pixels as u64)
             * self.bip.pixel_length() as u64
             * mem::size_of::<T>() as u64;
 
-        let (start_col, _) = cols.unwrap_or((0, self.headers.dims.pixels as u64));
-        let (start_row, end_row) = rows.unwrap_or((0, self.headers.dims.lines as u64));
+        let start_row_skip = start_col
+            * self.bip.pixel_length() as u64
+            * mem::size_of::<T>() as u64;
+
+        let end_row_skip = (self.bip.dims.pixels as u64 - end_col)
+            * self.bip.pixel_length() as u64
+            * mem::size_of::<T>() as u64;
 
         let name = name.to_owned();
 
@@ -277,15 +282,13 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
                 vec![T::zero(); row_length as usize * n_output_channels],
             ).unwrap();
 
-            let initial_skip = (start_row * self.headers.dims.pixels as u64 + start_col)
-                * self.bip.pixel_length() as u64
-                * mem::size_of::<T>() as u64;
-
             reader.skip(initial_skip);
 
             let mut row = start_row;
 
             while row < end_row {
+                reader.skip(start_row_skip);
+
                 unsafe {
                     let raw_read_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
 
@@ -296,6 +299,7 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
                     f(&mut read_array.view_mut(), &mut write_array);
 
                     let raw_write_buffer = make_raw(write_array.as_slice().unwrap());
+
                     writer.write_all(raw_write_buffer)
                         .await
                         .map_err(|_| VanadiumError::IoError)?;
@@ -303,7 +307,7 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
                     inc_bar!(pb, 1);
                 }
 
-                reader.skip(skip);
+                reader.skip(end_row_skip);
             }
 
             Ok(())

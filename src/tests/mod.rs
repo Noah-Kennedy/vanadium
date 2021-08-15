@@ -26,6 +26,10 @@ mod std_devs;
 #[cfg_attr(miri, ignore)]
 mod covariances;
 
+#[cfg(test)]
+#[cfg_attr(miri, ignore)]
+mod crop;
+
 #[test]
 fn test_raw() {
     let mut v: Vec<f32> = vec![0., 5., 2., 3., 4.];
