@@ -4,6 +4,7 @@ use std::io::SeekFrom;
 use std::iter::Sum;
 use std::ops::{AddAssign, DivAssign, SubAssign};
 use std::path::Path;
+use std::result::Result::Ok;
 use std::sync::Arc;
 
 use ndarray::{Array2, ArrayViewMut2};
@@ -11,6 +12,7 @@ use num_traits::{Float, FromPrimitive};
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeek, AsyncSeekExt};
 use tokio::runtime;
+use tokio::sync::Mutex;
 
 use crate::error::VanadiumResult;
 use crate::headers::{Header, ImageFormat};
@@ -20,7 +22,7 @@ use crate::io::bip::Bip;
 use crate::util::make_raw_mut;
 
 pub struct TokioBip<T> {
-    file: File,
+    file: Arc<Mutex<File>>,
     rt: Arc<runtime::Runtime>,
     dims: BipDims<T>,
 }
@@ -34,10 +36,10 @@ impl<T> TokioBip<T> {
             phantom: Default::default(),
         };
 
-        let rt = runtime::Builder::new_current_thread()
+        let rt = runtime::Builder::new_multi_thread()
             .build()?;
 
-        let file = rt.block_on(File::open(header.path))?;
+        let file = Arc::new(Mutex::new(rt.block_on(File::open(header.path))?));
 
         Ok(Self {
             file,
@@ -49,7 +51,7 @@ impl<T> TokioBip<T> {
 
 impl<T> Bip<T> for TokioBip<T>
     where T: Float + Clone + Copy + FromPrimitive + Sum + AddAssign + SubAssign + DivAssign +
-    'static + Debug,
+    'static + Debug + Sync + Send,
 {
     fn fold_batched<F, A>(&mut self, name: &str, mut accumulator: A, mut f: F) -> VanadiumResult<A>
         where F: FnMut(&mut Array2<T>, &mut A)
@@ -59,31 +61,56 @@ impl<T> Bip<T> for TokioBip<T>
         self.rt.clone().block_on(async {
             make_bar!(pb, self.dims.num_pixels() as u64, name);
 
-            let mut buffer = Array2::from_shape_vec(
-                (BATCH_SIZE, self.dims.pixel_length()),
-                vec![T::zero(); BATCH_SIZE * self.dims.pixel_length()],
-            ).unwrap();
+            let (tx, mut rx) = tokio::sync::mpsc::channel(4);
 
+            let pl = self.dims.pixel_length();
+
+            let make_buffer = move || {
+                Array2::from_shape_vec(
+                    (BATCH_SIZE, pl),
+                    vec![T::zero(); BATCH_SIZE * pl],
+                ).unwrap()
+            };
+
+            let mut fi = self.file.clone();
+
+            tokio::task::spawn(async move {
+                loop {
+                    let mut buffer = make_buffer();
+
+                    let sentinel = unsafe {
+                        let raw_buffer = make_raw_mut(buffer.as_slice_mut().unwrap());
+                        fi.lock().await.read_exact(raw_buffer).await.is_err()
+                    };
+
+                    if sentinel {
+                        break;
+                    }
+
+                    tx.send(buffer).await.unwrap();
+                }
+            });
+
+            let byte_len = BATCH_SIZE * pl * mem::size_of::<f32>();
             let mut seek = 0;
-            let byte_len = buffer.len() * mem::size_of::<f32>();
 
-            while unsafe {
-                let raw_buffer = make_raw_mut(buffer.as_slice_mut().unwrap());
-                self.file.read_exact(raw_buffer).await.is_ok()
-            } {
-                f(&mut buffer, &mut accumulator);
-
-                inc_bar!(pb, BATCH_SIZE as u64);
+            while let Some(mut buffer) = rx.recv().await {
+                tokio::task::block_in_place(|| {
+                    f(&mut buffer, &mut accumulator);
+                    inc_bar!(pb, BATCH_SIZE as u64);
+                });
 
                 seek += byte_len;
             }
 
-            self.file.seek(SeekFrom::Start(seek as u64)).await.unwrap();
+            self.file.lock().await.seek(SeekFrom::Start(seek as u64)).await.unwrap();
+
+            let mut buffer = make_buffer();
 
             let n_elements = unsafe {
                 let raw_buffer = make_raw_mut(buffer.as_slice_mut().unwrap());
                 let mut v = Vec::new();
-                let n_bytes = self.file.read_to_end(&mut v).await.unwrap();
+                let n_bytes = self.file.lock().await.read_to_end(&mut v).await.unwrap();
 
                 raw_buffer[..v.len()].clone_from_slice(&v);
 

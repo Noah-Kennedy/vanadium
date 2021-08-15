@@ -1261,6 +1261,7 @@ dependencies = [
  "autocfg",
  "bytes",
  "memchr",
+ "num_cpus",
  "pin-project-lite 0.2.7",
 ]
 

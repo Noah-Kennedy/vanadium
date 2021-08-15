@@ -87,7 +87,7 @@ features = ["serde"]
 ###################################################################################################
 [dependencies.tokio]
 version = "^1.10.0"
-features = ["rt", "fs", "io-util"]
+features = ["rt", "fs", "io-util", "sync", "rt-multi-thread"]
 optional = true
 
 # Memory mapped IO
