@@ -15,7 +15,7 @@ fn glommio_init(means: &Array1<f32>) {
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TEST_HEADER.clone());
+        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TINY_HEADER.clone());
 
         unsafe {
             GLO_VAL = MaybeUninit::new(bip.std_deviations(&means).unwrap());
@@ -27,7 +27,7 @@ fn mapped_init(means: &Array1<f32>) {
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let mut bip: MappedBip<f32> = MappedBip::new(TEST_HEADER.clone()).unwrap();
+        let mut bip: MappedBip<f32> = MappedBip::new(TINY_HEADER.clone()).unwrap();
 
         unsafe {
             MAP_VAL = MaybeUninit::new(bip.std_deviations(&means).unwrap());
@@ -39,7 +39,7 @@ fn sys_init(means: &Array1<f32>) {
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let mut bip: SyscallBip<f32> = SyscallBip::new(TEST_HEADER.clone()).unwrap();
+        let mut bip: SyscallBip<f32> = SyscallBip::new(TINY_HEADER.clone()).unwrap();
 
         unsafe {
             SYS_VAL = MaybeUninit::new(bip.std_deviations(&means).unwrap());

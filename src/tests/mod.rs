@@ -4,7 +4,17 @@ use crate::io::bip::{GlommioBip, SyscallBip};
 use crate::io::mapped::bip::MappedBip;
 use crate::util::{make_raw, make_raw_mut};
 
-const TEST_HEADER: Header<&str> = Header {
+const TINY_HEADER: Header<&str> = Header {
+    dims: ImageDims {
+        channels: 5,
+        lines: 1000,
+        pixels: 1000,
+    },
+    format: ImageFormat::Bip,
+    path: "data/tiny/bip",
+};
+
+const CROP_HEADER: Header<&str> = Header {
     dims: ImageDims {
         channels: 5,
         lines: 21954,

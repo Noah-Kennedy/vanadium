@@ -110,7 +110,7 @@ impl Bip<f32> for SyscallBip<f32> {
         cols: Option<(u64, u64)>,
         n_output_channels: usize,
         out: &dyn AsRef<Path>,
-        f: F,
+        mut f: F,
     ) -> VanadiumResult<()>
         where F: FnMut(&mut ArrayViewMut2<f32>, &mut Array2<f32>)
     {
@@ -121,12 +121,12 @@ impl Bip<f32> for SyscallBip<f32> {
             .create(true)
             .open(out).unwrap();
 
-        let (start_col, end_col) = cols.unwrap_or((0, self.headers.dims.pixels as u64));
-        let (start_row, end_row) = rows.unwrap_or((0, self.headers.dims.lines as u64));
+        let (start_col, end_col) = cols.unwrap_or((0, self.bip.dims.pixels as u64));
+        let (start_row, end_row) = rows.unwrap_or((0, self.bip.dims.lines as u64));
 
         let row_length = end_col - start_col;
 
-        let initial_skip = (start_row as i64 * self.headers.dims.pixels as i64)
+        let initial_skip = (start_row as i64 * self.bip.dims.pixels as i64)
             * self.bip.pixel_length() as i64
             * mem::size_of::<f32>() as i64;
 
@@ -152,12 +152,12 @@ impl Bip<f32> for SyscallBip<f32> {
             vec![0.0; row_length as usize * n_output_channels],
         ).unwrap();
 
-        self.file.seek(SeekFrom::Start(initial_skip as u64));
+        self.file.seek(SeekFrom::Start(initial_skip as u64)).unwrap();
 
         let mut row = start_row;
 
         while row < end_row {
-            self.file.seek(SeekFrom::Current(start_row_skip));
+            self.file.seek(SeekFrom::Current(start_row_skip)).unwrap();
 
             unsafe {
                 let raw_read_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
@@ -165,7 +165,7 @@ impl Bip<f32> for SyscallBip<f32> {
             }
 
 
-            f(&mut read_array, &mut write_array);
+            f(&mut read_array.view_mut(), &mut write_array);
 
             unsafe {
                 let raw_write_buffer = make_raw(write_array.as_slice().unwrap());
@@ -176,7 +176,7 @@ impl Bip<f32> for SyscallBip<f32> {
 
             row += 1;
 
-            self.file.seek(SeekFrom::Current(end_row_skip));
+            self.file.seek(SeekFrom::Current(end_row_skip)).unwrap();
         }
 
         Ok(())

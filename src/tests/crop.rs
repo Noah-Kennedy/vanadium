@@ -1,11 +1,12 @@
-use std::sync::Once;
-use crate::io::bip::{GlommioBip, SyscallBip};
-use crate::tests::TEST_HEADER;
-use crate::io::BasicImage;
 use std::fs::File;
-use std::io::Seek;
 use std::result::Result::Ok;
-use byteorder::ReadBytesExt;
+use std::sync::Once;
+
+use byteorder::{LittleEndian, ReadBytesExt};
+
+use crate::io::BasicImage;
+use crate::io::bip::{GlommioBip, SyscallBip};
+use crate::tests::{CROP_HEADER};
 
 const GLO_PATH: &str = "data/tiny/glo-bip";
 const SYS_PATH: &str = "data/tiny/sys-bip";
@@ -16,8 +17,8 @@ fn glommio_init() {
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TEST_HEADER.clone());
-        bip.crop(Some((0, 1000)), Some((0, 1000)), GLO_PATH).unwrap();
+        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(CROP_HEADER.clone());
+        bip.crop(Some((0, 1000)), Some((0, 1000)), &GLO_PATH).unwrap();
     });
 }
 
@@ -25,8 +26,8 @@ fn syscall_init() {
     static INIT: Once = Once::new();
 
     INIT.call_once(|| {
-        let mut bip: SyscallBip<f32> = SyscallBip::new(TEST_HEADER.clone()).unwrap();
-        bip.crop(Some((0, 1000)), Some((0, 1000)), GLO_PATH).unwrap();
+        let mut bip: SyscallBip<f32> = SyscallBip::new(CROP_HEADER.clone()).unwrap();
+        bip.crop(Some((0, 1000)), Some((0, 1000)), &SYS_PATH).unwrap();
     });
 }
 
@@ -58,10 +59,10 @@ fn check_glommio_syscall_equivalence() {
     let mut g = File::open(GLO_PATH).unwrap();
     let mut s = File::open(SYS_PATH).unwrap();
 
-    while let (Ok(gf), Ok(sf)) = (g.read_f32(), s.read_f32()) {
+    while let (Ok(gf), Ok(sf)) = (g.read_f32::<LittleEndian>(), s.read_f32::<LittleEndian>()) {
         assert_eq!(gf, sf, "EQ failed at {}: {} != {}", counter, gf, sf);
         counter += 1;
     }
 
-    assert_eq!(FILE_SIZE - 1, counter, "Did not make through file, made it to {}", counter);
+    assert_eq!((FILE_SIZE / 4), counter, "Did not make through file, made it to {}", counter);
 }

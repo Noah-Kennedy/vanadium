@@ -18,7 +18,7 @@ fn glommio_init() {
         let means = serde_json::from_reader(File::open("data/small/means.json").unwrap()).unwrap();
         let sd = serde_json::from_reader(File::open("data/small/std-devs.json").unwrap()).unwrap();
 
-        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TEST_HEADER.clone());
+        let mut bip: GlommioBip<&str, f32> = GlommioBip::new(TINY_HEADER.clone());
 
         unsafe {
             GLO_VAL = MaybeUninit::new(bip.covariance_matrix(Some(&means), Some(&sd)).unwrap());
@@ -33,7 +33,7 @@ fn mapped_init() {
         let means = serde_json::from_reader(File::open("data/small/means.json").unwrap()).unwrap();
         let sd = serde_json::from_reader(File::open("data/small/std-devs.json").unwrap()).unwrap();
 
-        let mut bip: MappedBip<f32> = MappedBip::new(TEST_HEADER.clone()).unwrap();
+        let mut bip: MappedBip<f32> = MappedBip::new(TINY_HEADER.clone()).unwrap();
 
         unsafe {
             MAP_VAL = MaybeUninit::new(bip.covariance_matrix(Some(&means), Some(&sd)).unwrap());
@@ -48,7 +48,7 @@ fn sys_init() {
         let means = serde_json::from_reader(File::open("data/small/means.json").unwrap()).unwrap();
         let sd = serde_json::from_reader(File::open("data/small/std-devs.json").unwrap()).unwrap();
 
-        let mut bip: SyscallBip<f32> = SyscallBip::new(TEST_HEADER.clone()).unwrap();
+        let mut bip: SyscallBip<f32> = SyscallBip::new(TINY_HEADER.clone()).unwrap();
 
         unsafe {
             SYS_VAL = MaybeUninit::new(bip.covariance_matrix(Some(&means), Some(&sd)).unwrap());

@@ -291,24 +291,25 @@ impl<P, T> Bip<T> for GlommioBip<P, T>
 
                 unsafe {
                     let raw_read_buffer = make_raw_mut(read_array.as_slice_mut().unwrap());
-
                     reader.read_exact(raw_read_buffer).await.unwrap();
+                }
 
-                    row += 1;
+                f(&mut read_array.view_mut(), &mut write_array);
 
-                    f(&mut read_array.view_mut(), &mut write_array);
-
+                unsafe {
                     let raw_write_buffer = make_raw(write_array.as_slice().unwrap());
-
                     writer.write_all(raw_write_buffer)
                         .await
                         .map_err(|_| VanadiumError::IoError)?;
-
-                    inc_bar!(pb, 1);
                 }
+
+                inc_bar!(pb, 1);
+                row += 1;
 
                 reader.skip(end_row_skip);
             }
+
+            writer.flush().await.unwrap();
 
             Ok(())
         })
