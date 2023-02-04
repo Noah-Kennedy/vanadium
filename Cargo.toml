@@ -86,7 +86,7 @@ features = ["serde"]
 # Optional Dependencies
 ###################################################################################################
 [dependencies.tokio]
-version = "^1.10.0"
+version = "^1.18.5"
 features = ["rt", "fs", "io-util", "sync", "rt-multi-thread"]
 optional = true
 
